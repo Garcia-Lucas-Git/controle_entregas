@@ -1,3 +1,4 @@
+import 'package:controle_entregas/core/devtools/test_data_cleanup_service.dart';
 import 'package:controle_entregas/data/database/app_database.dart';
 import 'package:drift/drift.dart';
 
@@ -162,14 +163,8 @@ class TestDataGeneratorService {
     }
   }
 
-  Future<int> cleanupGeneratedData() {
-    return _db.customUpdate(
-      "delete from shifts where driver_name like ? or coalesce(notes, '') like ?",
-      variables: [
-        Variable<String>('[DEVTOOLS]%'),
-        Variable<String>('%[DEVTOOLS]%'),
-      ],
-    );
+  Future<TestDataCleanupSummary> cleanupGeneratedData() {
+    return TestDataCleanupService(_db).cleanupAll();
   }
 
   Future<int> _insertShift({
@@ -192,7 +187,7 @@ class TestDataGeneratorService {
         totalEarningsCents: Value(totalEarningsCents),
         deliveryCount: Value(deliveryCount),
         notes: Value(notes),
-        source: Value(source),
+        source: Value(source == 'app' ? 'devtools' : source),
         hoursWorked: Value(hoursWorked),
         createdAt: Value(now.toIso8601String()),
       ),

@@ -5,6 +5,7 @@ class AutomationRunResult {
   final List<AutomationTestResult> tests;
   final List<AutomationOcrFixtureResult> ocrFixtures;
   final List<String> criticalErrors;
+  final List<AutomationWorkflowStageResult> workflowStages;
   final String reportPath;
 
   const AutomationRunResult({
@@ -14,6 +15,7 @@ class AutomationRunResult {
     required this.tests,
     required this.ocrFixtures,
     required this.criticalErrors,
+    this.workflowStages = const [],
     required this.reportPath,
   });
 
@@ -27,7 +29,28 @@ class AutomationRunResult {
   int get skippedCount =>
       tests.where((t) => t.status == AutomationStatus.skipped).length;
 
-  bool get passed => failCount == 0;
+  bool get workflowPassed =>
+      workflowStages.where((s) => s.status == AutomationStatus.fail).isEmpty;
+
+  bool get passed => failCount == 0 && workflowPassed;
+}
+
+class AutomationWorkflowStageResult {
+  final String name;
+  final AutomationStatus status;
+  final AutomationFailureCategory category;
+  final int durationMs;
+  final String? message;
+  final Map<String, dynamic> metadata;
+
+  const AutomationWorkflowStageResult({
+    required this.name,
+    required this.status,
+    required this.category,
+    required this.durationMs,
+    this.message,
+    this.metadata = const {},
+  });
 }
 
 class AutomationTestResult {
@@ -66,6 +89,19 @@ class AutomationOcrFixtureResult {
     required this.missingFields,
     this.message,
   });
+}
+
+enum AutomationFailureCategory {
+  infrastructure,
+  ocr,
+  database,
+  maps,
+  ifood,
+  history,
+  shift,
+  automation;
+
+  String get label => name.toUpperCase();
 }
 
 enum AutomationStatus {

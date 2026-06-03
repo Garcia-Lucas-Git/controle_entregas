@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:controle_entregas/core/devtools/automation_fixture_service.dart';
 import 'package:controle_entregas/core/devtools/automation_result.dart';
+import 'package:controle_entregas/core/devtools/test_data_cleanup_service.dart';
 import 'package:controle_entregas/core/devtools/diagnostics_service.dart';
 import 'package:controle_entregas/core/devtools/log_reader_service.dart';
 import 'package:controle_entregas/core/logging/log_storage.dart';
 import 'package:controle_entregas/data/database/app_database.dart';
 import 'package:controle_entregas/services/app_logger.dart';
+import 'package:controle_entregas/services/maps_launcher.dart';
 import 'package:controle_entregas/services/ocr_service.dart';
 import 'package:drift/drift.dart';
 import 'package:intl/intl.dart';
@@ -14,7 +16,8 @@ import 'package:path_provider/path_provider.dart';
 
 class AutomationRunner {
   static const suite = 'smoke';
-  static const marker = '[DEVTOOLS_AUTOMATION]';
+  static const workflowProfile = 'FULL_SHIFT_SIMULATION';
+  static const marker = '[AUTOMATION]';
 
   final AppDatabase _db;
   final AutomationFixtureService _fixtures;
@@ -51,6 +54,7 @@ class AutomationRunner {
       );
       tests.add(await _runTest(runId, 'history_health', _historyHealth));
       tests.add(await _runTest(runId, 'log_health', _logHealth));
+      final workflowStages = await _runFullShiftSimulation(runId);
 
       await LogStorage.flush();
       final criticalErrors = await _criticalErrorsSince(startedAt);
@@ -62,6 +66,7 @@ class AutomationRunner {
         tests: tests,
         ocrFixtures: ocrFixtures,
         criticalErrors: criticalErrors,
+        workflowStages: workflowStages,
         reportPath: '',
       );
       reportPath = await _writeReport(result);
@@ -72,6 +77,7 @@ class AutomationRunner {
         tests: tests,
         ocrFixtures: ocrFixtures,
         criticalErrors: criticalErrors,
+        workflowStages: workflowStages,
         reportPath: reportPath,
       );
 
@@ -95,6 +101,8 @@ class AutomationRunner {
           'partial': finalResult.partialCount,
           'fail': finalResult.failCount,
           'skipped': finalResult.skippedCount,
+          'workflow_stages': finalResult.workflowStages.length,
+          'workflow_passed': finalResult.workflowPassed,
         },
       );
       return finalResult;
@@ -461,6 +469,517 @@ class AutomationRunner {
     };
   }
 
+  Future<List<AutomationWorkflowStageResult>> _runFullShiftSimulation(
+    String runId,
+  ) async {
+    final cleanup = TestDataCleanupService(_db);
+    await cleanup.cleanupAll();
+    final ctx = _FullShiftContext(runId: runId);
+    final stages = <AutomationWorkflowStageResult>[];
+
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'Shift Creation',
+        AutomationFailureCategory.shift,
+        () => _workflowShiftCreation(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'OCR Route Creation',
+        AutomationFailureCategory.ocr,
+        () => _workflowOcrRouteCreation(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'Delivery Creation',
+        AutomationFailureCategory.database,
+        () => _workflowMultipleDeliveries(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'Maps Integration',
+        AutomationFailureCategory.maps,
+        () => _workflowMapsIntegration(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'Background Recovery',
+        AutomationFailureCategory.infrastructure,
+        () => _workflowBackgroundRecovery(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'iFood Workflow',
+        AutomationFailureCategory.ifood,
+        () => _workflowIfood(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'Manual Entry',
+        AutomationFailureCategory.automation,
+        () => _workflowManualEntry(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'History Validation',
+        AutomationFailureCategory.history,
+        () => _workflowHistoryValidation(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'Shift Closure',
+        AutomationFailureCategory.shift,
+        () => _workflowShiftClosure(ctx),
+      ),
+    );
+    stages.add(
+      await _runWorkflowStage(
+        runId,
+        'Cleanup',
+        AutomationFailureCategory.automation,
+        () => _workflowCleanup(cleanup),
+      ),
+    );
+
+    await _writeWorkflowReport(runId, stages);
+    return stages;
+  }
+
+  Future<AutomationWorkflowStageResult> _runWorkflowStage(
+    String runId,
+    String name,
+    AutomationFailureCategory category,
+    Future<Map<String, dynamic>> Function() body,
+  ) async {
+    final start = DateTime.now();
+    _log(
+      LogEvents.automationTestStart,
+      runId: runId,
+      test: name,
+      durationMs: 0,
+      metadata: {'profile': workflowProfile, 'category': category.label},
+    );
+    try {
+      final metadata = await body();
+      final durationMs = DateTime.now().difference(start).inMilliseconds;
+      _log(
+        LogEvents.automationTestPass,
+        runId: runId,
+        test: name,
+        durationMs: durationMs,
+        metadata: {
+          'profile': workflowProfile,
+          'category': category.label,
+          ...metadata,
+        },
+      );
+      return AutomationWorkflowStageResult(
+        name: name,
+        status: AutomationStatus.pass,
+        category: category,
+        durationMs: durationMs,
+        metadata: metadata,
+      );
+    } catch (e) {
+      final durationMs = DateTime.now().difference(start).inMilliseconds;
+      _log(
+        LogEvents.automationTestFail,
+        runId: runId,
+        test: name,
+        durationMs: durationMs,
+        severity: LogSeverity.error,
+        metadata: {
+          'profile': workflowProfile,
+          'category': category.label,
+          'error': e.toString(),
+        },
+      );
+      return AutomationWorkflowStageResult(
+        name: name,
+        status: AutomationStatus.fail,
+        category: category,
+        durationMs: durationMs,
+        message: e.toString(),
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> _workflowShiftCreation(
+    _FullShiftContext ctx,
+  ) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    final shiftId = await _db.shiftsDao.insertShift(
+      ShiftsTableCompanion(
+        driverName: Value('$marker Driver ${ctx.runId}'),
+        startedAt: Value(now),
+        status: const Value('open'),
+        notes: Value('$marker automation_run_id=${ctx.runId} full shift'),
+        source: Value('automation:${ctx.runId}'),
+        createdAt: Value(now),
+      ),
+    );
+    final shift = await _db.shiftsDao.getShiftById(shiftId);
+    if (shift == null || shift.status != 'open') {
+      throw StateError('Shift was not persisted as open.');
+    }
+    ctx.shiftId = shiftId;
+    return {'shift_id': shiftId, 'status': shift.status};
+  }
+
+  Future<Map<String, dynamic>> _workflowOcrRouteCreation(
+    _FullShiftContext ctx,
+  ) async {
+    final shiftId = ctx.requireShiftId();
+    final files = await _fixtures.discoverImages();
+    if (files.isEmpty) throw StateError('No OCR fixtures available.');
+    final service = OcrService();
+    OcrResult result;
+    try {
+      result = await service.processImage(files.first.path);
+    } finally {
+      await service.dispose();
+    }
+    final locator = result.partnerCollectionCode ?? result.deliveryIdentifier;
+    if (!result.hasRequiredFields) throw StateError('OCR address missing.');
+    if (locator == null || locator.isEmpty) {
+      throw StateError('OCR locator missing.');
+    }
+
+    final now = DateTime.now().toUtc().toIso8601String();
+    final routeId = await _db.routesDao.insertRoute(
+      RoutesTableCompanion(
+        shiftId: Value(shiftId),
+        routeNumber: const Value(1),
+        status: const Value('open'),
+        startedAt: Value(now),
+        createdAt: Value(now),
+      ),
+    );
+    final deliveryId = await _insertAutomationDelivery(
+      ctx: ctx,
+      routeId: routeId,
+      sequenceNumber: 1,
+      customerName: '$marker OCR Cliente',
+      addressText: result.addressText ?? '$marker Rua OCR, 100',
+      partnerCollectionCode: locator,
+      ocrRawText: '${result.rawText}\nautomation_run_id=${ctx.runId}',
+    );
+    ctx.routeId = routeId;
+    ctx.deliveryIds.add(deliveryId);
+    ctx.locator = locator;
+    return {
+      'route_id': routeId,
+      'delivery_id': deliveryId,
+      'address_present': true,
+      'locator': locator,
+    };
+  }
+
+  Future<Map<String, dynamic>> _workflowMultipleDeliveries(
+    _FullShiftContext ctx,
+  ) async {
+    final routeId = ctx.requireRouteId();
+    var deliveries = await _db.deliveriesDao.getDeliveriesForRoute(routeId);
+    if (deliveries.length != 1) throw StateError('Expected 1 delivery.');
+    for (var i = 2; i <= 5; i++) {
+      ctx.deliveryIds.add(
+        await _insertAutomationDelivery(
+          ctx: ctx,
+          routeId: routeId,
+          sequenceNumber: i,
+          customerName: '$marker Cliente $i',
+          addressText: '$marker Rua Sequencial, $i',
+          partnerCollectionCode: 'AUTO${ctx.runId.hashCode.abs()}$i',
+        ),
+      );
+    }
+    deliveries = await _db.deliveriesDao.getDeliveriesForRoute(routeId);
+    if (deliveries.length != 5) throw StateError('Expected 5 deliveries.');
+    for (var i = 6; i <= 10; i++) {
+      ctx.deliveryIds.add(
+        await _insertAutomationDelivery(
+          ctx: ctx,
+          routeId: routeId,
+          sequenceNumber: i,
+          customerName: '$marker Cliente $i',
+          addressText: '$marker Rua Sequencial, $i',
+          partnerCollectionCode: 'AUTO${ctx.runId.hashCode.abs()}$i',
+        ),
+      );
+    }
+    deliveries = await _db.deliveriesDao.getDeliveriesForRoute(routeId);
+    final sequences = deliveries.map((d) => d.sequenceNumber).toSet();
+    if (deliveries.length != 10 || sequences.length != 10) {
+      throw StateError('Expected 10 unique delivery sequences.');
+    }
+    return {
+      'delivery_count': deliveries.length,
+      'sequence_count': sequences.length,
+    };
+  }
+
+  Future<Map<String, dynamic>> _workflowMapsIntegration(
+    _FullShiftContext ctx,
+  ) async {
+    final deliveries = await _db.deliveriesDao.getDeliveriesForRoute(
+      ctx.requireRouteId(),
+    );
+    final addresses = deliveries
+        .map((d) => d.addressText)
+        .where((a) => a.trim().isNotEmpty)
+        .toList();
+    if (addresses.isEmpty) throw StateError('No addresses available for maps.');
+    final request = MapsLauncher.buildNavigationRequest(addresses);
+    if (request == null || request.primary.isEmpty) {
+      throw StateError('Maps request was not generated.');
+    }
+    return {
+      'address_count': addresses.length,
+      'primary': request.primary,
+      'fallback': request.fallback,
+      'coordinates_required': false,
+    };
+  }
+
+  Future<Map<String, dynamic>> _workflowBackgroundRecovery(
+    _FullShiftContext ctx,
+  ) async {
+    for (var i = 0; i < 3; i++) {
+      final shift = await _db.shiftsDao.getShiftById(ctx.requireShiftId());
+      final route = await _db.routesDao.getRouteById(ctx.requireRouteId());
+      final delivery = await _db.deliveriesDao.getDeliveryById(
+        ctx.deliveryIds.first,
+      );
+      if (shift == null || route == null || delivery == null) {
+        throw StateError('State was not preserved during simulated lifecycle.');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    }
+    return {'cycles': 3, 'state_preserved': true};
+  }
+
+  Future<Map<String, dynamic>> _workflowIfood(_FullShiftContext ctx) async {
+    final delivery = await _db.deliveriesDao.getDeliveryById(
+      ctx.deliveryIds.first,
+    );
+    final locator =
+        delivery?.partnerCollectionCode ?? delivery?.deliveryIdentifier;
+    if (locator == null || locator != ctx.locator) {
+      throw StateError('Locator was not preserved end-to-end.');
+    }
+    await _db.deliveriesDao.updateIfoodConfirmation(
+      id: delivery!.id,
+      success: false,
+      confirmedAt: DateTime.now().toUtc().toIso8601String(),
+    );
+    final updated = await _db.deliveriesDao.getDeliveryById(delivery.id);
+    if (updated?.partnerCollectionCode != locator) {
+      throw StateError('Locator changed after iFood helper update.');
+    }
+    final helperUrl = Uri.https('portal.ifood.com.br', '/delivery', {
+      'code': locator,
+    });
+    return {
+      'locator': locator,
+      'length': locator.length,
+      'helper_url': helperUrl.toString(),
+    };
+  }
+
+  Future<Map<String, dynamic>> _workflowManualEntry(
+    _FullShiftContext ctx,
+  ) async {
+    final shiftId = ctx.requireShiftId();
+    final now = DateTime.now().toUtc().toIso8601String();
+    final routeNumber = await _db.routesDao.getNextRouteNumber(shiftId);
+    final routeId = await _db.routesDao.insertRoute(
+      RoutesTableCompanion(
+        shiftId: Value(shiftId),
+        routeNumber: Value(routeNumber),
+        status: const Value('open'),
+        startedAt: Value(now),
+        createdAt: Value(now),
+      ),
+    );
+    final deliveryId = await _insertAutomationDelivery(
+      ctx: ctx,
+      routeId: routeId,
+      sequenceNumber: 1,
+      customerName: '$marker Manual Cliente',
+      addressText: '$marker Rua Manual, 200',
+      partnerCollectionCode: 'MANUAL${ctx.runId.hashCode.abs()}',
+    );
+    ctx.manualRouteId = routeId;
+    ctx.deliveryIds.add(deliveryId);
+    final delivery = await _db.deliveriesDao.getDeliveryById(deliveryId);
+    if (delivery == null || delivery.partnerCollectionCode == null) {
+      throw StateError('Manual delivery was not persisted.');
+    }
+    return {'manual_route_id': routeId, 'manual_delivery_id': deliveryId};
+  }
+
+  Future<Map<String, dynamic>> _workflowHistoryValidation(
+    _FullShiftContext ctx,
+  ) async {
+    final completedAt = DateTime.now().toUtc().toIso8601String();
+    for (final id in ctx.deliveryIds) {
+      await _db.deliveriesDao.completeDelivery(
+        id: id,
+        completedAt: completedAt,
+        distanceKm: 1.0,
+      );
+    }
+    final completed = await _db.deliveriesDao.getDeliveriesForShift(
+      ctx.requireShiftId(),
+    );
+    if (completed.length != ctx.deliveryIds.length) {
+      throw StateError('History completed delivery count mismatch.');
+    }
+    final totalDistance = completed.fold<double>(
+      0,
+      (sum, item) => sum + (item.distanceKm ?? 0),
+    );
+    return {
+      'completed_deliveries': completed.length,
+      'total_distance': totalDistance,
+    };
+  }
+
+  Future<Map<String, dynamic>> _workflowShiftClosure(
+    _FullShiftContext ctx,
+  ) async {
+    final closedAt = DateTime.now().toUtc().toIso8601String();
+    await _db.routesDao.closeRoute(
+      id: ctx.requireRouteId(),
+      closedAt: closedAt,
+      deliveryCountAtClose: 10,
+    );
+    if (ctx.manualRouteId != null) {
+      await _db.routesDao.closeRoute(
+        id: ctx.manualRouteId!,
+        closedAt: closedAt,
+        deliveryCountAtClose: 1,
+      );
+    }
+    await _db.shiftsDao.closeShift(
+      id: ctx.requireShiftId(),
+      endedAt: closedAt,
+      totalEarningsCents: ctx.deliveryIds.length * 800,
+      deliveryCount: ctx.deliveryIds.length,
+    );
+    final shift = await _db.shiftsDao.getShiftById(ctx.requireShiftId());
+    if (shift == null || shift.status != 'closed') {
+      throw StateError('Shift was not closed.');
+    }
+    return {
+      'shift_id': shift.id,
+      'status': shift.status,
+      'delivery_count': shift.deliveryCount,
+    };
+  }
+
+  Future<Map<String, dynamic>> _workflowCleanup(
+    TestDataCleanupService cleanup,
+  ) async {
+    final before = await cleanup.countAutomationRecords();
+    final summary = await cleanup.cleanupAll();
+    final after = await cleanup.countAutomationRecords();
+    if ((after['deliveries'] ?? 0) != 0 ||
+        (after['routes'] ?? 0) != 0 ||
+        (after['shifts'] ?? 0) != 0) {
+      throw StateError('Automation records remain after cleanup: $after');
+    }
+    return {
+      'before': before,
+      'deliveries_deleted': summary.deliveriesDeleted,
+      'routes_deleted': summary.routesDeleted,
+      'shifts_deleted': summary.shiftsDeleted,
+      'after': after,
+    };
+  }
+
+  Future<int> _insertAutomationDelivery({
+    required _FullShiftContext ctx,
+    required int routeId,
+    required int sequenceNumber,
+    required String customerName,
+    required String addressText,
+    String? partnerCollectionCode,
+    String? ocrRawText,
+  }) {
+    final now = DateTime.now().toUtc().toIso8601String();
+    return _db.deliveriesDao.insertDelivery(
+      DeliveriesTableCompanion(
+        routeId: Value(routeId),
+        shiftId: Value(ctx.requireShiftId()),
+        sequenceNumber: Value(sequenceNumber),
+        customerName: Value(customerName),
+        addressText: Value('$addressText automation_run_id=${ctx.runId}'),
+        partnerCollectionCode: Value(partnerCollectionCode),
+        ocrRawText: Value(
+          ocrRawText ?? '$marker automation_run_id=${ctx.runId}',
+        ),
+        createdAt: Value(now),
+        needsIfoodConfirmation: Value(partnerCollectionCode != null),
+      ),
+    );
+  }
+
+  Future<String> _writeWorkflowReport(
+    String runId,
+    List<AutomationWorkflowStageResult> stages,
+  ) async {
+    final dir = await _reportDirectory();
+    await dir.create(recursive: true);
+    final file = File('${dir.path}/workflow_report.md');
+    final buffer = StringBuffer()
+      ..writeln('# DeliveryFlow Workflow Validation')
+      ..writeln()
+      ..writeln('Run ID: $runId')
+      ..writeln('Profile: $workflowProfile')
+      ..writeln()
+      ..writeln('## Business Workflow Validation')
+      ..writeln();
+    for (final stage in stages) {
+      final dots = '.' * (28 - stage.name.length).clamp(1, 28);
+      buffer.writeln('${stage.name} $dots ${stage.status.label}');
+      if (stage.message != null) buffer.writeln('  - ${stage.message}');
+    }
+    buffer
+      ..writeln()
+      ..writeln('## Failure Classification')
+      ..writeln();
+    final failures = stages.where(
+      (stage) => stage.status == AutomationStatus.fail,
+    );
+    if (failures.isEmpty) {
+      buffer.writeln('None');
+    } else {
+      for (final stage in failures) {
+        buffer.writeln('- ${stage.category.label}: ${stage.name}');
+      }
+    }
+    await file.writeAsString(buffer.toString());
+    return file.path;
+  }
+
   Future<Map<String, int>> _tableCounts() async {
     return {
       'shifts': await _count('shifts'),
@@ -477,10 +996,7 @@ class AutomationRunner {
   }
 
   Future<void> _cleanupAutomationData() async {
-    await _db.customUpdate(
-      "delete from shifts where driver_name like ? or coalesce(notes, '') like ?",
-      variables: [Variable<String>('$marker%'), Variable<String>('%$marker%')],
-    );
+    await TestDataCleanupService(_db).cleanupAll();
   }
 
   Future<List<String>> _criticalErrorsSince(DateTime startedAt) async {
@@ -535,6 +1051,43 @@ class AutomationRunner {
 
     for (final test in result.tests) {
       buffer.writeln('- ${test.name}: ${test.status.label}');
+    }
+
+    buffer
+      ..writeln()
+      ..writeln('## Business Workflow Validation')
+      ..writeln();
+    if (result.workflowStages.isEmpty) {
+      buffer.writeln('Not executed');
+    } else {
+      for (final stage in result.workflowStages) {
+        final dots = '.' * (28 - stage.name.length).clamp(1, 28);
+        buffer.writeln(
+          '${stage.name} $dots ${stage.status.label} (${stage.category.label})',
+        );
+      }
+    }
+
+    buffer
+      ..writeln()
+      ..writeln('## Failure Classification')
+      ..writeln();
+    final failedByCategory = <AutomationFailureCategory, int>{};
+    for (final stage in result.workflowStages) {
+      if (stage.status == AutomationStatus.fail) {
+        failedByCategory.update(
+          stage.category,
+          (value) => value + 1,
+          ifAbsent: () => 1,
+        );
+      }
+    }
+    if (failedByCategory.isEmpty) {
+      buffer.writeln('None');
+    } else {
+      for (final entry in failedByCategory.entries) {
+        buffer.writeln('- ${entry.key.label}: ${entry.value}');
+      }
     }
 
     buffer
@@ -611,4 +1164,27 @@ class _OcrFixtureSuiteResult {
   final List<AutomationOcrFixtureResult> fixtures;
 
   const _OcrFixtureSuiteResult({required this.test, required this.fixtures});
+}
+
+class _FullShiftContext {
+  final String runId;
+  int? shiftId;
+  int? routeId;
+  int? manualRouteId;
+  String? locator;
+  final List<int> deliveryIds = [];
+
+  _FullShiftContext({required this.runId});
+
+  int requireShiftId() {
+    final value = shiftId;
+    if (value == null) throw StateError('Shift ID is not available.');
+    return value;
+  }
+
+  int requireRouteId() {
+    final value = routeId;
+    if (value == null) throw StateError('Route ID is not available.');
+    return value;
+  }
 }

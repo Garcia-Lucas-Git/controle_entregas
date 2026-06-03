@@ -8,6 +8,7 @@ FIXTURE_SRC="${FIXTURE_SRC:-/home/lucas/Imagens/imagem para testes no app}"
 DEVICE_FILES_ROOT="/sdcard/Android/data/$PACKAGE/files"
 DEVICE_FIXTURE_DIR="$DEVICE_FILES_ROOT/test_fixtures/pedidos"
 REPORT_DEVICE="$DEVICE_FILES_ROOT/automation_reports/latest_smoke_report.md"
+WORKFLOW_REPORT_DEVICE="$DEVICE_FILES_ROOT/automation_reports/workflow_report.md"
 OUT_ROOT="reports/device_smoke"
 RUN_STAMP="$(date +%Y%m%d_%H%M%S)"
 OUT_DIR="$OUT_ROOT/$RUN_STAMP"
@@ -222,6 +223,9 @@ fi
 
 stage "Pulling artifacts" 7
 $ADB pull "$REPORT_DEVICE" "$OUT_DIR/smoke_report.md" >/dev/null || fail "could not pull smoke report from device."
+if $ADB shell "[ -f '$WORKFLOW_REPORT_DEVICE' ]" >/dev/null 2>&1; then
+  $ADB pull "$WORKFLOW_REPORT_DEVICE" "$OUT_DIR/workflow_report.md" >/dev/null || true
+fi
 cp "$OUT_DIR/smoke_report.md" "$LATEST_REPORT"
 collect_logcat
 capture_screenshot final
@@ -244,6 +248,15 @@ PASS_COUNT="${PASS_COUNT:-0}"
 FAIL_COUNT="${FAIL_COUNT:-0}"
 RUN_ID="${RUN_ID:-unknown}"
 DURATION="${DURATION:-unknown}"
+if [ -f "$OUT_DIR/workflow_report.md" ]; then
+  if grep -E '^.+FAIL$|FAIL \(' "$OUT_DIR/workflow_report.md" >/dev/null 2>&1; then
+    WORKFLOW_VALIDATION="FAIL"
+  else
+    WORKFLOW_VALIDATION="PASS"
+  fi
+else
+  WORKFLOW_VALIDATION="MISSING"
+fi
 CRITICAL_ERRORS="$(critical_error_count)"
 
 stage "Complete" 9
@@ -252,6 +265,7 @@ log "Smoke Summary"
 log "PASS: $PASS_COUNT"
 log "FAIL: $FAIL_COUNT"
 log "CRITICAL_ERRORS: $CRITICAL_ERRORS"
+log "WORKFLOW_VALIDATION: $WORKFLOW_VALIDATION"
 log "REPORT_DIR: $OUT_DIR"
 log "RUN_ID: $RUN_ID"
 log "Execution Time: $DURATION"
@@ -265,5 +279,8 @@ if [ "$FAIL_COUNT" -gt 0 ]; then
 fi
 if [ "$CRITICAL_ERRORS" -gt 0 ]; then
   fail "detected $CRITICAL_ERRORS critical error line(s). See $OUT_DIR/logcat_filtered.txt."
+fi
+if [ "$WORKFLOW_VALIDATION" != "PASS" ]; then
+  fail "workflow validation did not pass. See $OUT_DIR/workflow_report.md."
 fi
 log "PASS"

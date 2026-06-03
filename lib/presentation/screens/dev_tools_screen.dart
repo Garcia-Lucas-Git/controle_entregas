@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:controle_entregas/core/devtools/diagnostic_bundle_service.dart';
 import 'package:controle_entregas/core/devtools/log_reader_service.dart';
+import 'package:controle_entregas/core/devtools/test_data_cleanup_service.dart';
 import 'package:controle_entregas/core/devtools/test_data_generator_service.dart';
 import 'package:controle_entregas/core/logging/log_storage.dart';
 import 'package:controle_entregas/core/monitoring/build_info.dart';
@@ -30,6 +31,9 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
 
   TestDataGeneratorService get _generator =>
       TestDataGeneratorService(ref.read(appDatabaseProvider));
+
+  TestDataCleanupService get _cleanup =>
+      TestDataCleanupService(ref.read(appDatabaseProvider));
 
   @override
   void initState() {
@@ -125,13 +129,17 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
     }
   }
 
-  Future<void> _cleanupGenerated() async {
+  Future<void> _confirmCleanup({
+    required String title,
+    required String successMessage,
+    required Future<Object?> Function() action,
+  }) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Limpar dados gerados?'),
+        title: Text(title),
         content: const Text(
-          'Somente registros marcados com [DEVTOOLS] serão removidos.',
+          'Somente registros marcados com [AUTOMATION], [DEVTOOLS] ou automation_run_id serão removidos.',
         ),
         actions: [
           TextButton(
@@ -146,13 +154,32 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
       ),
     );
     if (confirmed != true) return;
-    await _runAction(
-      successMessage: 'Dados gerados removidos.',
-      action: () async {
-        await _generator.cleanupGeneratedData();
-      },
-    );
+    await _runAction(successMessage: successMessage, action: action);
   }
+
+  Future<void> _cleanupDeliveries() => _confirmCleanup(
+    title: 'Excluir entregas de teste?',
+    successMessage: 'Entregas de teste removidas.',
+    action: () => _cleanup.cleanupAutomationDeliveries(),
+  );
+
+  Future<void> _cleanupRoutes() => _confirmCleanup(
+    title: 'Excluir rotas de teste?',
+    successMessage: 'Rotas de teste removidas.',
+    action: () => _cleanup.cleanupAutomationRoutes(),
+  );
+
+  Future<void> _cleanupHistory() => _confirmCleanup(
+    title: 'Excluir histórico de teste?',
+    successMessage: 'Histórico de teste removido.',
+    action: () => _cleanup.cleanupAutomationHistory(),
+  );
+
+  Future<void> _cleanupGenerated() => _confirmCleanup(
+    title: 'Executar limpeza completa de simulação?',
+    successMessage: 'Limpeza completa de simulação concluída.',
+    action: () => _generator.cleanupGeneratedData(),
+  );
 
   Future<void> _runAction({
     required String successMessage,
@@ -386,10 +413,29 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
                     }).toList(),
               ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _working ? null : _cleanupGenerated,
-                icon: const Icon(Icons.cleaning_services_outlined),
-                label: const Text('Limpar dados [DEVTOOLS]'),
+              _CleanupButton(
+                label: 'Excluir Entregas de Teste',
+                icon: Icons.local_shipping_outlined,
+                working: _working,
+                onPressed: _cleanupDeliveries,
+              ),
+              _CleanupButton(
+                label: 'Excluir Rotas de Teste',
+                icon: Icons.route_outlined,
+                working: _working,
+                onPressed: _cleanupRoutes,
+              ),
+              _CleanupButton(
+                label: 'Excluir Histórico de Teste',
+                icon: Icons.history_outlined,
+                working: _working,
+                onPressed: _cleanupHistory,
+              ),
+              _CleanupButton(
+                label: 'Limpeza Completa de Simulação',
+                icon: Icons.cleaning_services_outlined,
+                working: _working,
+                onPressed: _cleanupGenerated,
               ),
             ],
           ),
@@ -468,6 +514,35 @@ class _NavButton extends StatelessWidget {
         label: Text(label),
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 48),
+        ),
+      ),
+    );
+  }
+}
+
+class _CleanupButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool working;
+  final VoidCallback onPressed;
+
+  const _CleanupButton({
+    required this.label,
+    required this.icon,
+    required this.working,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: OutlinedButton.icon(
+        onPressed: working ? null : onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 44),
         ),
       ),
     );

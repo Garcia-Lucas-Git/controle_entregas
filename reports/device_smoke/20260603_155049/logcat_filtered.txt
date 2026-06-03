@@ -1,0 +1,16 @@
+06-03 15:50:56.269 10858 10888 E ExportedFlags: android.os.flagging.AconfigStorageReadException: ERROR_PACKAGE_NOT_FOUND: package com.android.settingslib.widget.theme.flags cannot be found on the device
+06-03 15:50:58.052 12291 12368 I DGW     : I[notifyStreamGroupError:1883] StreamGroupTransport[notifgateway] notify StreamGroup error: StreamGroupNetworkRequest failed - ping timeout error
+06-03 15:50:58.343  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-03 15:51:00.024 10972 11026 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 15:51:01.112 10972 11026 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:02.075 10972 11048 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:03.027 10972 11058 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:04.009 10972 11061 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:04.841 10972 11062 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:05.762 10972 11068 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:06.681 10972 11074 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:07.446 10972 11078 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:08.219 10972 11026 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:08.561 10972 11058 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 15:51:09.443 10972 11058 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:51:10.381  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
