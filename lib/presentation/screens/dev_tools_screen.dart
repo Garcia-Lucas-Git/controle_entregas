@@ -266,6 +266,11 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
                 label: 'Automation Runner',
                 onPressed: () => context.push('/dev/automation-runner'),
               ),
+              _NavButton(
+                icon: Icons.fact_check_outlined,
+                label: 'Validação Guiada de Campo',
+                onPressed: () => context.push('/dev/field-validation'),
+              ),
             ],
           ),
           const SizedBox(height: 16),

@@ -1,0 +1,14 @@
+06-03 16:28:23.281  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-03 16:28:23.285 19191 19244 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:28:23.990 19191 19244 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:24.255 19191 19270 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:24.510 19191 19286 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:24.774 19191 19292 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:24.999 19191 19300 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:25.240 19191 19306 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:25.453 19191 19312 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:25.668 19191 19315 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:25.687  2444  2444 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+06-03 16:28:25.954 19191 19244 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:28:26.072 19191 19286 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:28:26.333 19191 19286 D PipelineManager: OCR process succeeded via visionkit pipeline.

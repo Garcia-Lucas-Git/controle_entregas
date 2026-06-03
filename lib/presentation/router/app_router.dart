@@ -9,6 +9,7 @@ import 'package:controle_entregas/presentation/screens/manual_delivery_screen.da
 import 'package:controle_entregas/presentation/screens/log_viewer_screen.dart';
 import 'package:controle_entregas/presentation/screens/delivery_card_screen.dart';
 import 'package:controle_entregas/presentation/screens/history_screen.dart';
+import 'package:controle_entregas/presentation/screens/field_validation_screen.dart';
 import 'package:controle_entregas/presentation/screens/home_screen.dart';
 import 'package:controle_entregas/presentation/screens/ifood_confirmation_screen.dart';
 import 'package:controle_entregas/presentation/screens/new_route_screen.dart';
@@ -47,6 +48,7 @@ GoRouter appRouter(AppRouterRef ref) {
       if (state.matchedLocation == AppRoutes.home) return null;
       if (state.matchedLocation == AppRoutes.settings) return null;
       if (state.matchedLocation == '/dev/automation-runner') return null;
+      if (state.matchedLocation == '/dev/field-validation') return null;
       if (state.matchedLocation == '/smoke') return null;
       if (state.matchedLocation == '/automation/smoke') return null;
       final s = await settingsRepo.getSettings();
@@ -150,6 +152,10 @@ GoRouter appRouter(AppRouterRef ref) {
       GoRoute(
         path: '/dev/automation-runner',
         builder: (context, state) => const AutomationRunnerScreen(),
+      ),
+      GoRoute(
+        path: '/dev/field-validation',
+        builder: (context, state) => const FieldValidationScreen(),
       ),
       GoRoute(
         path: '/smoke',

@@ -1,0 +1,14 @@
+06-03 16:34:15.054 20023 20089 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:34:15.744 20023 20089 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:15.986 20023 20112 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:16.231 20023 20118 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:16.486 20023 20119 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:16.712 20023 20121 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:16.959 20023 20127 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:17.168 20023 20133 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:17.378 20023 20135 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:17.597 20023 20089 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:17.714 20023 20118 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:34:17.941 20023 20118 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:34:20.182 20023 20023 D DeliveryFlow: DEV_DEEP_LINK_RECEIVED route=/dev/field-validation
+06-03 16:34:20.660 20023 20023 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=io.flutter.embedding.android.FlutterActivity$1@1172de6

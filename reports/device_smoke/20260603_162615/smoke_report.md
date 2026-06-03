@@ -1,9 +1,9 @@
 # DeliveryFlow Device Smoke Test
 
-Run ID: AUTO-1780515254762
-Started: 2026-06-03T19:34:14.762797Z
-Finished: 2026-06-03T19:34:18.208150Z
-Duration: 3445 ms
+Run ID: AUTO-1780514782755
+Started: 2026-06-03T19:26:22.755664Z
+Finished: 2026-06-03T19:26:26.376214Z
+Duration: 3620 ms
 
 ## Summary
 
@@ -44,15 +44,15 @@ None
 
 file | result | raw_text_length | locator | address_found | duration_ms
 --- | --- | ---: | --- | --- | ---:
-WhatsApp Image 2026-06-03 at 13.55.16 (1).jpeg | PASS | 766 | 7249 | true | 851
-WhatsApp Image 2026-06-03 at 13.55.16 (2).jpeg | PASS | 758 | 7470 | true | 231
-WhatsApp Image 2026-06-03 at 13.55.16.jpeg | PASS | 728 | 3769 | true | 239
-WhatsApp Image 2026-06-03 at 13.55.17 (1).jpeg | PASS | 820 | 0672 | true | 259
-WhatsApp Image 2026-06-03 at 13.55.17.jpeg | PASS | 762 | 8368 | true | 225
-WhatsApp Image 2026-06-03 at 13.55.18 (1).jpeg | PASS | 712 | 4655 | true | 243
-WhatsApp Image 2026-06-03 at 13.55.18 (2).jpeg | PASS | 707 | 0905 | true | 209
-WhatsApp Image 2026-06-03 at 13.55.18 (3).jpeg | PASS | 765 | 7654 | true | 209
-WhatsApp Image 2026-06-03 at 13.55.18.jpeg | PASS | 467 | 5102 | true | 211
+WhatsApp Image 2026-06-03 at 13.55.16 (1).jpeg | PASS | 766 | 7249 | true | 894
+WhatsApp Image 2026-06-03 at 13.55.16 (2).jpeg | PASS | 758 | 7470 | true | 244
+WhatsApp Image 2026-06-03 at 13.55.16.jpeg | PASS | 728 | 3769 | true | 247
+WhatsApp Image 2026-06-03 at 13.55.17 (1).jpeg | PASS | 820 | 0672 | true | 264
+WhatsApp Image 2026-06-03 at 13.55.17.jpeg | PASS | 762 | 8368 | true | 247
+WhatsApp Image 2026-06-03 at 13.55.18 (1).jpeg | PASS | 712 | 4655 | true | 240
+WhatsApp Image 2026-06-03 at 13.55.18 (2).jpeg | PASS | 707 | 0905 | true | 201
+WhatsApp Image 2026-06-03 at 13.55.18 (3).jpeg | PASS | 765 | 7654 | true | 217
+WhatsApp Image 2026-06-03 at 13.55.18.jpeg | PASS | 467 | 5102 | true | 219
 
 ## Critical Errors
 

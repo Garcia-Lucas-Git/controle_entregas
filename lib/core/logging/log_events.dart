@@ -155,6 +155,15 @@ abstract final class LogEvents {
   static const automationOcrFixtureFail = 'AUTOMATION_OCR_FIXTURE_FAIL';
   static const automationReportGenerated = 'AUTOMATION_REPORT_GENERATED';
 
+  // ── Field validation ─────────────────────────────────────────────────────
+  static const fieldValidationStart = 'FIELD_VALIDATION_START';
+  static const fieldValidationStepPass = 'FIELD_VALIDATION_STEP_PASS';
+  static const fieldValidationStepFail = 'FIELD_VALIDATION_STEP_FAIL';
+  static const fieldValidationStepSkip = 'FIELD_VALIDATION_STEP_SKIP';
+  static const fieldValidationReportGenerated =
+      'FIELD_VALIDATION_REPORT_GENERATED';
+  static const fieldValidationComplete = 'FIELD_VALIDATION_COMPLETE';
+
   // ── Developer / diagnostics ───────────────────────────────────────────────
   static const dbIntegrityCheck = 'DB_INTEGRITY_CHECK';
   static const devToolsOpened = 'DEV_TOOLS_OPENED';
