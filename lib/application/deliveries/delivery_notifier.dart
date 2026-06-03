@@ -9,14 +9,10 @@ part 'delivery_notifier.g.dart';
 Stream<List<Delivery>> deliveriesForRoute(
   DeliveriesForRouteRef ref,
   int routeId,
-) =>
-    ref.watch(deliveryRepositoryProvider).watchDeliveriesForRoute(routeId);
+) => ref.watch(deliveryRepositoryProvider).watchDeliveriesForRoute(routeId);
 
 @riverpod
-Stream<Delivery?> deliveryById(
-  DeliveryByIdRef ref,
-  int deliveryId,
-) =>
+Stream<Delivery?> deliveryById(DeliveryByIdRef ref, int deliveryId) =>
     ref.watch(deliveryRepositoryProvider).watchById(deliveryId);
 
 @riverpod
@@ -29,23 +25,24 @@ class DeliveryNotifier extends _$DeliveryNotifier {
     required int shiftId,
     required int sequenceNumber,
     required OcrResult ocr,
-  }) =>
-      ref.read(deliveryRepositoryProvider).createDelivery(
-            routeId: routeId,
-            shiftId: shiftId,
-            sequenceNumber: sequenceNumber,
-            addressText: ocr.addressText ?? '',
-            customerName: ocr.customerName,
-            orderNumber: ocr.orderNumber,
-            ocrRawText: ocr.rawText,
-            needsIfoodConfirmation: ocr.needsIfoodConfirmation,
-            deliveryIdentifier: ocr.deliveryIdentifier,
-            partnerCollectionCode: ocr.partnerCollectionCode,
-            hasDrinks: ocr.hasDrinks,
-            needsCard: ocr.needsCard,
-            needsChange: ocr.needsChange,
-            changeAmountCents: ocr.changeAmountCents,
-          );
+  }) => ref
+      .read(deliveryRepositoryProvider)
+      .createDelivery(
+        routeId: routeId,
+        shiftId: shiftId,
+        sequenceNumber: sequenceNumber,
+        addressText: ocr.addressText ?? '',
+        customerName: ocr.customerName,
+        orderNumber: ocr.orderNumber,
+        ocrRawText: ocr.rawText,
+        needsIfoodConfirmation: ocr.needsIfoodConfirmation,
+        deliveryIdentifier: ocr.deliveryIdentifier,
+        partnerCollectionCode: ocr.partnerCollectionCode,
+        hasDrinks: ocr.hasDrinks,
+        needsCard: ocr.needsCard,
+        needsChange: ocr.needsChange,
+        changeAmountCents: ocr.changeAmountCents,
+      );
 
   Future<int> createManual({
     required int routeId,
@@ -54,28 +51,27 @@ class DeliveryNotifier extends _$DeliveryNotifier {
     required String addressText,
     String? customerName,
     String? orderNumber,
-  }) =>
-      ref.read(deliveryRepositoryProvider).createDelivery(
-            routeId: routeId,
-            shiftId: shiftId,
-            sequenceNumber: sequenceNumber,
-            addressText: addressText,
-            customerName: customerName,
-            orderNumber: orderNumber,
-          );
+    String? partnerCollectionCode,
+  }) => ref
+      .read(deliveryRepositoryProvider)
+      .createDelivery(
+        routeId: routeId,
+        shiftId: shiftId,
+        sequenceNumber: sequenceNumber,
+        addressText: addressText,
+        customerName: customerName,
+        orderNumber: orderNumber,
+        partnerCollectionCode: partnerCollectionCode,
+      );
 
   Future<void> setInProgress(int id) =>
       ref.read(deliveryRepositoryProvider).setInProgress(id);
 
-  Future<void> complete(int id, {double? distanceKm}) =>
-      ref.read(deliveryRepositoryProvider).completeDelivery(
-            id: id,
-            distanceKm: distanceKm,
-          );
+  Future<void> complete(int id, {double? distanceKm}) => ref
+      .read(deliveryRepositoryProvider)
+      .completeDelivery(id: id, distanceKm: distanceKm);
 
-  Future<void> updateIfood(int id, {required bool success}) =>
-      ref.read(deliveryRepositoryProvider).updateIfoodConfirmation(
-            id: id,
-            success: success,
-          );
+  Future<void> updateIfood(int id, {required bool success}) => ref
+      .read(deliveryRepositoryProvider)
+      .updateIfoodConfirmation(id: id, success: success);
 }

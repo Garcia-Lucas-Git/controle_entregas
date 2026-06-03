@@ -27,19 +27,15 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
   void initState() {
     super.initState();
     final e = widget.entry;
-    _selectedDate =
-        e != null ? e.startedAt.toLocal() : DateTime.now();
-    _deliveriesCtrl =
-        TextEditingController(text: e != null ? '${e.deliveryCount}' : '');
+    _selectedDate = e != null ? e.startedAt.toLocal() : DateTime.now();
+    _deliveriesCtrl = TextEditingController(
+      text: e != null ? '${e.deliveryCount}' : '',
+    );
     _earningsCtrl = TextEditingController(
-      text: e != null
-          ? (e.totalEarnings.cents / 100).toStringAsFixed(2)
-          : '',
+      text: e != null ? (e.totalEarnings.cents / 100).toStringAsFixed(2) : '',
     );
     _hoursCtrl = TextEditingController(
-      text: e?.hoursWorked != null
-          ? e!.hoursWorked!.toStringAsFixed(0)
-          : '',
+      text: e?.hoursWorked != null ? e!.hoursWorked!.toStringAsFixed(0) : '',
     );
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
   }
@@ -65,8 +61,7 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
 
   Future<void> _submit() async {
     final deliveries = int.tryParse(_deliveriesCtrl.text.trim());
-    final earningsText =
-        _earningsCtrl.text.trim().replaceAll(',', '.');
+    final earningsText = _earningsCtrl.text.trim().replaceAll(',', '.');
     final earnings = double.tryParse(earningsText);
 
     if (deliveries == null || deliveries < 0) {
@@ -79,18 +74,15 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
     }
 
     final earningsCents = (earnings * 100).round();
-    final hoursText =
-        _hoursCtrl.text.trim().replaceAll(',', '.');
-    final hoursWorked =
-        hoursText.isEmpty ? null : double.tryParse(hoursText);
+    final hoursText = _hoursCtrl.text.trim().replaceAll(',', '.');
+    final hoursWorked = hoursText.isEmpty ? null : double.tryParse(hoursText);
     final notes = _notesCtrl.text.trim().isEmpty
         ? null
         : _notesCtrl.text.trim();
 
     setState(() => _saving = true);
     try {
-      final notifier =
-          ref.read(historicalEntryNotifierProvider.notifier);
+      final notifier = ref.read(historicalEntryNotifierProvider.notifier);
       if (_isEditing) {
         await notifier.updateEntry(
           id: widget.entry!.id,
@@ -119,8 +111,7 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
   }
 
   void _snack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -129,16 +120,14 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(_isEditing ? 'Editar Histórico' : 'Adicionar Histórico'),
+        title: Text(_isEditing ? 'Editar Histórico' : 'Adicionar Histórico'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Data *',
-                style: Theme.of(context).textTheme.labelLarge),
+            Text('Data *', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: _pickDate,
@@ -163,7 +152,8 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
             TextField(
               controller: _earningsCtrl,
               keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true),
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Ganhos Estimados *',
                 border: OutlineInputBorder(),
@@ -175,7 +165,8 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
             TextField(
               controller: _hoursCtrl,
               keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true),
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Horas Trabalhadas',
                 border: OutlineInputBorder(),
@@ -198,8 +189,7 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save),
               label: Text(_isEditing ? 'Salvar Alterações' : 'Salvar'),

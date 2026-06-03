@@ -32,13 +32,18 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
   Future<void> _captureAndProcess() async {
     setState(() => _processing = true);
     final sid = SessionManager.ocr();
-    AppLogger.log(LogEvents.ocrStart,
-        module: 'NewRouteScreen',
-        screen: 'NewRouteScreen',
-        sessionId: sid,
-        metadata: {'source': 'camera'});
-    AppLogger.log(LogEvents.ocrSourceCamera,
-        module: 'NewRouteScreen', sessionId: sid);
+    AppLogger.log(
+      LogEvents.ocrStart,
+      module: 'NewRouteScreen',
+      screen: 'NewRouteScreen',
+      sessionId: sid,
+      metadata: {'source': 'camera'},
+    );
+    AppLogger.log(
+      LogEvents.ocrSourceCamera,
+      module: 'NewRouteScreen',
+      sessionId: sid,
+    );
 
     // Log permission status before invoking camera
     try {
@@ -62,52 +67,67 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
         imageQuality: 95,
       );
       if (image == null) {
-        setState(() => _processing = false);
+        if (mounted) setState(() => _processing = false);
         return;
       }
 
       final result = await _ocrService.processImage(image.path);
+      _logLocatorCaptured(result, sid, source: 'camera');
+      if (!mounted) return;
 
       if (result.rawText.trim().isEmpty) {
-        AppLogger.warn(LogEvents.ocrProcessFail,
-            module: 'NewRouteScreen',
-            sessionId: sid,
-            metadata: {'reason': 'empty_raw_text'});
+        AppLogger.warn(
+          LogEvents.ocrProcessFail,
+          module: 'NewRouteScreen',
+          sessionId: sid,
+          metadata: {'reason': 'empty_raw_text'},
+        );
         setState(() => _processing = false);
-        if (mounted) _showRecoveryDialog();
+        _showRecoveryDialog();
         return;
       }
 
       if (!result.hasRequiredFields) {
-        AppLogger.warn(LogEvents.ocrLowConfidence,
-            module: 'NewRouteScreen', sessionId: sid);
+        AppLogger.warn(
+          LogEvents.ocrLowConfidence,
+          module: 'NewRouteScreen',
+          sessionId: sid,
+        );
       }
 
       _routeId ??= await ref
           .read(routeNotifierProvider.notifier)
           .createRoute(widget.shiftId);
+      if (!mounted) return;
 
       setState(() {
         _results.add(result);
         _processing = false;
       });
     } catch (e, st) {
-      AppLogger.error(LogEvents.exception,
-          module: 'NewRouteScreen',
-          screen: 'NewRouteScreen',
-          method: '_captureAndProcess',
-          sessionId: sid,
-          exception: e,
-          stackTrace: st);
-      setState(() => _processing = false);
-      if (mounted) _showRecoveryDialog();
+      AppLogger.error(
+        LogEvents.exception,
+        module: 'NewRouteScreen',
+        screen: 'NewRouteScreen',
+        method: '_captureAndProcess',
+        sessionId: sid,
+        exception: e,
+        stackTrace: st,
+      );
+      if (mounted) {
+        setState(() => _processing = false);
+        _showRecoveryDialog();
+      }
     }
   }
 
   Future<void> _importFromGallery() async {
     final sid = SessionManager.ocr();
-    AppLogger.log(LogEvents.ocrSourceGallery,
-        module: 'NewRouteScreen', sessionId: sid);
+    AppLogger.log(
+      LogEvents.ocrSourceGallery,
+      module: 'NewRouteScreen',
+      sessionId: sid,
+    );
 
     // Log storage permission status before gallery access
     try {
@@ -130,47 +150,80 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
       );
       if (image == null) return;
 
-      AppLogger.log(LogEvents.ocrFileReceived,
-          module: 'NewRouteScreen',
-          sessionId: sid,
-          metadata: {'path': image.path});
+      AppLogger.log(
+        LogEvents.ocrFileReceived,
+        module: 'NewRouteScreen',
+        sessionId: sid,
+        metadata: {'path': image.path},
+      );
       setState(() => _processing = true);
 
       final result = await _ocrService.processImage(image.path);
+      _logLocatorCaptured(result, sid, source: 'gallery');
+      if (!mounted) return;
 
       if (result.rawText.trim().isEmpty) {
-        AppLogger.warn(LogEvents.galleryOcrFail,
-            module: 'NewRouteScreen', sessionId: sid);
+        AppLogger.warn(
+          LogEvents.galleryOcrFail,
+          module: 'NewRouteScreen',
+          sessionId: sid,
+        );
         setState(() => _processing = false);
-        if (mounted) _showRecoveryDialog();
+        _showRecoveryDialog();
         return;
       }
 
-      AppLogger.info(LogEvents.galleryOcrSuccess,
-          module: 'NewRouteScreen', sessionId: sid);
+      AppLogger.info(
+        LogEvents.galleryOcrSuccess,
+        module: 'NewRouteScreen',
+        sessionId: sid,
+      );
 
       _routeId ??= await ref
           .read(routeNotifierProvider.notifier)
           .createRoute(widget.shiftId);
+      if (!mounted) return;
 
       setState(() {
         _results.add(result);
         _processing = false;
       });
     } catch (e, st) {
-      AppLogger.error(LogEvents.exception,
-          module: 'NewRouteScreen',
-          method: '_importFromGallery',
-          exception: e,
-          stackTrace: st);
-      setState(() => _processing = false);
-      if (mounted) _showRecoveryDialog();
+      AppLogger.error(
+        LogEvents.exception,
+        module: 'NewRouteScreen',
+        method: '_importFromGallery',
+        exception: e,
+        stackTrace: st,
+      );
+      if (mounted) {
+        setState(() => _processing = false);
+        _showRecoveryDialog();
+      }
     }
   }
 
+  void _logLocatorCaptured(
+    OcrResult result,
+    String sid, {
+    required String source,
+  }) {
+    final locator = result.partnerCollectionCode ?? result.deliveryIdentifier;
+    if (locator == null || locator.isEmpty) return;
+    AppLogger.log(
+      LogEvents.locatorCaptured,
+      module: 'NewRouteScreen',
+      sessionId: sid,
+      metadata: {'value': locator, 'length': locator.length, 'source': source},
+    );
+  }
+
   void _showRecoveryDialog() {
-    AppLogger.info(LogEvents.recoveryPopupOpened,
-        module: 'NewRouteScreen', screen: 'NewRouteScreen');
+    AppLogger.info(
+      LogEvents.recoveryPopupOpened,
+      module: 'NewRouteScreen',
+      screen: 'NewRouteScreen',
+    );
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -183,16 +236,20 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              AppLogger.info(LogEvents.userSelectedRetry,
-                  module: 'NewRouteScreen');
+              AppLogger.info(
+                LogEvents.userSelectedRetry,
+                module: 'NewRouteScreen',
+              );
             },
             child: const Text('Reenviar Foto'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              AppLogger.info(LogEvents.ocrSourceGallery,
-                  module: 'NewRouteScreen');
+              AppLogger.info(
+                LogEvents.ocrSourceGallery,
+                module: 'NewRouteScreen',
+              );
               _importFromGallery();
             },
             child: const Text('Importar da Galeria'),
@@ -200,19 +257,24 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              AppLogger.info(LogEvents.userSelectedManualEntry,
-                  module: 'NewRouteScreen');
-              if (mounted) {
-                context.push(
-                  '/shift/${widget.shiftId}/manual',
-                  extra: {'routeId': _routeId},
-                );
-              }
+              AppLogger.info(
+                LogEvents.userSelectedManualEntry,
+                module: 'NewRouteScreen',
+              );
+              if (mounted) _openManualEntry();
             },
             child: const Text('Manualmente'),
           ),
         ],
       ),
+    );
+  }
+
+  void _openManualEntry() {
+    AppLogger.info(LogEvents.userSelectedManualEntry, module: 'NewRouteScreen');
+    context.push(
+      '/shift/${widget.shiftId}/manual',
+      extra: {'routeId': _routeId},
     );
   }
 
@@ -259,11 +321,28 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
                 FilledButton.icon(
                   onPressed: _processing ? null : _captureAndProcess,
                   icon: const Icon(Icons.camera_alt),
-                  label: Text(_results.isEmpty
-                      ? 'Fotografar comprovante'
-                      : 'Adicionar comprovante'),
+                  label: const Text('Tirar Foto'),
                   style: FilledButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 56)),
+                    minimumSize: const Size(double.infinity, 56),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _processing ? null : _importFromGallery,
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Importar da Galeria'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _processing ? null : _openManualEntry,
+                  icon: const Icon(Icons.edit_location_alt_outlined),
+                  label: const Text('Entrada Manual'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
                 ),
                 if (_results.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -272,7 +351,8 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
                     icon: const Icon(Icons.check),
                     label: Text('Revisar ${_results.length} comprovante(s)'),
                     style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 48)),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
                   ),
                 ],
               ],
@@ -294,8 +374,11 @@ class _EmptyCapture extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.receipt_long, size: 80,
-              color: Theme.of(context).colorScheme.outlineVariant),
+          Icon(
+            Icons.receipt_long,
+            size: 80,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           const SizedBox(height: 16),
           Text(
             processing
@@ -328,8 +411,10 @@ class _OcrPreviewCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 14,
-                  child: Text('${index + 1}',
-                      style: const TextStyle(fontSize: 12)),
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -340,20 +425,28 @@ class _OcrPreviewCard extends StatelessWidget {
                   ),
                 ),
                 if (!result.hasRequiredFields)
-                  const Icon(Icons.warning_amber,
-                      color: Colors.amber, size: 20),
+                  const Icon(
+                    Icons.warning_amber,
+                    color: Colors.amber,
+                    size: 20,
+                  ),
               ],
             ),
             if (result.addressText != null) ...[
               const SizedBox(height: 8),
-              Text(result.addressText!,
-                  style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                result.addressText!,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
             if (result.orderNumber != null) ...[
               const SizedBox(height: 4),
-              Text('Pedido: ${result.orderNumber}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.outline)),
+              Text(
+                'Pedido: ${result.orderNumber}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
             ],
             if (result.needsIfoodConfirmation ||
                 result.hasDrinks ||

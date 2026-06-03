@@ -9,8 +9,9 @@ class SettingsRepository {
 
   SettingsRepository(AppDatabase db) : _dao = db.configDao;
 
-  Stream<AppSettings> watchSettings() =>
-      _dao.watchConfig().map((r) => r != null ? _fromRow(r) : AppSettings.defaults);
+  Stream<AppSettings> watchSettings() => _dao.watchConfig().map(
+    (r) => r != null ? _fromRow(r) : AppSettings.defaults,
+  );
 
   Future<AppSettings> getSettings() async {
     final row = await _dao.getConfig();
@@ -19,16 +20,18 @@ class SettingsRepository {
 
   Future<void> saveSettings(AppSettings settings) {
     final now = DateTime.now().toUtc().toIso8601String();
-    return _dao.upsertConfig(AppConfigTableCompanion(
-      driverName: Value(settings.driverName),
-      pizzeriaAddress: Value(settings.pizzeriaAddress),
-      ifoodUrl: Value(settings.ifoodUrl),
-      ifoodFieldSelector: Value(settings.ifoodFieldSelector),
-      ocrContrastEnabled: Value(settings.ocrContrastEnabled),
-      activeRouteId: Value(settings.activeRouteId),
-      activeDeliveryIndex: Value(settings.activeDeliveryIndex),
-      updatedAt: Value(now),
-    ));
+    return _dao.upsertConfig(
+      AppConfigTableCompanion(
+        driverName: Value(settings.driverName),
+        pizzeriaAddress: Value(settings.pizzeriaAddress),
+        ifoodUrl: Value(settings.ifoodUrl),
+        ifoodFieldSelector: Value(settings.ifoodFieldSelector),
+        ocrContrastEnabled: Value(settings.ocrContrastEnabled),
+        activeRouteId: Value(settings.activeRouteId),
+        activeDeliveryIndex: Value(settings.activeDeliveryIndex),
+        updatedAt: Value(now),
+      ),
+    );
   }
 
   Future<void> setActiveRoute({int? routeId, int? deliveryIndex}) =>
@@ -37,13 +40,13 @@ class SettingsRepository {
   Future<void> clearActiveRoute() => _dao.clearActiveRoute();
 
   static AppSettings _fromRow(AppConfigTableData r) => AppSettings(
-        driverName: r.driverName,
-        pizzeriaAddress: r.pizzeriaAddress,
-        ifoodUrl: r.ifoodUrl,
-        ifoodFieldSelector: r.ifoodFieldSelector,
-        ocrContrastEnabled: r.ocrContrastEnabled,
-        earningsConfig: const EarningsConfig.defaults(),
-        activeRouteId: r.activeRouteId,
-        activeDeliveryIndex: r.activeDeliveryIndex,
-      );
+    driverName: r.driverName,
+    pizzeriaAddress: r.pizzeriaAddress,
+    ifoodUrl: r.ifoodUrl,
+    ifoodFieldSelector: r.ifoodFieldSelector,
+    ocrContrastEnabled: r.ocrContrastEnabled,
+    earningsConfig: const EarningsConfig.defaults(),
+    activeRouteId: r.activeRouteId,
+    activeDeliveryIndex: r.activeDeliveryIndex,
+  );
 }

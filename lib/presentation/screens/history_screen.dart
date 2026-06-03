@@ -19,14 +19,18 @@ class HistoryScreen extends ConsumerWidget {
         if (shifts.isEmpty) {
           AppLogger.info(LogEvents.historyLoadEmpty, module: 'HistoryScreen');
         } else {
-          final closed = shifts.where((s) => s.status == ShiftStatus.closed).length;
-          AppLogger.log(LogEvents.historyRowsFound,
-              module: 'HistoryScreen',
-              metadata: {
-                'total': shifts.length,
-                'closed': closed,
-                'open': shifts.length - closed,
-              });
+          final closed = shifts
+              .where((s) => s.status == ShiftStatus.closed)
+              .length;
+          AppLogger.log(
+            LogEvents.historyRowsFound,
+            module: 'HistoryScreen',
+            metadata: {
+              'total': shifts.length,
+              'closed': closed,
+              'open': shifts.length - closed,
+            },
+          );
         }
       });
     });
@@ -63,10 +67,7 @@ class HistoryScreen extends ConsumerWidget {
             itemCount: grouped.length,
             itemBuilder: (ctx, i) {
               final entry = grouped[i];
-              return _MonthGroup(
-                monthLabel: entry.key,
-                shifts: entry.value,
-              );
+              return _MonthGroup(monthLabel: entry.key, shifts: entry.value);
             },
           );
         },
@@ -103,8 +104,10 @@ class _MonthGroupState extends State<_MonthGroup> {
       0,
       (sum, s) => sum + s.totalEarnings.cents,
     );
-    final totalDeliveries =
-        widget.shifts.fold(0, (sum, s) => sum + s.deliveryCount);
+    final totalDeliveries = widget.shifts.fold(
+      0,
+      (sum, s) => sum + s.deliveryCount,
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -114,21 +117,19 @@ class _MonthGroupState extends State<_MonthGroup> {
             title: Text(
               widget.monthLabel.toUpperCase(),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             subtitle: Text(
               '$totalDeliveries entregas · '
               'R\$ ${(totalEarnings / 100).toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            trailing:
-                Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+            trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
             onTap: () => setState(() => _expanded = !_expanded),
           ),
-          if (_expanded)
-            ...widget.shifts.map((s) => _ShiftTile(shift: s)),
+          if (_expanded) ...widget.shifts.map((s) => _ShiftTile(shift: s)),
         ],
       ),
     );
@@ -148,7 +149,8 @@ class _ShiftTile extends ConsumerWidget {
     // Historical (manual) entry
     if (shift.isHistorical) {
       final subtitle = StringBuffer(
-          '${shift.deliveryCount} entregas · ${shift.totalEarnings.format()}');
+        '${shift.deliveryCount} entregas · ${shift.totalEarnings.format()}',
+      );
       if (shift.hoursWorked != null) {
         subtitle.write(' · ${shift.hoursWorked!.toStringAsFixed(0)}h');
       }
@@ -161,8 +163,7 @@ class _ShiftTile extends ConsumerWidget {
             Text(date),
             const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: colorScheme.secondaryContainer,
                 borderRadius: BorderRadius.circular(4),
@@ -177,14 +178,15 @@ class _ShiftTile extends ConsumerWidget {
             ),
           ],
         ),
-        subtitle: Text(subtitle.toString(),
-            style: Theme.of(context).textTheme.bodySmall),
+        subtitle: Text(
+          subtitle.toString(),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         trailing: PopupMenuButton<_HistoryAction>(
           onSelected: (action) => _handleAction(context, ref, action),
           itemBuilder: (_) => const [
             PopupMenuItem(value: _HistoryAction.edit, child: Text('Editar')),
-            PopupMenuItem(
-                value: _HistoryAction.delete, child: Text('Excluir')),
+            PopupMenuItem(value: _HistoryAction.delete, child: Text('Excluir')),
           ],
         ),
         onTap: () => context.push('/history/add', extra: shift),
@@ -217,8 +219,7 @@ class _ShiftTile extends ConsumerWidget {
             Text(date),
             const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(4),
@@ -269,21 +270,22 @@ class _ShiftTile extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir registro?'),
         content: const Text(
-            'Este registro histórico será excluído permanentemente.'),
+          'Este registro histórico será excluído permanentemente.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Excluir')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir'),
+          ),
         ],
       ),
     );
     if (confirmed == true) {
-      await ref
-          .read(historicalEntryNotifierProvider.notifier)
-          .delete(shift.id);
+      await ref.read(historicalEntryNotifierProvider.notifier).delete(shift.id);
     }
   }
 }

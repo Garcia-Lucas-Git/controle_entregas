@@ -5,17 +5,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'route_notifier.g.dart';
 
 @riverpod
-Stream<List<RouteEntity>> routesForShift(
-  RoutesForShiftRef ref,
-  int shiftId,
-) =>
+Stream<List<RouteEntity>> routesForShift(RoutesForShiftRef ref, int shiftId) =>
     ref.watch(routeRepositoryProvider).watchRoutesForShift(shiftId);
 
 @riverpod
-Stream<RouteEntity?> routeById(
-  RouteByIdRef ref,
-  int routeId,
-) =>
+Stream<RouteEntity?> routeById(RouteByIdRef ref, int routeId) =>
     ref.watch(routeRepositoryProvider).watchById(routeId);
 
 @riverpod
@@ -32,19 +26,19 @@ class RouteNotifier extends _$RouteNotifier {
         .read(deliveryRepositoryProvider)
         .getDeliveriesForRoute(routeId);
 
-    final completed =
-        deliveries.where((d) => d.isCompleted).toList();
+    final completed = deliveries.where((d) => d.isCompleted).toList();
 
-    await ref.read(routeRepositoryProvider).closeRoute(
-          id: routeId,
-          deliveryCountAtClose: completed.length,
-        );
+    await ref
+        .read(routeRepositoryProvider)
+        .closeRoute(id: routeId, deliveryCountAtClose: completed.length);
 
     // Fetch the route to get shiftId
     final route = await ref.read(routeRepositoryProvider).getById(routeId);
     if (route == null) return;
 
-    await ref.read(earningsRepositoryProvider).classifyAndSaveRoute(
+    await ref
+        .read(earningsRepositoryProvider)
+        .classifyAndSaveRoute(
           routeId: routeId,
           shiftId: route.shiftId,
           deliveryCountAtClose: completed.length,

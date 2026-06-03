@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:controle_entregas/application/deliveries/delivery_notifier.dart';
 import 'package:controle_entregas/application/ifood/ifood_provider.dart';
 import 'package:controle_entregas/application/settings/settings_notifier.dart';
@@ -29,17 +31,41 @@ class IFoodConfirmationScreen extends ConsumerStatefulWidget {
 
 class _IFoodConfirmationScreenState
     extends ConsumerState<IFoodConfirmationScreen> {
-  late final WebViewController _webViewController;
+  late WebViewController _webViewController;
   late final String _sid;
+  late final WakeLockController _wakeLock;
   final List<String> _codeDigits = [];
-  static const int _expectedDigits = 6;
   bool _webViewReady = false;
+  bool _disposed = false;
+
+  String? get _locatorCode =>
+      widget.partnerCollectionCode?.trim().isNotEmpty == true
+      ? widget.partnerCollectionCode!.trim()
+      : widget.deliveryIdentifier?.trim().isNotEmpty == true
+      ? widget.deliveryIdentifier!.trim()
+      : null;
+
+  String? get _locatorDigits => _locatorCode?.replaceAll(RegExp(r'\D'), '');
+
+  int get _expectedDigits {
+    final digits = _locatorDigits;
+    return digits != null && digits.isNotEmpty ? digits.length : 6;
+  }
 
   @override
   void initState() {
     super.initState();
     _sid = SessionManager.ifood();
-    ref.read(wakeLockControllerProvider.notifier).acquire();
+    _wakeLock = ref.read(wakeLockControllerProvider.notifier);
+    _wakeLock.acquire();
+    final locator = _locatorCode;
+    if (locator != null) {
+      _logLocator(
+        LogEvents.locatorCaptured,
+        locator,
+        extra: {'delivery_id': widget.deliveryId, 'stage': 'ifood_screen_init'},
+      );
+    }
     AppLogger.log(
       LogEvents.ifoodOpenStart,
       module: 'IFoodConfirmationScreen',
@@ -56,7 +82,8 @@ class _IFoodConfirmationScreenState
 
   @override
   void dispose() {
-    ref.read(wakeLockControllerProvider.notifier).release();
+    _disposed = true;
+    _wakeLock.release();
     super.dispose();
   }
 
@@ -71,35 +98,45 @@ class _IFoodConfirmationScreenState
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
-            AppLogger.log(LogEvents.ifoodPageLoading,
-                module: 'IFoodConfirmationScreen',
-                sessionId: _sid,
-                metadata: {'url': url});
+            if (_disposed) return;
+            AppLogger.log(
+              LogEvents.ifoodPageLoading,
+              module: 'IFoodConfirmationScreen',
+              sessionId: _sid,
+              metadata: {'url': url},
+            );
           },
           onPageFinished: (url) {
+            if (_disposed || !mounted) return;
             setState(() => _webViewReady = true);
             ref.read(iFoodNotifierProvider.notifier).onWebViewReady();
-            AppLogger.log(LogEvents.ifoodPageLoaded,
-                module: 'IFoodConfirmationScreen',
-                sessionId: _sid,
-                metadata: {'url': url});
+            AppLogger.log(
+              LogEvents.ifoodPageLoaded,
+              module: 'IFoodConfirmationScreen',
+              sessionId: _sid,
+              metadata: {'url': url},
+            );
           },
           onWebResourceError: (error) {
-            AppLogger.error(LogEvents.ifoodPageFail,
-                module: 'IFoodConfirmationScreen',
-                sessionId: _sid,
-                metadata: {
-                  'description': error.description,
-                  'error_code': error.errorCode,
-                  'error_type': error.errorType?.toString(),
-                  'url': error.url,
-                });
+            if (_disposed || !mounted) return;
+            AppLogger.error(
+              LogEvents.ifoodPageFail,
+              module: 'IFoodConfirmationScreen',
+              sessionId: _sid,
+              metadata: {
+                'description': error.description,
+                'error_code': error.errorCode,
+                'error_type': error.errorType?.toString(),
+                'url': error.url,
+              },
+            );
             ref
                 .read(iFoodNotifierProvider.notifier)
                 .onWebViewFailed(error.description);
             _openManualFallback();
           },
           onNavigationRequest: (NavigationRequest request) {
+            if (_disposed) return NavigationDecision.navigate;
             AppLogger.log(
               LogEvents.ifoodWebviewUrlChanged,
               severity: LogSeverity.verbose,
@@ -113,6 +150,7 @@ class _IFoodConfirmationScreenState
             return NavigationDecision.navigate;
           },
           onHttpError: (HttpResponseError error) {
+            if (_disposed) return;
             AppLogger.error(
               LogEvents.ifoodWebviewHttpError,
               module: 'IFoodConfirmationScreen',
@@ -128,78 +166,127 @@ class _IFoodConfirmationScreenState
 
     // Load the iFood URL after settings are available
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_disposed || !mounted) return;
       final settings = await ref.read(settingsNotifierProvider.future);
-      AppLogger.log(LogEvents.ifoodPageLoading,
-          module: 'IFoodConfirmationScreen',
-          sessionId: _sid,
-          metadata: {'url': settings.ifoodUrl});
-      _webViewController.loadRequest(Uri.parse(settings.ifoodUrl));
+      if (_disposed || !mounted) return;
+      AppLogger.log(
+        LogEvents.ifoodPageLoading,
+        module: 'IFoodConfirmationScreen',
+        sessionId: _sid,
+        metadata: {'url': settings.ifoodUrl},
+      );
+      await _webViewController.loadRequest(Uri.parse(settings.ifoodUrl));
     });
   }
 
+  void _logLocator(String event, String value, {Map<String, dynamic>? extra}) {
+    AppLogger.log(
+      event,
+      module: 'IFoodConfirmationScreen',
+      sessionId: _sid,
+      metadata: {'value': value, 'length': value.length, ...?extra},
+    );
+  }
+
   Future<void> _injectCode(String code, String selector) async {
-    if (selector.isEmpty) return;
-    AppLogger.log(LogEvents.ifoodJsInjectionStart,
-        module: 'IFoodConfirmationScreen',
-        sessionId: _sid,
-        metadata: {'selector': selector, 'code_length': code.length});
+    if (selector.isEmpty || _disposed || !mounted) return;
+    AppLogger.log(
+      LogEvents.ifoodJsInjectionStart,
+      module: 'IFoodConfirmationScreen',
+      sessionId: _sid,
+      metadata: {'selector': selector, 'code_length': code.length},
+    );
+    _logLocator(
+      LogEvents.locatorJsInjection,
+      code,
+      extra: {'selector': selector},
+    );
     try {
-      await _webViewController.runJavaScript("""
+      final selectorLiteral = jsonEncode(selector);
+      final codeLiteral = jsonEncode(code);
+      await _webViewController.runJavaScript('''
         (function() {
-          var el = document.querySelector('$selector');
+          var el = document.querySelector($selectorLiteral);
           if (el) {
-            el.value = '$code';
+            el.value = $codeLiteral;
             el.dispatchEvent(new Event('input', { bubbles: true }));
             el.dispatchEvent(new Event('change', { bubbles: true }));
           }
         })();
-      """);
-      AppLogger.log(LogEvents.ifoodJsInjectionSuccess,
-          module: 'IFoodConfirmationScreen', sessionId: _sid);
+      ''');
+      AppLogger.log(
+        LogEvents.ifoodJsInjectionSuccess,
+        module: 'IFoodConfirmationScreen',
+        sessionId: _sid,
+      );
     } catch (e, st) {
-      AppLogger.error(LogEvents.ifoodJsInjectionFail,
-          module: 'IFoodConfirmationScreen',
-          sessionId: _sid,
-          exception: e,
-          stackTrace: st);
+      AppLogger.error(
+        LogEvents.ifoodJsInjectionFail,
+        module: 'IFoodConfirmationScreen',
+        sessionId: _sid,
+        exception: e,
+        stackTrace: st,
+      );
     }
   }
 
   Future<void> _submitCode() async {
     if (_codeDigits.length < _expectedDigits) return;
+    if (_disposed || !mounted) return;
 
-    final code = _codeDigits.join();
+    final typedCode = _codeDigits.join();
+    final locator = _locatorCode;
+    final locatorDigits = _locatorDigits;
+    final code = locator != null && locatorDigits == typedCode
+        ? locator
+        : typedCode;
+    _logLocator(
+      LogEvents.locatorRequestSent,
+      code,
+      extra: {'typed_value': typedCode, 'delivery_id': widget.deliveryId},
+    );
+
     final settings = await ref.read(settingsNotifierProvider.future);
+    if (_disposed || !mounted) return;
 
     if (settings.ifoodFieldSelector.isNotEmpty) {
-      AppLogger.log(LogEvents.ifoodSelectorFound,
-          module: 'IFoodConfirmationScreen',
-          sessionId: _sid,
-          metadata: {'selector': settings.ifoodFieldSelector});
-      await _injectCode(code, settings.ifoodFieldSelector);
-    } else {
-      AppLogger.warn(LogEvents.ifoodSelectorNotFound,
-          module: 'IFoodConfirmationScreen',
-          sessionId: _sid,
-          metadata: {'hint': 'Configure selector in Settings > iFood'});
-    }
-
-    ref.read(iFoodNotifierProvider.notifier).onWebViewSuccess();
-    await ref.read(deliveryNotifierProvider.notifier).updateIfood(
-          widget.deliveryId,
-          success: true,
-        );
-    AppLogger.log(LogEvents.ifoodConfirmSuccess,
+      AppLogger.log(
+        LogEvents.ifoodSelectorFound,
         module: 'IFoodConfirmationScreen',
         sessionId: _sid,
-        metadata: {'delivery_id': widget.deliveryId});
+        metadata: {'selector': settings.ifoodFieldSelector},
+      );
+      await _injectCode(code, settings.ifoodFieldSelector);
+      if (_disposed || !mounted) return;
+    } else {
+      AppLogger.warn(
+        LogEvents.ifoodSelectorNotFound,
+        module: 'IFoodConfirmationScreen',
+        sessionId: _sid,
+        metadata: {'hint': 'Configure selector in Settings > iFood'},
+      );
+    }
 
-    if (!mounted) return;
+    if (_disposed || !mounted) return;
+    ref.read(iFoodNotifierProvider.notifier).onWebViewSuccess();
+    await ref
+        .read(deliveryNotifierProvider.notifier)
+        .updateIfood(widget.deliveryId, success: true);
+    AppLogger.log(
+      LogEvents.ifoodConfirmSuccess,
+      module: 'IFoodConfirmationScreen',
+      sessionId: _sid,
+      metadata: {'delivery_id': widget.deliveryId},
+    );
+
+    if (_disposed || !mounted) return;
     _showResult(success: true);
   }
 
   Future<void> _openManualFallback() async {
+    if (_disposed || !mounted) return;
     final settings = await ref.read(settingsNotifierProvider.future);
+    if (_disposed || !mounted) return;
     final uri = Uri.parse(settings.ifoodUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -207,6 +294,7 @@ class _IFoodConfirmationScreenState
   }
 
   void _showResult({required bool success}) {
+    if (_disposed || !mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -221,6 +309,7 @@ class _IFoodConfirmationScreenState
   }
 
   void _onDigitTap(String digit) {
+    if (_disposed || !mounted) return;
     if (_codeDigits.length >= _expectedDigits) return;
     setState(() => _codeDigits.add(digit));
     if (_codeDigits.length == _expectedDigits) {
@@ -229,6 +318,7 @@ class _IFoodConfirmationScreenState
   }
 
   void _onBackspace() {
+    if (_disposed || !mounted) return;
     if (_codeDigits.isEmpty) return;
     setState(() => _codeDigits.removeLast());
   }
@@ -269,6 +359,7 @@ class _IFoodConfirmationScreenState
                   _WebViewErrorBanner(
                     message: ifoodStatus.errorMessage,
                     onRetry: () {
+                      if (_disposed || !mounted) return;
                       ref.read(iFoodNotifierProvider.notifier).reset();
                       setState(() => _webViewReady = false);
                       _initWebView();
@@ -281,8 +372,8 @@ class _IFoodConfirmationScreenState
           const Divider(height: 1),
 
           // ── Locator reference ─────────────────────────────────────────
-          if (widget.partnerCollectionCode?.isNotEmpty == true)
-            _LocatorReference(code: widget.partnerCollectionCode!),
+          if (_locatorCode != null)
+            _LocatorReference(code: _locatorCode!, sessionId: _sid),
 
           // ── Code entry display ────────────────────────────────────────
           Padding(
@@ -308,10 +399,9 @@ class _IFoodConfirmationScreenState
                   alignment: Alignment.center,
                   child: Text(
                     filled ? _codeDigits[i] : '',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 );
               }),
@@ -320,10 +410,7 @@ class _IFoodConfirmationScreenState
 
           // ── Numpad ────────────────────────────────────────────────────
           Expanded(
-            child: _NumPad(
-              onDigit: _onDigitTap,
-              onBackspace: _onBackspace,
-            ),
+            child: _NumPad(onDigit: _onDigitTap, onBackspace: _onBackspace),
           ),
 
           // Manual confirmed option when in fallback
@@ -332,13 +419,12 @@ class _IFoodConfirmationScreenState
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: OutlinedButton(
                 onPressed: () async {
-                  ref
-                      .read(iFoodNotifierProvider.notifier)
-                      .onManualConfirmed();
+                  if (_disposed || !mounted) return;
+                  ref.read(iFoodNotifierProvider.notifier).onManualConfirmed();
                   await ref
                       .read(deliveryNotifierProvider.notifier)
                       .updateIfood(widget.deliveryId, success: true);
-                  if (!mounted) return;
+                  if (_disposed || !mounted) return;
                   _showResult(success: true);
                 },
                 style: OutlinedButton.styleFrom(
@@ -372,22 +458,26 @@ class _NumPad extends StatelessWidget {
 
     return Column(
       children: rows
-          .map((row) => Expanded(
-                child: Row(
-                  children: row
-                      .map((label) => Expanded(
-                            child: label.isEmpty
-                                ? const SizedBox.shrink()
-                                : _NumKey(
-                                    label: label,
-                                    onTap: label == '⌫'
-                                        ? onBackspace
-                                        : () => onDigit(label),
-                                  ),
-                          ))
-                      .toList(),
-                ),
-              ))
+          .map(
+            (row) => Expanded(
+              child: Row(
+                children: row
+                    .map(
+                      (label) => Expanded(
+                        child: label.isEmpty
+                            ? const SizedBox.shrink()
+                            : _NumKey(
+                                label: label,
+                                onTap: label == '⌫'
+                                    ? onBackspace
+                                    : () => onDigit(label),
+                              ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -406,10 +496,9 @@ class _NumKey extends StatelessWidget {
       child: Center(
         child: Text(
           label,
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w500),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w500),
         ),
       ),
     );
@@ -429,8 +518,9 @@ class _ResultOverlay extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Dialog.fullscreen(
-      backgroundColor:
-          success ? colorScheme.primaryContainer : colorScheme.errorContainer,
+      backgroundColor: success
+          ? colorScheme.primaryContainer
+          : colorScheme.errorContainer,
       child: InkWell(
         onTap: onDismiss,
         child: Center(
@@ -446,20 +536,20 @@ class _ResultOverlay extends StatelessWidget {
               Text(
                 success ? 'Confirmado!' : 'Falha na confirmação',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: success
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onErrorContainer,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: success
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onErrorContainer,
+                ),
               ),
               const SizedBox(height: 48),
               Text(
                 'Toque para continuar',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: success
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onErrorContainer,
-                    ),
+                  color: success
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onErrorContainer,
+                ),
               ),
             ],
           ),
@@ -473,7 +563,8 @@ class _ResultOverlay extends StatelessWidget {
 
 class _LocatorReference extends StatelessWidget {
   final String code;
-  const _LocatorReference({required this.code});
+  final String sessionId;
+  const _LocatorReference({required this.code, required this.sessionId});
 
   @override
   Widget build(BuildContext context) {
@@ -493,8 +584,9 @@ class _LocatorReference extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     letterSpacing: 1.1,
-                    color: colorScheme.onSecondaryContainer
-                        .withValues(alpha: 0.7),
+                    color: colorScheme.onSecondaryContainer.withValues(
+                      alpha: 0.7,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -515,8 +607,18 @@ class _LocatorReference extends StatelessWidget {
             tooltip: 'Copiar código',
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: code));
-              AppLogger.log(LogEvents.ifoodLocatorClipboardCopy,
-                  module: 'IFoodConfirmationScreen', metadata: {'code': code});
+              AppLogger.log(
+                LogEvents.locatorClipboardCopy,
+                module: 'IFoodConfirmationScreen',
+                sessionId: sessionId,
+                metadata: {'value': code, 'length': code.length},
+              );
+              AppLogger.log(
+                LogEvents.ifoodLocatorClipboardCopy,
+                module: 'IFoodConfirmationScreen',
+                sessionId: sessionId,
+                metadata: {'code': code},
+              );
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -544,24 +646,33 @@ class _WebViewErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.92),
+      color: Theme.of(
+        context,
+      ).colorScheme.errorContainer.withValues(alpha: 0.92),
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          Icon(Icons.warning_amber,
-              color: Theme.of(context).colorScheme.error, size: 20),
+          Icon(
+            Icons.warning_amber,
+            color: Theme.of(context).colorScheme.error,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Automação falhou — abrindo manualmente',
               style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onErrorContainer),
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
             ),
           ),
           TextButton(
             onPressed: onRetry,
-            child: const Text('Tentar novamente', style: TextStyle(fontSize: 11)),
+            child: const Text(
+              'Tentar novamente',
+              style: TextStyle(fontSize: 11),
+            ),
           ),
         ],
       ),

@@ -1,8 +1,11 @@
 import 'dart:io';
 
-import 'package:controle_entregas/application/shifts/shift_notifier.dart';
+import 'package:controle_entregas/core/devtools/diagnostic_bundle_service.dart';
+import 'package:controle_entregas/core/devtools/log_reader_service.dart';
+import 'package:controle_entregas/core/devtools/test_data_generator_service.dart';
 import 'package:controle_entregas/core/logging/log_storage.dart';
 import 'package:controle_entregas/core/monitoring/build_info.dart';
+import 'package:controle_entregas/core/providers/database_provider.dart';
 import 'package:controle_entregas/services/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -20,10 +23,13 @@ class DevToolsScreen extends ConsumerStatefulWidget {
 }
 
 class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
-  List<_LogFileInfo> _logFiles = [];
+  List<DevLogFileInfo> _logFiles = [];
   bool _loadingFiles = false;
-  bool _generatingData = false;
+  bool _working = false;
   Map<String, dynamic> _buildMeta = {};
+
+  TestDataGeneratorService get _generator =>
+      TestDataGeneratorService(ref.read(appDatabaseProvider));
 
   @override
   void initState() {
@@ -41,25 +47,14 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
   Future<void> _loadLogFiles() async {
     setState(() => _loadingFiles = true);
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final files = <_LogFileInfo>[];
-      for (final name in [
-        'deliveryflow.log',
-        'deliveryflow.1.log',
-        'deliveryflow.2.log',
-      ]) {
-        final f = File('${dir.path}/$name');
-        if (await f.exists()) {
-          final size = await f.length();
-          files.add(_LogFileInfo(name: name, sizeBytes: size));
-        }
-      }
+      final result = await LogReaderService.readLogs();
+      if (!mounted) return;
       setState(() {
-        _logFiles = files;
+        _logFiles = result.files;
         _loadingFiles = false;
       });
     } catch (_) {
-      setState(() => _loadingFiles = false);
+      if (mounted) setState(() => _loadingFiles = false);
     }
   }
 
@@ -68,10 +63,19 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Logs exportados.'),
-            behavior: SnackBarBehavior.floating),
+          content: Text('Logs exportados.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
+  }
+
+  Future<void> _exportBundle() async {
+    await _runAction(
+      successMessage: 'Bundle diagnóstico exportado.',
+      action: () =>
+          DiagnosticBundleService(ref.read(appDatabaseProvider)).export(),
+    );
   }
 
   Future<void> _clearLogs() async {
@@ -80,14 +84,17 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Limpar todos os logs?'),
         content: const Text(
-            'Todos os arquivos de log serão deletados permanentemente.'),
+          'Todos os arquivos de log serão deletados permanentemente.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Limpar')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Limpar'),
+          ),
         ],
       ),
     );
@@ -108,63 +115,77 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Logs apagados.'),
-              behavior: SnackBarBehavior.floating),
+            content: Text('Logs apagados.'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e')),
-        );
-      }
+      _showError(e);
     }
   }
 
-  /// Generates 7 historical entries for the last 7 days (test data).
-  Future<void> _generateTestHistory() async {
-    setState(() => _generatingData = true);
+  Future<void> _cleanupGenerated() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Limpar dados gerados?'),
+        content: const Text(
+          'Somente registros marcados com [DEVTOOLS] serão removidos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Limpar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _runAction(
+      successMessage: 'Dados gerados removidos.',
+      action: () async {
+        await _generator.cleanupGeneratedData();
+      },
+    );
+  }
+
+  Future<void> _runAction({
+    required String successMessage,
+    required Future<void> Function() action,
+  }) async {
+    setState(() => _working = true);
     try {
-      final notifier =
-          ref.read(historicalEntryNotifierProvider.notifier);
-      final now = DateTime.now();
-      final testDays = [
-        (days: 1, deliveries: 22, earnings: 17600, note: 'Teste domingo'),
-        (days: 2, deliveries: 18, earnings: 14400, note: 'Teste sábado'),
-        (days: 3, deliveries: 25, earnings: 20000, note: 'Teste sexta'),
-        (days: 4, deliveries: 15, earnings: 12000, note: 'Teste quinta'),
-        (days: 5, deliveries: 20, earnings: 16000, note: 'Teste quarta'),
-        (days: 6, deliveries: 30, earnings: 24000, note: 'Teste terça'),
-        (days: 7, deliveries: 28, earnings: 22400, note: 'Teste segunda'),
-      ];
-      for (final d in testDays) {
-        await notifier.save(
-          date: now.subtract(Duration(days: d.days)),
-          deliveryCount: d.deliveries,
-          earningsCents: d.earnings,
-          hoursWorked: 8.0,
-          notes: d.note,
-        );
-      }
-      AppLogger.info(LogEvents.testDataGenerated,
-          module: 'DevToolsScreen',
-          metadata: {'type': 'history', 'count': testDays.length});
+      await action();
+      AppLogger.info(
+        LogEvents.testDataGenerated,
+        module: 'DevToolsScreen',
+        metadata: {'message': successMessage},
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('7 entradas de teste criadas.'),
-              behavior: SnackBarBehavior.floating),
+          SnackBar(
+            content: Text(successMessage),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e')),
-        );
-      }
+      _showError(e);
     } finally {
-      if (mounted) setState(() => _generatingData = false);
+      if (mounted) setState(() => _working = false);
     }
+  }
+
+  void _showError(Object e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Erro: $e')));
   }
 
   @override
@@ -174,42 +195,70 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ── App info ────────────────────────────────────────────────────
           _Section(
             title: 'Build Info',
             children: _buildMeta.isEmpty
                 ? const [SizedBox(height: 20, child: LinearProgressIndicator())]
                 : [
-                    _InfoRow('Versão',
-                        '${_buildMeta['version_name']} (${_buildMeta['version_code']})'),
-                    _InfoRow('Build type',
-                        '${_buildMeta['build_type']}'),
-                    _InfoRow('Dispositivo',
-                        '${_buildMeta['manufacturer']} ${_buildMeta['device_model']}'),
-                    _InfoRow('Android',
-                        '${_buildMeta['android_release']} (API ${_buildMeta['android_sdk']})'),
-                    _InfoRow('OS Version',
-                        '${_buildMeta['os_version']}'.length > 40
-                            ? '${_buildMeta['os_version']}'.substring(0, 40)
-                            : '${_buildMeta['os_version']}'),
+                    _InfoRow(
+                      'Versão',
+                      '${_buildMeta['version_name']} (${_buildMeta['version_code']})',
+                    ),
+                    _InfoRow('Build type', '${_buildMeta['build_type']}'),
+                    _InfoRow(
+                      'Dispositivo',
+                      '${_buildMeta['manufacturer']} ${_buildMeta['device_model']}',
+                    ),
+                    _InfoRow(
+                      'Android',
+                      '${_buildMeta['android_release']} (API ${_buildMeta['android_sdk']})',
+                    ),
                   ],
           ),
           const SizedBox(height: 16),
-
-          // ── Log files ────────────────────────────────────────────────────
+          _Section(
+            title: 'Observability',
+            children: [
+              _NavButton(
+                icon: Icons.list_alt,
+                label: 'Log Viewer',
+                onPressed: () => context.push('/dev/logs'),
+              ),
+              _NavButton(
+                icon: Icons.account_tree_outlined,
+                label: 'Session Explorer',
+                onPressed: () => context.push('/dev/sessions'),
+              ),
+              _NavButton(
+                icon: Icons.monitor_heart_outlined,
+                label: 'Diagnostics Dashboard',
+                onPressed: () => context.push('/dev/diagnostics'),
+              ),
+              _NavButton(
+                icon: Icons.play_circle_outline,
+                label: 'Automation Runner',
+                onPressed: () => context.push('/dev/automation-runner'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           _Section(
             title: 'Log Files',
             children: [
               if (_loadingFiles)
                 const CircularProgressIndicator()
               else if (_logFiles.isEmpty)
-                const Text('Nenhum arquivo de log encontrado.',
-                    style: TextStyle(fontSize: 13))
+                const Text(
+                  'Nenhum arquivo de log encontrado.',
+                  style: TextStyle(fontSize: 13),
+                )
               else
-                ..._logFiles.map((f) => _InfoRow(
-                      f.name,
-                      '${(f.sizeBytes / 1024).toStringAsFixed(1)} KB',
-                    )),
+                ..._logFiles.map(
+                  (f) => _InfoRow(
+                    f.name,
+                    '${(f.sizeBytes / 1024).toStringAsFixed(1)} KB',
+                  ),
+                ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -236,16 +285,20 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _working ? null : _exportBundle,
+                icon: const Icon(Icons.archive_outlined),
+                label: const Text('Exportar Bundle Diagnóstico'),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-
-          // ── OCR Sandbox ──────────────────────────────────────────────────
           _Section(
             title: 'OCR Sandbox',
             children: [
               const Text(
-                'Teste o OCR em qualquer imagem sem criar uma rota real.',
+                'Teste OCR por imagem ou simule o parser com texto bruto.',
                 style: TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 8),
@@ -260,49 +313,98 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
-          // ── Test data generators ─────────────────────────────────────────
           _Section(
             title: 'Gerar Dados de Teste',
             children: [
-              const Text(
-                'Cria registros históricos dos últimos 7 dias para validar '
-                'relatórios e totais no histórico.',
-                style: TextStyle(fontSize: 13),
-              ),
+              if (_working) const LinearProgressIndicator(),
               const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    [
+                      _ActionChip(
+                        'Turno aberto',
+                        () => _generator.createOpenShift(),
+                      ),
+                      _ActionChip(
+                        'Turno fechado',
+                        () => _generator.createClosedShift(),
+                      ),
+                      _ActionChip(
+                        'Rota vazia',
+                        () => _generator.createEmptyRoute(),
+                      ),
+                      _ActionChip(
+                        'Rota ativa',
+                        () => _generator.createActiveRoute(),
+                      ),
+                      _ActionChip(
+                        'Rota concluída',
+                        () => _generator.createCompletedRoute(),
+                      ),
+                      _ActionChip(
+                        'Entrega manual',
+                        () => _generator.createManualDelivery(),
+                      ),
+                      _ActionChip(
+                        'Entrega OCR',
+                        () => _generator.createOcrDelivery(),
+                      ),
+                      _ActionChip(
+                        'Entrega iFood',
+                        () => _generator.createIfoodDelivery(),
+                      ),
+                      _ActionChip(
+                        'Rota mista',
+                        () => _generator.createMixedRoute(),
+                      ),
+                      _ActionChip(
+                        'Histórico 1d',
+                        () => _generator.createHistoryDays(1),
+                      ),
+                      _ActionChip(
+                        'Histórico 7d',
+                        () => _generator.createHistoryDays(7),
+                      ),
+                      _ActionChip(
+                        'Histórico 30d',
+                        () => _generator.createHistoryDays(30),
+                      ),
+                    ].map((item) {
+                      return ActionChip(
+                        label: Text(item.label),
+                        onPressed: _working
+                            ? null
+                            : () => _runAction(
+                                successMessage: '${item.label} gerado.',
+                                action: () async {
+                                  await item.action();
+                                },
+                              ),
+                      );
+                    }).toList(),
+              ),
+              const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: _generatingData ? null : _generateTestHistory,
-                icon: _generatingData
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_chart),
-                label: const Text('Gerar 7 dias de histórico'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                ),
+                onPressed: _working ? null : _cleanupGenerated,
+                icon: const Icon(Icons.cleaning_services_outlined),
+                label: const Text('Limpar dados [DEVTOOLS]'),
               ),
             ],
           ),
           const SizedBox(height: 16),
-
-          // ── Validation checklist ─────────────────────────────────────────
           _Section(
             title: 'Checklist de Validação',
-            children: [
+            children: const [
               _CheckItem('OCR com imagem boa'),
               _CheckItem('OCR com imagem ruim → popup recovery'),
-              _CheckItem('Importar da galeria → OCR pipeline'),
-              _CheckItem('Entrada manual → localizador obrigatório'),
-              _CheckItem('Fechar turno → dialog pré-encerramento'),
-              _CheckItem('Código localizador visível na tela de entrega'),
-              _CheckItem('Copiar localizador → clipboard + snackbar'),
-              _CheckItem('Abrir iFood → localizador já copiado'),
-              _CheckItem('Histórico → turnos abertos aparecem'),
-              _CheckItem('Exportar logs → arquivo JSONL legível'),
+              _CheckItem('Parser bruto → campos extraídos'),
+              _CheckItem('Log Viewer → filtros e busca'),
+              _CheckItem('Session Explorer → linha do tempo por SID'),
+              _CheckItem('Diagnostics → banco, runtime e release'),
+              _CheckItem('Bundle → JSON compartilhável'),
+              _CheckItem('Dados gerados → marcados com [DEVTOOLS]'),
             ],
           ),
         ],
@@ -325,10 +427,10 @@ class _Section extends StatelessWidget {
         Text(
           title.toUpperCase(),
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-              ),
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.1,
+          ),
         ),
         const SizedBox(height: 8),
         Card(
@@ -341,6 +443,33 @@ class _Section extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  const _NavButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: FilledButton.tonalIcon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(double.infinity, 48),
+        ),
+      ),
     );
   }
 }
@@ -359,10 +488,12 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 140,
-            child: Text(label,
-                style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
           ),
-          Text(value, style: const TextStyle(fontSize: 13)),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
         ],
       ),
     );
@@ -371,6 +502,7 @@ class _InfoRow extends StatelessWidget {
 
 class _CheckItem extends StatelessWidget {
   final String label;
+
   const _CheckItem(this.label);
 
   @override
@@ -379,8 +511,11 @@ class _CheckItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Icon(Icons.check_box_outline_blank,
-              size: 18, color: Theme.of(context).colorScheme.outlineVariant),
+          Icon(
+            Icons.check_box_outline_blank,
+            size: 18,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           const SizedBox(width: 8),
           Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
         ],
@@ -389,8 +524,9 @@ class _CheckItem extends StatelessWidget {
   }
 }
 
-class _LogFileInfo {
-  final String name;
-  final int sizeBytes;
-  const _LogFileInfo({required this.name, required this.sizeBytes});
+class _ActionChip {
+  final String label;
+  final Future<Object?> Function() action;
+
+  const _ActionChip(this.label, this.action);
 }

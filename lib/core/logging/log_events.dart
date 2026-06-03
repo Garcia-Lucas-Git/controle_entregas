@@ -92,6 +92,13 @@ abstract final class LogEvents {
   static const ifoodConfirmFail = 'IFOOD_CONFIRM_FAIL';
   static const ifoodManualFallback = 'IFOOD_MANUAL_FALLBACK';
 
+  // ── Locator pipeline diagnostics ─────────────────────────────────────────
+  static const locatorCaptured = 'LOCATOR_CAPTURED';
+  static const locatorStored = 'LOCATOR_STORED';
+  static const locatorClipboardCopy = 'LOCATOR_CLIPBOARD_COPY';
+  static const locatorJsInjection = 'LOCATOR_JS_INJECTION';
+  static const locatorRequestSent = 'LOCATOR_REQUEST_SENT';
+
   // ── Database ──────────────────────────────────────────────────────────────
   static const dbOpen = 'DB_OPEN';
   static const dbMigrationStart = 'DB_MIGRATION_START';
@@ -130,6 +137,23 @@ abstract final class LogEvents {
   static const ocrImagePreprocessStart = 'OCR_IMAGE_PREPROCESS_START';
   static const ocrImagePreprocessSuccess = 'OCR_IMAGE_PREPROCESS_SUCCESS';
   static const ocrImagePreprocessFail = 'OCR_IMAGE_PREPROCESS_FAIL';
+
+  // ── Automation runner ────────────────────────────────────────────────────
+  static const automationDeepLinkReceived = 'AUTOMATION_DEEP_LINK_RECEIVED';
+  static const automationScreenOpened = 'AUTOMATION_SCREEN_OPENED';
+  static const automationRunStart = 'AUTOMATION_RUN_START';
+  static const automationRunComplete = 'AUTOMATION_RUN_COMPLETE';
+  static const automationRunFail = 'AUTOMATION_RUN_FAIL';
+  static const automationTestStart = 'AUTOMATION_TEST_START';
+  static const automationTestPass = 'AUTOMATION_TEST_PASS';
+  static const automationTestFail = 'AUTOMATION_TEST_FAIL';
+  static const automationFixtureDirCheck = 'AUTOMATION_FIXTURE_DIR_CHECK';
+  static const automationFixtureFound = 'AUTOMATION_FIXTURE_FOUND';
+  static const automationFixtureMissing = 'AUTOMATION_FIXTURE_MISSING';
+  static const automationOcrFixtureStart = 'AUTOMATION_OCR_FIXTURE_START';
+  static const automationOcrFixturePass = 'AUTOMATION_OCR_FIXTURE_PASS';
+  static const automationOcrFixtureFail = 'AUTOMATION_OCR_FIXTURE_FAIL';
+  static const automationReportGenerated = 'AUTOMATION_REPORT_GENERATED';
 
   // ── Developer / diagnostics ───────────────────────────────────────────────
   static const dbIntegrityCheck = 'DB_INTEGRITY_CHECK';

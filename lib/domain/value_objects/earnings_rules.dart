@@ -19,8 +19,9 @@ abstract final class EarningsRules {
 
   static Money rateFor(EarningsType type, EarningsConfig config) =>
       switch (type) {
-        EarningsType.longSingleDelivery =>
-          Money(config.longSingleDeliveryRateCents),
+        EarningsType.longSingleDelivery => Money(
+          config.longSingleDeliveryRateCents,
+        ),
         EarningsType.normal => Money(config.baseRateCents),
       };
 }
@@ -35,12 +36,12 @@ class EarningsConfig {
   });
 
   const EarningsConfig.defaults()
-      : baseRateCents = 800,
-        longSingleDeliveryRateCents = 1000;
+    : baseRateCents = 800,
+      longSingleDeliveryRateCents = 1000;
 
   Map<String, dynamic> toJson() => {
-        'base_rate_cents': baseRateCents,
-        'long_single_delivery_rate_cents': longSingleDeliveryRateCents,
-        'earnings_config_version': 1,
-      };
+    'base_rate_cents': baseRateCents,
+    'long_single_delivery_rate_cents': longSingleDeliveryRateCents,
+    'earnings_config_version': 1,
+  };
 }

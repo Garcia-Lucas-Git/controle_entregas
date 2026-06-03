@@ -59,12 +59,16 @@ class SettingsNotifier extends _$SettingsNotifier {
     required int baseRateCents,
     required int longSingleDeliveryRateCents,
   }) async {
-    await ref.read(earningsRepositoryProvider).updateConfig(
+    await ref
+        .read(earningsRepositoryProvider)
+        .updateConfig(
           baseRateCents: baseRateCents,
           longSingleDeliveryRateCents: longSingleDeliveryRateCents,
         );
     final current = await future;
-    await ref.read(settingsRepositoryProvider).saveSettings(
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveSettings(
           current.copyWith(
             earningsConfig: EarningsConfig(
               baseRateCents: baseRateCents,

@@ -10,8 +10,9 @@ class DeliveryRepository {
 
   DeliveryRepository(AppDatabase db) : _dao = db.deliveriesDao;
 
-  Stream<List<Delivery>> watchDeliveriesForRoute(int routeId) =>
-      _dao.watchDeliveriesForRoute(routeId).map((r) => r.map(_fromRow).toList());
+  Stream<List<Delivery>> watchDeliveriesForRoute(int routeId) => _dao
+      .watchDeliveriesForRoute(routeId)
+      .map((r) => r.map(_fromRow).toList());
 
   Future<List<Delivery>> getDeliveriesForRoute(int routeId) async {
     final rows = await _dao.getDeliveriesForRoute(routeId);
@@ -54,25 +55,43 @@ class DeliveryRepository {
     final now = DateTime.now().toUtc().toIso8601String();
     final sid = SessionManager.delivery();
     try {
-      final id = await _dao.insertDelivery(DeliveriesTableCompanion(
-        routeId: Value(routeId),
-        shiftId: Value(shiftId),
-        sequenceNumber: Value(sequenceNumber),
-        status: const Value('pending'),
-        addressText: Value(addressText),
-        customerName: Value(customerName),
-        orderNumber: Value(orderNumber),
-        orderValueCents: Value(orderValueCents),
-        ocrRawText: Value(ocrRawText),
-        needsIfoodConfirmation: Value(needsIfoodConfirmation),
-        deliveryIdentifier: Value(deliveryIdentifier),
-        partnerCollectionCode: Value(partnerCollectionCode),
-        hasDrinks: Value(hasDrinks),
-        needsCard: Value(needsCard),
-        needsChange: Value(needsChange),
-        changeAmountCents: Value(changeAmountCents),
-        createdAt: Value(now),
-      ));
+      final id = await _dao.insertDelivery(
+        DeliveriesTableCompanion(
+          routeId: Value(routeId),
+          shiftId: Value(shiftId),
+          sequenceNumber: Value(sequenceNumber),
+          status: const Value('pending'),
+          addressText: Value(addressText),
+          customerName: Value(customerName),
+          orderNumber: Value(orderNumber),
+          orderValueCents: Value(orderValueCents),
+          ocrRawText: Value(ocrRawText),
+          needsIfoodConfirmation: Value(needsIfoodConfirmation),
+          deliveryIdentifier: Value(deliveryIdentifier),
+          partnerCollectionCode: Value(partnerCollectionCode),
+          hasDrinks: Value(hasDrinks),
+          needsCard: Value(needsCard),
+          needsChange: Value(needsChange),
+          changeAmountCents: Value(changeAmountCents),
+          createdAt: Value(now),
+        ),
+      );
+      final locator = partnerCollectionCode ?? deliveryIdentifier;
+      if (locator != null && locator.isNotEmpty) {
+        AppLogger.log(
+          LogEvents.locatorStored,
+          module: 'DeliveryRepository',
+          className: 'DeliveryRepository',
+          method: 'createDelivery',
+          sessionId: sid,
+          metadata: {
+            'value': locator,
+            'length': locator.length,
+            'delivery_id': id,
+            'route_id': routeId,
+          },
+        );
+      }
       AppLogger.log(
         LogEvents.dbDeliveryInsertSuccess,
         module: 'DeliveryRepository',
@@ -84,7 +103,7 @@ class DeliveryRepository {
           'route_id': routeId,
           'shift_id': shiftId,
           'seq': sequenceNumber,
-          'has_locator': partnerCollectionCode != null,
+          'has_locator': locator != null,
           'needs_ifood': needsIfoodConfirmation,
         },
       );
@@ -106,10 +125,7 @@ class DeliveryRepository {
 
   Future<void> setInProgress(int id) => _dao.setInProgress(id);
 
-  Future<void> completeDelivery({
-    required int id,
-    double? distanceKm,
-  }) {
+  Future<void> completeDelivery({required int id, double? distanceKm}) {
     final now = DateTime.now().toUtc().toIso8601String();
     return _dao.completeDelivery(
       id: id,
@@ -131,30 +147,29 @@ class DeliveryRepository {
   }
 
   static Delivery _fromRow(DeliveriesTableData r) => Delivery(
-        id: r.id,
-        routeId: r.routeId,
-        shiftId: r.shiftId,
-        sequenceNumber: r.sequenceNumber,
-        status: DeliveryStatus.fromJson(r.status),
-        customerName: r.customerName,
-        addressText: r.addressText,
-        distanceKm: r.distanceKm,
-        orderNumber: r.orderNumber,
-        orderValueCents: r.orderValueCents,
-        ocrRawText: r.ocrRawText,
-        completedAt:
-            r.completedAt != null ? DateTime.parse(r.completedAt!) : null,
-        createdAt: DateTime.parse(r.createdAt),
-        needsIfoodConfirmation: r.needsIfoodConfirmation,
-        deliveryIdentifier: r.deliveryIdentifier,
-        partnerCollectionCode: r.partnerCollectionCode,
-        ifoodConfirmationSuccess: r.ifoodConfirmationSuccess,
-        ifoodConfirmedAt: r.ifoodConfirmedAt != null
-            ? DateTime.parse(r.ifoodConfirmedAt!)
-            : null,
-        hasDrinks: r.hasDrinks,
-        needsCard: r.needsCard,
-        needsChange: r.needsChange,
-        changeAmountCents: r.changeAmountCents,
-      );
+    id: r.id,
+    routeId: r.routeId,
+    shiftId: r.shiftId,
+    sequenceNumber: r.sequenceNumber,
+    status: DeliveryStatus.fromJson(r.status),
+    customerName: r.customerName,
+    addressText: r.addressText,
+    distanceKm: r.distanceKm,
+    orderNumber: r.orderNumber,
+    orderValueCents: r.orderValueCents,
+    ocrRawText: r.ocrRawText,
+    completedAt: r.completedAt != null ? DateTime.parse(r.completedAt!) : null,
+    createdAt: DateTime.parse(r.createdAt),
+    needsIfoodConfirmation: r.needsIfoodConfirmation,
+    deliveryIdentifier: r.deliveryIdentifier,
+    partnerCollectionCode: r.partnerCollectionCode,
+    ifoodConfirmationSuccess: r.ifoodConfirmationSuccess,
+    ifoodConfirmedAt: r.ifoodConfirmedAt != null
+        ? DateTime.parse(r.ifoodConfirmedAt!)
+        : null,
+    hasDrinks: r.hasDrinks,
+    needsCard: r.needsCard,
+    needsChange: r.needsChange,
+    changeAmountCents: r.changeAmountCents,
+  );
 }

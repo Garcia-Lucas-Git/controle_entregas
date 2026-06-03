@@ -14,8 +14,11 @@ abstract final class BuildInfo {
     final meta = <String, dynamic>{
       'version_name': '1.0.0',
       'version_code': 2002,
-      'build_type':
-          kReleaseMode ? 'release' : kProfileMode ? 'profile' : 'debug',
+      'build_type': kReleaseMode
+          ? 'release'
+          : kProfileMode
+          ? 'profile'
+          : 'debug',
       'is_release': kReleaseMode,
       'os': Platform.operatingSystem,
       'os_version': Platform.operatingSystemVersion,
@@ -24,8 +27,9 @@ abstract final class BuildInfo {
 
     // Parse Android API level from os_version string
     // e.g. "Android 13 (API 33) Build/TPP2.220218.023"
-    final apiMatch =
-        RegExp(r'API\s+(\d+)').firstMatch(Platform.operatingSystemVersion);
+    final apiMatch = RegExp(
+      r'API\s+(\d+)',
+    ).firstMatch(Platform.operatingSystemVersion);
     if (apiMatch != null) {
       meta['android_sdk'] = int.tryParse(apiMatch.group(1) ?? '0');
     }
@@ -35,7 +39,10 @@ abstract final class BuildInfo {
     meta['device_model'] = props['ro.product.model'] ?? 'unknown';
     meta['manufacturer'] = props['ro.product.manufacturer'] ?? 'unknown';
     meta['android_release'] = props['ro.build.version.release'] ?? 'unknown';
-    meta['build_fingerprint'] = _truncate(props['ro.build.fingerprint'] ?? '', 60);
+    meta['build_fingerprint'] = _truncate(
+      props['ro.build.fingerprint'] ?? '',
+      60,
+    );
 
     _cached = meta;
     return meta;
@@ -78,15 +85,17 @@ abstract final class ReleaseDiagnostics {
   /// Checks if the R8 mapping/missing_rules.txt exists after a build.
   /// Only relevant when running on a development machine, not on device.
   static Future<Map<String, dynamic>> checkBuildArtifacts(
-      String projectRoot) async {
+    String projectRoot,
+  ) async {
     final result = <String, dynamic>{
       'is_release': kReleaseMode,
       'project_root': projectRoot,
     };
 
     try {
-      final mappingDir =
-          Directory('$projectRoot/build/app/outputs/mapping/release');
+      final mappingDir = Directory(
+        '$projectRoot/build/app/outputs/mapping/release',
+      );
       result['mapping_dir_exists'] = await mappingDir.exists();
 
       if (result['mapping_dir_exists'] == true) {
@@ -95,7 +104,8 @@ abstract final class ReleaseDiagnostics {
 
         if (result['missing_rules_exists'] == true) {
           final content = await missingRules.readAsString();
-          final lines = content.split('\n')
+          final lines = content
+              .split('\n')
               .where((l) => l.isNotEmpty && !l.startsWith('#'))
               .toList();
           result['missing_rules_count'] = lines.length;

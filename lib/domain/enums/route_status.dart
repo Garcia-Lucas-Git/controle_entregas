@@ -3,6 +3,5 @@ enum RouteStatus {
   closed;
 
   String toJson() => name;
-  static RouteStatus fromJson(String value) =>
-      RouteStatus.values.byName(value);
+  static RouteStatus fromJson(String value) => RouteStatus.values.byName(value);
 }

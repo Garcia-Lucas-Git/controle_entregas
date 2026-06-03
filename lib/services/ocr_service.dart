@@ -48,24 +48,30 @@ class OcrService {
   TextRecognizer? _recognizer;
 
   OcrService() {
-    AppLogger.log(LogEvents.mlkitInitStart,
-        module: 'OcrService',
-        className: 'OcrService',
-        metadata: {'script': 'latin'});
+    AppLogger.log(
+      LogEvents.mlkitInitStart,
+      module: 'OcrService',
+      className: 'OcrService',
+      metadata: {'script': 'latin'},
+    );
     try {
       _recognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      AppLogger.log(LogEvents.mlkitInitSuccess,
-          module: 'OcrService',
-          className: 'OcrService',
-          metadata: {'script': 'latin', 'status': 'recognizer_created'});
+      AppLogger.log(
+        LogEvents.mlkitInitSuccess,
+        module: 'OcrService',
+        className: 'OcrService',
+        metadata: {'script': 'latin', 'status': 'recognizer_created'},
+      );
     } catch (e, st) {
       // Graceful degradation: log diagnostics, do not rethrow.
       // _recognizer stays null; processImage() will return empty result.
-      AppLogger.error(LogEvents.mlkitInitFail,
-          module: 'OcrService',
-          className: 'OcrService',
-          exception: e,
-          stackTrace: st);
+      AppLogger.error(
+        LogEvents.mlkitInitFail,
+        module: 'OcrService',
+        className: 'OcrService',
+        exception: e,
+        stackTrace: st,
+      );
     }
   }
 
@@ -127,14 +133,21 @@ class OcrService {
         },
       );
       if (!exists) {
-        AppLogger.error(LogEvents.ocrInputImageFail, module: 'OcrService',
-            sessionId: sid, metadata: {'reason': 'file_not_found'});
+        AppLogger.error(
+          LogEvents.ocrInputImageFail,
+          module: 'OcrService',
+          sessionId: sid,
+          metadata: {'reason': 'file_not_found'},
+        );
         return OcrResult(rawText: '', confidence: 0.0);
       }
 
       // Detect format from magic bytes and log image diagnostics
-      AppLogger.log(LogEvents.ocrImagePreprocessStart,
-          module: 'OcrService', sessionId: sid);
+      AppLogger.log(
+        LogEvents.ocrImagePreprocessStart,
+        module: 'OcrService',
+        sessionId: sid,
+      );
       final format = await _detectFormat(imagePath);
       AppLogger.log(
         LogEvents.ocrImageFormat,
@@ -147,34 +160,50 @@ class OcrService {
           'preprocessing': 'none',
         },
       );
-      AppLogger.log(LogEvents.ocrImagePreprocessSuccess,
-          module: 'OcrService', sessionId: sid,
-          metadata: {'format': format});
+      AppLogger.log(
+        LogEvents.ocrImagePreprocessSuccess,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {'format': format},
+      );
     } catch (e, st) {
-      AppLogger.error(LogEvents.ocrInputImageFail, module: 'OcrService',
-          sessionId: sid, exception: e, stackTrace: st);
+      AppLogger.error(
+        LogEvents.ocrInputImageFail,
+        module: 'OcrService',
+        sessionId: sid,
+        exception: e,
+        stackTrace: st,
+      );
     }
 
     // ── ML Kit recognition ─────────────────────────────────────────────────
     // Guard: if TextRecognizer failed to initialize (e.g. R8 stripping),
     // return empty result now — recovery popup will handle it upstream.
     if (_recognizer == null) {
-      AppLogger.log(LogEvents.mlkitModelMissing,
-          severity: LogSeverity.error,
-          module: 'OcrService',
-          sessionId: sid,
-          metadata: {'reason': 'recognizer_null_at_processImage'});
+      AppLogger.log(
+        LogEvents.mlkitModelMissing,
+        severity: LogSeverity.error,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {'reason': 'recognizer_null_at_processImage'},
+      );
       return OcrResult(rawText: '', confidence: 0.0);
     }
 
-    AppLogger.log(LogEvents.ocrRecognizerStart,
-        module: 'OcrService', sessionId: sid);
+    AppLogger.log(
+      LogEvents.ocrRecognizerStart,
+      module: 'OcrService',
+      sessionId: sid,
+    );
 
     late final RecognizedText recognized;
     try {
       final inputImage = InputImage.fromFilePath(imagePath);
-      AppLogger.log(LogEvents.ocrInputImageSuccess,
-          module: 'OcrService', sessionId: sid);
+      AppLogger.log(
+        LogEvents.ocrInputImageSuccess,
+        module: 'OcrService',
+        sessionId: sid,
+      );
 
       recognized = await _recognizer!.processImage(inputImage);
     } catch (e, st) {
@@ -208,8 +237,6 @@ class OcrService {
         .where((l) => l.isNotEmpty)
         .toList();
 
-    final fullText = lines.join('\n').toUpperCase();
-
     // Text preview (first 300 chars, newlines → |)
     final preview = recognized.text.length > 300
         ? '${recognized.text.substring(0, 300)}…'
@@ -241,81 +268,90 @@ class OcrService {
     }
 
     // ── Field extraction ──────────────────────────────────────────────────
-    AppLogger.log(LogEvents.ocrRegexStart,
-        module: 'OcrService', sessionId: sid);
+    AppLogger.log(
+      LogEvents.ocrRegexStart,
+      module: 'OcrService',
+      sessionId: sid,
+    );
 
-    final address = _extractAfterAnchor(lines, OcrKeywords.addressAnchors);
-    final customerName =
-        _extractAfterAnchor(lines, OcrKeywords.customerNameAnchors);
-    final neighborhood =
-        _extractAfterAnchor(lines, OcrKeywords.neighborhoodAnchors);
-    final orderNumber = _extractOrderNumber(fullText, lines);
-    final deliveryId =
-        _extractAfterAnchor(lines, OcrKeywords.deliveryIdAnchors);
-    final collectionResult = _extractCollectionCode(fullText, lines);
-    final collectionCode = collectionResult.$1;
-    final collectionMethod = collectionResult.$2;
+    final parsed = _parseLines(recognized.text, lines);
+    final result = parsed.result;
 
     // Log each found field individually for traceability
-    if (address != null) {
-      AppLogger.log(LogEvents.ocrFieldAddressFound,
-          module: 'OcrService', sessionId: sid,
-          metadata: {'value': address});
+    if (result.addressText != null) {
+      AppLogger.log(
+        LogEvents.ocrFieldAddressFound,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {'value': result.addressText},
+      );
     }
-    if (customerName != null) {
-      AppLogger.log(LogEvents.ocrFieldCustomerFound,
-          module: 'OcrService', sessionId: sid,
-          metadata: {'value': customerName});
+    if (result.customerName != null) {
+      AppLogger.log(
+        LogEvents.ocrFieldCustomerFound,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {'value': result.customerName},
+      );
     }
-    if (deliveryId != null) {
-      AppLogger.log(LogEvents.ocrFieldLocatorFound,
-          module: 'OcrService', sessionId: sid,
-          metadata: {'field': 'deliveryIdentifier', 'value': deliveryId});
+    if (result.deliveryIdentifier != null) {
+      AppLogger.log(
+        LogEvents.ocrFieldLocatorFound,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {
+          'field': 'deliveryIdentifier',
+          'value': result.deliveryIdentifier,
+        },
+      );
     }
-    if (collectionCode != null) {
-      final eventName = collectionMethod == 'anchor'
+    if (result.partnerCollectionCode != null) {
+      final eventName = parsed.collectionMethod == 'anchor'
           ? LogEvents.ocrFieldCollectionFound
           : LogEvents.ocrFieldCollectionFallback;
-      AppLogger.log(eventName,
-          module: 'OcrService', sessionId: sid,
-          metadata: {'value': collectionCode, 'method': collectionMethod});
+      AppLogger.log(
+        eventName,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {
+          'value': result.partnerCollectionCode,
+          'method': parsed.collectionMethod,
+        },
+      );
     }
 
-    // Log missing critical fields
-    final missing = <String>[];
-    if (address == null) missing.add('address');
-    if (collectionCode == null && deliveryId == null) missing.add('locator');
+    final capturedLocator =
+        result.partnerCollectionCode ?? result.deliveryIdentifier;
+    if (capturedLocator != null && capturedLocator.isNotEmpty) {
+      AppLogger.log(
+        LogEvents.locatorCaptured,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {
+          'value': capturedLocator,
+          'length': capturedLocator.length,
+          'source': 'ocr_result',
+        },
+      );
+    }
 
-    if (missing.isNotEmpty) {
+    if (parsed.missingFields.isNotEmpty) {
       AppLogger.log(
         LogEvents.ocrRegexFail,
         severity: LogSeverity.warning,
         module: 'OcrService',
         sessionId: sid,
-        metadata: {'missing_fields': missing},
+        metadata: {'missing_fields': parsed.missingFields},
       );
     } else {
-      AppLogger.log(LogEvents.ocrRegexSuccess,
-          module: 'OcrService', sessionId: sid);
+      AppLogger.log(
+        LogEvents.ocrRegexSuccess,
+        module: 'OcrService',
+        sessionId: sid,
+      );
     }
 
     final totalMs = DateTime.now().difference(t0).inMilliseconds;
-    final result = OcrResult(
-      rawText: recognized.text,
-      customerName: customerName,
-      addressText: address,
-      neighborhood: neighborhood,
-      orderNumber: orderNumber,
-      deliveryIdentifier: deliveryId,
-      partnerCollectionCode: collectionCode,
-      needsIfoodConfirmation:
-          _containsAny(fullText, OcrKeywords.ifoodConfirmation),
-      hasDrinks: _containsAny(fullText, OcrKeywords.drinks),
-      needsCard: _containsAny(fullText, OcrKeywords.cardMachine),
-      needsChange: _containsAny(fullText, OcrKeywords.change),
-      changeAmountCents: _extractChangeAmount(fullText),
-      confidence: lines.isEmpty ? 0.0 : 1.0,
-    );
 
     if (result.hasRequiredFields) {
       AppLogger.log(
@@ -325,7 +361,8 @@ class OcrService {
         metadata: {
           'duration_ms': totalMs,
           'has_address': result.addressText != null,
-          'has_locator': result.partnerCollectionCode != null ||
+          'has_locator':
+              result.partnerCollectionCode != null ||
               result.deliveryIdentifier != null,
           'needs_ifood': result.needsIfoodConfirmation,
         },
@@ -352,21 +389,90 @@ class OcrService {
     await _recognizer?.close();
   }
 
+  static OcrResult parseRawText(String rawText) {
+    final lines = rawText
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    return _parseLines(rawText, lines).result;
+  }
+
+  static _OcrParseDetails _parseLines(String rawText, List<String> lines) {
+    if (lines.isEmpty) return _OcrParseDetails.empty(rawText);
+
+    final fullText = lines.join('\n').toUpperCase();
+    final address = _extractAfterAnchor(lines, OcrKeywords.addressAnchors);
+    final customerName = _extractAfterAnchor(
+      lines,
+      OcrKeywords.customerNameAnchors,
+    );
+    final neighborhood = _extractAfterAnchor(
+      lines,
+      OcrKeywords.neighborhoodAnchors,
+    );
+    final orderNumber = _extractOrderNumber(fullText, lines);
+    final deliveryId = _extractAfterAnchor(
+      lines,
+      OcrKeywords.deliveryIdAnchors,
+    );
+    final collectionResult = _extractCollectionCode(fullText, lines);
+    final collectionCode = collectionResult.$1;
+    final collectionMethod = collectionResult.$2;
+
+    final missing = <String>[];
+    if (address == null) missing.add('address');
+    if (collectionCode == null && deliveryId == null) missing.add('locator');
+
+    return _OcrParseDetails(
+      result: OcrResult(
+        rawText: rawText,
+        customerName: customerName,
+        addressText: address,
+        neighborhood: neighborhood,
+        orderNumber: orderNumber,
+        deliveryIdentifier: deliveryId,
+        partnerCollectionCode: collectionCode,
+        needsIfoodConfirmation: _containsAny(
+          fullText,
+          OcrKeywords.ifoodConfirmation,
+        ),
+        hasDrinks: _containsAny(fullText, OcrKeywords.drinks),
+        needsCard: _containsAny(fullText, OcrKeywords.cardMachine),
+        needsChange: _containsAny(fullText, OcrKeywords.change),
+        changeAmountCents: _extractChangeAmount(fullText),
+        confidence: 1.0,
+      ),
+      collectionMethod: collectionMethod,
+      missingFields: missing,
+    );
+  }
+
   // ── Collection code extraction (standard + relaxed passes) ───────────────
 
   /// Returns (code, method) where method is 'anchor' or the regex pattern used.
-  (String?, String) _extractCollectionCode(
-      String fullText, List<String> lines) {
-    final fromAnchor =
-        _extractAfterAnchor(lines, OcrKeywords.collectionCodeAnchors);
+  static (String?, String) _extractCollectionCode(
+    String fullText,
+    List<String> lines,
+  ) {
+    final fromAnchor = _extractAfterAnchor(
+      lines,
+      OcrKeywords.collectionCodeAnchors,
+    );
     if (fromAnchor != null && fromAnchor.isNotEmpty) {
       return (fromAnchor, 'anchor');
     }
 
     final relaxed = [
-      (RegExp(r'COD[^\n\d]{0,10}(\w{4,10})', caseSensitive: false), 'cod_prefix'),
+      (
+        RegExp(r'COD[^\n\d]{0,10}(\w{4,10})', caseSensitive: false),
+        'cod_prefix',
+      ),
       (RegExp(r'#\s*([A-Z0-9]{4,10})'), 'hash_prefix'),
-      (RegExp(r'CODE[^\n\d]{0,5}(\w{4,10})', caseSensitive: false), 'code_prefix'),
+      (
+        RegExp(r'CODE[^\n\d]{0,5}(\w{4,10})', caseSensitive: false),
+        'code_prefix',
+      ),
       (RegExp(r'\b([A-Z]{2,4}[\s\-]?\d{4,8})\b'), 'alphanum_pattern'),
     ];
 
@@ -384,7 +490,7 @@ class OcrService {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  String? _extractAfterAnchor(List<String> lines, List<String> anchors) {
+  static String? _extractAfterAnchor(List<String> lines, List<String> anchors) {
     for (int i = 0; i < lines.length; i++) {
       final upper = lines[i].toUpperCase();
       for (final anchor in anchors) {
@@ -404,9 +510,11 @@ class OcrService {
     return null;
   }
 
-  String? _extractOrderNumber(String fullText, List<String> lines) {
-    final fromAnchor =
-        _extractAfterAnchor(lines, OcrKeywords.orderNumberAnchors);
+  static String? _extractOrderNumber(String fullText, List<String> lines) {
+    final fromAnchor = _extractAfterAnchor(
+      lines,
+      OcrKeywords.orderNumberAnchors,
+    );
     if (fromAnchor != null) {
       final digits = RegExp(r'\d{4,}').firstMatch(fromAnchor)?.group(0);
       if (digits != null) return digits;
@@ -416,20 +524,21 @@ class OcrService {
     return null;
   }
 
-  int? _extractChangeAmount(String fullText) {
-    final match = RegExp(r'TROCO[^\d]*R?\$?\s*(\d+)[,.](\d{2})',
-            caseSensitive: false)
-        .firstMatch(fullText);
+  static int? _extractChangeAmount(String fullText) {
+    final match = RegExp(
+      r'TROCO[^\d]*R?\$?\s*(\d+)[,.](\d{2})',
+      caseSensitive: false,
+    ).firstMatch(fullText);
     if (match == null) return null;
     final reais = int.tryParse(match.group(1) ?? '0') ?? 0;
     final cents = int.tryParse(match.group(2) ?? '0') ?? 0;
     return reais * 100 + cents;
   }
 
-  bool _containsAny(String text, List<String> keywords) =>
+  static bool _containsAny(String text, List<String> keywords) =>
       keywords.any((kw) => text.contains(kw.toUpperCase()));
 
-  bool _isAnchorLine(String line) {
+  static bool _isAnchorLine(String line) {
     final upper = line.toUpperCase();
     const allAnchors = [
       ...OcrKeywords.customerNameAnchors,
@@ -441,4 +550,22 @@ class OcrService {
     ];
     return allAnchors.any((a) => upper.contains(a));
   }
+}
+
+class _OcrParseDetails {
+  final OcrResult result;
+  final String collectionMethod;
+  final List<String> missingFields;
+
+  const _OcrParseDetails({
+    required this.result,
+    required this.collectionMethod,
+    required this.missingFields,
+  });
+
+  factory _OcrParseDetails.empty(String rawText) => _OcrParseDetails(
+    result: OcrResult(rawText: rawText, confidence: 0.0),
+    collectionMethod: 'not_found',
+    missingFields: const ['address', 'locator'],
+  );
 }

@@ -9,7 +9,16 @@ import 'package:controle_entregas/services/app_logger.dart';
 abstract final class NetworkMonitor {
   static Timer? _timer;
   static bool _lastOnline = true;
+  static int? _lastLatencyMs;
+  static DateTime? _lastCheckedAt;
   static bool _started = false;
+
+  static NetworkSnapshot snapshot() => NetworkSnapshot(
+    started: _started,
+    online: _lastOnline,
+    latencyMs: _lastLatencyMs,
+    checkedAt: _lastCheckedAt,
+  );
 
   static void start() {
     if (_started) return;
@@ -29,24 +38,24 @@ abstract final class NetworkMonitor {
     int? latencyMs;
 
     try {
-      final result = await InternetAddress.lookup('dns.google')
-          .timeout(const Duration(seconds: 5));
+      final result = await InternetAddress.lookup(
+        'dns.google',
+      ).timeout(const Duration(seconds: 5));
       isOnline = result.isNotEmpty && result.first.rawAddress.isNotEmpty;
       latencyMs = DateTime.now().difference(t0).inMilliseconds;
     } catch (_) {
       isOnline = false;
       latencyMs = null;
     }
+    _lastLatencyMs = latencyMs;
+    _lastCheckedAt = DateTime.now();
 
     // Log latency for every check (verbose — not just on state change)
     AppLogger.log(
       LogEvents.networkStateChange,
       severity: LogSeverity.verbose,
       module: 'NetworkMonitor',
-      metadata: {
-        'online': isOnline,
-        'latency_ms': latencyMs,
-      },
+      metadata: {'online': isOnline, 'latency_ms': latencyMs},
     );
 
     if (isOnline == _lastOnline) return;
@@ -66,4 +75,18 @@ abstract final class NetworkMonitor {
       },
     );
   }
+}
+
+class NetworkSnapshot {
+  final bool started;
+  final bool online;
+  final int? latencyMs;
+  final DateTime? checkedAt;
+
+  const NetworkSnapshot({
+    required this.started,
+    required this.online,
+    required this.latencyMs,
+    required this.checkedAt,
+  });
 }

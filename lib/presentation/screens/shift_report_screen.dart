@@ -10,8 +10,7 @@ class ShiftReportScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reportAsync =
-        ref.watch(shiftReportDataProvider(shiftId));
+    final reportAsync = ref.watch(shiftReportDataProvider(shiftId));
 
     return Scaffold(
       appBar: AppBar(
@@ -61,9 +60,9 @@ class ShiftReportScreen extends ConsumerWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: SelectableText(
@@ -119,14 +118,15 @@ class _SummaryCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon,
-                  color: Theme.of(context).colorScheme.primary, size: 22),
+              Icon(
+                icon,
+                color: Theme.of(context).colorScheme.primary,
+                size: 22,
+              ),
               const SizedBox(height: 8),
-              Text(value,
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text(value, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 4),
-              Text(label,
-                  style: Theme.of(context).textTheme.bodySmall),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),

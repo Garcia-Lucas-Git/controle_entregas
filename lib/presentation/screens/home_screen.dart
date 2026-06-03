@@ -30,7 +30,9 @@ class HomeScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Erro: $e')),
         data: (s) {
           if (!s.isSetupComplete) {
-            return _SetupPrompt(onSetup: () => context.push(AppRoutes.settings));
+            return _SetupPrompt(
+              onSetup: () => context.push(AppRoutes.settings),
+            );
           }
           return openShift.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -57,13 +59,17 @@ class _SetupPrompt extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.delivery_dining,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.delivery_dining,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 24),
-            Text('Bem-vindo ao DeliveryFlow',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center),
+            Text(
+              'Bem-vindo ao DeliveryFlow',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 12),
             Text(
               'Configure seu nome e o endereço da pizzaria para começar.',
@@ -95,15 +101,21 @@ class _NoShiftView extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.moped_outlined,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.moped_outlined,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 24),
-            Text('Olá, $driverName!',
-                style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Olá, $driverName!',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 8),
-            Text('Nenhum turno aberto.',
-                style: Theme.of(context).textTheme.bodyLarge),
+            Text(
+              'Nenhum turno aberto.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             const SizedBox(height: 32),
             FilledButton.icon(
               onPressed: () async {
@@ -153,8 +165,8 @@ class _ActiveShiftView extends ConsumerWidget {
               Text(
                 'Turno ativo — ${_formatTime(shift.startedAt)}',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                    ),
+                  color: colorScheme.onPrimaryContainer,
+                ),
               ),
             ],
           ),
@@ -223,27 +235,38 @@ class _ActiveShiftView extends ConsumerWidget {
   }
 
   Future<void> _confirmClose(BuildContext context, WidgetRef ref) async {
-    AppLogger.info(LogEvents.shiftEndManualCheck, module: 'HomeScreen', screen: 'HomeScreen');
+    AppLogger.info(
+      LogEvents.shiftEndManualCheck,
+      module: 'HomeScreen',
+      screen: 'HomeScreen',
+    );
 
     final addManual = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Antes de encerrar o turno'),
         content: const Text(
-            'Deseja adicionar alguma entrega manualmente antes de encerrar o turno?'),
+          'Deseja adicionar alguma entrega manualmente antes de encerrar o turno?',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Não')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Não'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sim')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sim'),
+          ),
         ],
       ),
     );
 
     if (addManual == true) {
-      AppLogger.info(LogEvents.shiftEndManualAdded, module: 'HomeScreen', screen: 'HomeScreen');
+      AppLogger.info(
+        LogEvents.shiftEndManualAdded,
+        module: 'HomeScreen',
+        screen: 'HomeScreen',
+      );
       if (context.mounted) {
         context.push('/shift/${shift.id}/manual');
       }
@@ -257,20 +280,27 @@ class _ActiveShiftView extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Fechar turno?'),
         content: const Text(
-            'O turno será encerrado e os ganhos serão calculados.'),
+          'O turno será encerrado e os ganhos serão calculados.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Fechar')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Fechar'),
+          ),
         ],
       ),
     );
 
     if (confirmed == true) {
-      AppLogger.info(LogEvents.shiftEndCompleted, module: 'HomeScreen', screen: 'HomeScreen');
+      AppLogger.info(
+        LogEvents.shiftEndCompleted,
+        module: 'HomeScreen',
+        screen: 'HomeScreen',
+      );
       await ref.read(shiftNotifierProvider.notifier).closeShift();
     }
   }
@@ -301,14 +331,15 @@ class _StatCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon,
-                  color: Theme.of(context).colorScheme.primary, size: 24),
+              Icon(
+                icon,
+                color: Theme.of(context).colorScheme.primary,
+                size: 24,
+              ),
               const SizedBox(height: 8),
-              Text(value,
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text(value, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 4),
-              Text(label,
-                  style: Theme.of(context).textTheme.bodySmall),
+              Text(label, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),

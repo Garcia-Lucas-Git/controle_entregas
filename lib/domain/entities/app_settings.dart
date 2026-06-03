@@ -24,13 +24,13 @@ class AppSettings {
   });
 
   static AppSettings get defaults => const AppSettings(
-        driverName: '',
-        pizzeriaAddress: '',
-        ifoodUrl: 'https://confirmacao-entrega-propria.ifood.com.br/',
-        ifoodFieldSelector: '',
-        ocrContrastEnabled: false,
-        earningsConfig: EarningsConfig.defaults(),
-      );
+    driverName: '',
+    pizzeriaAddress: '',
+    ifoodUrl: 'https://confirmacao-entrega-propria.ifood.com.br/',
+    ifoodFieldSelector: '',
+    ocrContrastEnabled: false,
+    earningsConfig: EarningsConfig.defaults(),
+  );
 
   bool get isSetupComplete =>
       driverName.isNotEmpty && pizzeriaAddress.isNotEmpty;
@@ -44,15 +44,14 @@ class AppSettings {
     EarningsConfig? earningsConfig,
     int? activeRouteId,
     int? activeDeliveryIndex,
-  }) =>
-      AppSettings(
-        driverName: driverName ?? this.driverName,
-        pizzeriaAddress: pizzeriaAddress ?? this.pizzeriaAddress,
-        ifoodUrl: ifoodUrl ?? this.ifoodUrl,
-        ifoodFieldSelector: ifoodFieldSelector ?? this.ifoodFieldSelector,
-        ocrContrastEnabled: ocrContrastEnabled ?? this.ocrContrastEnabled,
-        earningsConfig: earningsConfig ?? this.earningsConfig,
-        activeRouteId: activeRouteId ?? this.activeRouteId,
-        activeDeliveryIndex: activeDeliveryIndex ?? this.activeDeliveryIndex,
-      );
+  }) => AppSettings(
+    driverName: driverName ?? this.driverName,
+    pizzeriaAddress: pizzeriaAddress ?? this.pizzeriaAddress,
+    ifoodUrl: ifoodUrl ?? this.ifoodUrl,
+    ifoodFieldSelector: ifoodFieldSelector ?? this.ifoodFieldSelector,
+    ocrContrastEnabled: ocrContrastEnabled ?? this.ocrContrastEnabled,
+    earningsConfig: earningsConfig ?? this.earningsConfig,
+    activeRouteId: activeRouteId ?? this.activeRouteId,
+    activeDeliveryIndex: activeDeliveryIndex ?? this.activeDeliveryIndex,
+  );
 }

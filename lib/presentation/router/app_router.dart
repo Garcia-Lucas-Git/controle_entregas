@@ -1,9 +1,12 @@
 import 'package:controle_entregas/core/providers/database_provider.dart';
 import 'package:controle_entregas/domain/entities/shift.dart';
 import 'package:controle_entregas/presentation/screens/active_route_screen.dart';
+import 'package:controle_entregas/presentation/screens/automation_runner_screen.dart';
 import 'package:controle_entregas/presentation/screens/add_history_screen.dart';
 import 'package:controle_entregas/presentation/screens/dev_tools_screen.dart';
+import 'package:controle_entregas/presentation/screens/diagnostics_dashboard_screen.dart';
 import 'package:controle_entregas/presentation/screens/manual_delivery_screen.dart';
+import 'package:controle_entregas/presentation/screens/log_viewer_screen.dart';
 import 'package:controle_entregas/presentation/screens/delivery_card_screen.dart';
 import 'package:controle_entregas/presentation/screens/history_screen.dart';
 import 'package:controle_entregas/presentation/screens/home_screen.dart';
@@ -12,6 +15,7 @@ import 'package:controle_entregas/presentation/screens/new_route_screen.dart';
 import 'package:controle_entregas/presentation/screens/ocr_sandbox_screen.dart';
 import 'package:controle_entregas/presentation/screens/route_review_screen.dart';
 import 'package:controle_entregas/presentation/screens/settings_screen.dart';
+import 'package:controle_entregas/presentation/screens/session_explorer_screen.dart';
 import 'package:controle_entregas/presentation/screens/shift_report_screen.dart';
 import 'package:controle_entregas/services/ocr_service.dart';
 import 'package:go_router/go_router.dart';
@@ -42,6 +46,9 @@ GoRouter appRouter(AppRouterRef ref) {
     redirect: (context, state) async {
       if (state.matchedLocation == AppRoutes.home) return null;
       if (state.matchedLocation == AppRoutes.settings) return null;
+      if (state.matchedLocation == '/dev/automation-runner') return null;
+      if (state.matchedLocation == '/smoke') return null;
+      if (state.matchedLocation == '/automation/smoke') return null;
       final s = await settingsRepo.getSettings();
       if (!s.isSetupComplete) return AppRoutes.settings;
       return null;
@@ -91,8 +98,7 @@ GoRouter appRouter(AppRouterRef ref) {
           return IFoodConfirmationScreen(
             deliveryId: int.parse(state.pathParameters['deliveryId']!),
             deliveryIdentifier: extra['deliveryIdentifier'] as String?,
-            partnerCollectionCode:
-                extra['partnerCollectionCode'] as String?,
+            partnerCollectionCode: extra['partnerCollectionCode'] as String?,
           );
         },
       ),
@@ -102,15 +108,13 @@ GoRouter appRouter(AppRouterRef ref) {
       ),
       GoRoute(
         path: '/history/add',
-        builder: (context, state) => AddHistoryScreen(
-          entry: state.extra as Shift?,
-        ),
+        builder: (context, state) =>
+            AddHistoryScreen(entry: state.extra as Shift?),
       ),
       GoRoute(
         path: '/shift/:shiftId/manual',
         builder: (context, state) {
-          final extra =
-              state.extra as Map<String, dynamic>? ?? {};
+          final extra = state.extra as Map<String, dynamic>? ?? {};
           return ManualDeliveryScreen(
             shiftId: int.parse(state.pathParameters['shiftId']!),
             routeId: extra['routeId'] as int?,
@@ -131,7 +135,36 @@ GoRouter appRouter(AppRouterRef ref) {
         path: '/dev/ocr-sandbox',
         builder: (context, state) => const OcrSandboxScreen(),
       ),
+      GoRoute(
+        path: '/dev/logs',
+        builder: (context, state) => const LogViewerScreen(),
+      ),
+      GoRoute(
+        path: '/dev/sessions',
+        builder: (context, state) => const SessionExplorerScreen(),
+      ),
+      GoRoute(
+        path: '/dev/diagnostics',
+        builder: (context, state) => const DiagnosticsDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/dev/automation-runner',
+        builder: (context, state) => const AutomationRunnerScreen(),
+      ),
+      GoRoute(
+        path: '/smoke',
+        builder: (context, state) => AutomationRunnerScreen(
+          runToken: state.uri.queryParameters['run'] ?? '',
+          launchedFromDeepLink: true,
+        ),
+      ),
+      GoRoute(
+        path: '/automation/smoke',
+        builder: (context, state) => AutomationRunnerScreen(
+          runToken: state.uri.queryParameters['run'] ?? '',
+          launchedFromDeepLink: true,
+        ),
+      ),
     ],
   );
 }
-

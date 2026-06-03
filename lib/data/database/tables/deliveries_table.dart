@@ -12,8 +12,9 @@ class DeliveriesTable extends Table {
   IntColumn get shiftId =>
       integer().references(ShiftsTable, #id, onDelete: KeyAction.cascade)();
   IntColumn get sequenceNumber => integer().withDefault(const Constant(1))();
-  TextColumn get status =>
-      text().withDefault(const Constant('pending'))(); // pending|in_progress|completed
+  TextColumn get status => text().withDefault(
+    const Constant('pending'),
+  )(); // pending|in_progress|completed
   TextColumn get customerName => text().nullable()();
   TextColumn get addressText => text()();
   RealColumn get distanceKm => real().nullable()();
@@ -32,11 +33,8 @@ class DeliveriesTable extends Table {
   TextColumn get ifoodConfirmedAt => text().nullable()();
 
   // Delivery flags
-  BoolColumn get hasDrinks =>
-      boolean().withDefault(const Constant(false))();
-  BoolColumn get needsCard =>
-      boolean().withDefault(const Constant(false))();
-  BoolColumn get needsChange =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get hasDrinks => boolean().withDefault(const Constant(false))();
+  BoolColumn get needsCard => boolean().withDefault(const Constant(false))();
+  BoolColumn get needsChange => boolean().withDefault(const Constant(false))();
   IntColumn get changeAmountCents => integer().nullable()();
 }

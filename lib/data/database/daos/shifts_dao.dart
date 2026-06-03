@@ -5,8 +5,7 @@ import 'package:controle_entregas/data/database/tables/shifts_table.dart';
 part 'shifts_dao.g.dart';
 
 @DriftAccessor(tables: [ShiftsTable])
-class ShiftsDao extends DatabaseAccessor<AppDatabase>
-    with _$ShiftsDaoMixin {
+class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
   ShiftsDao(super.db);
 
   Future<int> insertShift(ShiftsTableCompanion entry) =>
@@ -15,10 +14,9 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase>
   Future<bool> updateShift(ShiftsTableCompanion entry) =>
       update(db.shiftsTable).replace(entry);
 
-  Stream<List<ShiftsTableData>> watchAllShifts() =>
-      (select(db.shiftsTable)
-            ..orderBy([(t) => OrderingTerm.desc(t.startedAt)]))
-          .watch();
+  Stream<List<ShiftsTableData>> watchAllShifts() => (select(
+    db.shiftsTable,
+  )..orderBy([(t) => OrderingTerm.desc(t.startedAt)])).watch();
 
   Future<ShiftsTableData?> getOpenShift() =>
       (select(db.shiftsTable)
@@ -33,23 +31,21 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase>
           .watchSingleOrNull();
 
   Future<ShiftsTableData?> getShiftById(int id) =>
-      (select(db.shiftsTable)..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
+      (select(db.shiftsTable)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<int> closeShift({
     required int id,
     required String endedAt,
     required int totalEarningsCents,
     required int deliveryCount,
-  }) =>
-      (update(db.shiftsTable)..where((t) => t.id.equals(id))).write(
-        ShiftsTableCompanion(
-          endedAt: Value(endedAt),
-          status: const Value('closed'),
-          totalEarningsCents: Value(totalEarningsCents),
-          deliveryCount: Value(deliveryCount),
-        ),
-      );
+  }) => (update(db.shiftsTable)..where((t) => t.id.equals(id))).write(
+    ShiftsTableCompanion(
+      endedAt: Value(endedAt),
+      status: const Value('closed'),
+      totalEarningsCents: Value(totalEarningsCents),
+      deliveryCount: Value(deliveryCount),
+    ),
+  );
 
   Future<int> updateHistoricalShift({
     required int id,
@@ -58,17 +54,16 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase>
     required int earningsCents,
     double? hoursWorked,
     String? notes,
-  }) =>
-      (update(db.shiftsTable)..where((t) => t.id.equals(id))).write(
-        ShiftsTableCompanion(
-          startedAt: Value(dateStr),
-          endedAt: Value(dateStr),
-          totalEarningsCents: Value(earningsCents),
-          deliveryCount: Value(deliveryCount),
-          notes: Value(notes),
-          hoursWorked: Value(hoursWorked),
-        ),
-      );
+  }) => (update(db.shiftsTable)..where((t) => t.id.equals(id))).write(
+    ShiftsTableCompanion(
+      startedAt: Value(dateStr),
+      endedAt: Value(dateStr),
+      totalEarningsCents: Value(earningsCents),
+      deliveryCount: Value(deliveryCount),
+      notes: Value(notes),
+      hoursWorked: Value(hoursWorked),
+    ),
+  );
 
   Future<int> deleteShiftById(int id) =>
       (delete(db.shiftsTable)..where((t) => t.id.equals(id))).go();

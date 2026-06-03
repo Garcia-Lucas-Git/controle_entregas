@@ -5,10 +5,12 @@
 /// Example: OCR-018F4A2B3C1
 abstract final class SessionManager {
   static String generate(String prefix) {
-    final ts =
-        DateTime.now().millisecondsSinceEpoch.toRadixString(16).toUpperCase();
-    final micro =
-        (DateTime.now().microsecond % 4096).toRadixString(16).toUpperCase();
+    final ts = DateTime.now().millisecondsSinceEpoch
+        .toRadixString(16)
+        .toUpperCase();
+    final micro = (DateTime.now().microsecond % 4096)
+        .toRadixString(16)
+        .toUpperCase();
     return '$prefix-$ts$micro';
   }
 

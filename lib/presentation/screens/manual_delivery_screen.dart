@@ -11,11 +11,7 @@ class ManualDeliveryScreen extends ConsumerStatefulWidget {
   final int shiftId;
   final int? routeId;
 
-  const ManualDeliveryScreen({
-    super.key,
-    required this.shiftId,
-    this.routeId,
-  });
+  const ManualDeliveryScreen({super.key, required this.shiftId, this.routeId});
 
   @override
   ConsumerState<ManualDeliveryScreen> createState() =>
@@ -51,7 +47,8 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
     });
 
     try {
-      final routeId = widget.routeId ??
+      final routeId =
+          widget.routeId ??
           await ref
               .read(routeNotifierProvider.notifier)
               .createRoute(widget.shiftId);
@@ -59,29 +56,38 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
       final address = _addressCtrl.text.trim();
       final customer = _customerCtrl.text.trim();
 
-      await ref.read(deliveryNotifierProvider.notifier).createManual(
+      await ref
+          .read(deliveryNotifierProvider.notifier)
+          .createManual(
             routeId: routeId,
             shiftId: widget.shiftId,
             sequenceNumber: 1,
             addressText: address.isEmpty ? '—' : address,
             customerName: customer.isEmpty ? null : customer,
             orderNumber: locator,
+            partnerCollectionCode: locator,
           );
 
-      AppLogger.info(LogEvents.deliveryCreateSuccess,
-          module: 'ManualDeliveryScreen',
-          metadata: {'route_id': routeId, 'locator': locator});
+      AppLogger.info(
+        LogEvents.deliveryCreateSuccess,
+        module: 'ManualDeliveryScreen',
+        metadata: {'route_id': routeId, 'locator': locator},
+      );
 
       if (!mounted) return;
       context.go('/shift/${widget.shiftId}/route/$routeId/active');
     } catch (e) {
-      AppLogger.log(LogEvents.exception,
-          module: 'ManualDeliveryScreen', error: e);
+      AppLogger.log(
+        LogEvents.exception,
+        module: 'ManualDeliveryScreen',
+        error: e,
+      );
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Erro ao registrar entrega. Tente novamente.')),
+            content: Text('Erro ao registrar entrega. Tente novamente.'),
+          ),
         );
       }
     }
@@ -149,20 +155,21 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
             const SizedBox(height: 20),
 
             // Route type — secondary, at bottom
-            Text('Tipo de Rota',
-                style: Theme.of(context).textTheme.labelLarge),
+            Text('Tipo de Rota', style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             SegmentedButton<_RouteType>(
               segments: const [
                 ButtonSegment(
-                    value: _RouteType.single, label: Text('Entrega única')),
+                  value: _RouteType.single,
+                  label: Text('Entrega única'),
+                ),
                 ButtonSegment(
-                    value: _RouteType.multiple,
-                    label: Text('Múltiplas entregas')),
+                  value: _RouteType.multiple,
+                  label: Text('Múltiplas entregas'),
+                ),
               ],
               selected: {_routeType},
-              onSelectionChanged: (s) =>
-                  setState(() => _routeType = s.first),
+              onSelectionChanged: (s) => setState(() => _routeType = s.first),
             ),
             const SizedBox(height: 32),
 
@@ -172,8 +179,7 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child:
-                          CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.check),
               label: const Text('Registrar Entrega'),

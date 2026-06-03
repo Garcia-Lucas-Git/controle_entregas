@@ -45,20 +45,22 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   @override
   void initState() {
     super.initState();
-    _driverNameCtrl =
-        TextEditingController(text: widget.settings.driverName);
-    _pizzeriaCtrl =
-        TextEditingController(text: widget.settings.pizzeriaAddress);
+    _driverNameCtrl = TextEditingController(text: widget.settings.driverName);
+    _pizzeriaCtrl = TextEditingController(
+      text: widget.settings.pizzeriaAddress,
+    );
     _ifoodUrlCtrl = TextEditingController(text: widget.settings.ifoodUrl);
-    _ifoodSelectorCtrl =
-        TextEditingController(text: widget.settings.ifoodFieldSelector);
+    _ifoodSelectorCtrl = TextEditingController(
+      text: widget.settings.ifoodFieldSelector,
+    );
     _baseRateCtrl = TextEditingController(
-        text: (widget.settings.earningsConfig.baseRateCents / 100)
-            .toStringAsFixed(2));
+      text: (widget.settings.earningsConfig.baseRateCents / 100)
+          .toStringAsFixed(2),
+    );
     _longRateCtrl = TextEditingController(
-        text: (widget.settings.earningsConfig.longSingleDeliveryRateCents /
-                100)
-            .toStringAsFixed(2));
+      text: (widget.settings.earningsConfig.longSingleDeliveryRateCents / 100)
+          .toStringAsFixed(2),
+    );
     _ocrContrast = widget.settings.ocrContrastEnabled;
   }
 
@@ -83,20 +85,19 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
     await notifier.updateOcrContrast(_ocrContrast);
 
     final baseRate =
-        (double.tryParse(_baseRateCtrl.text.replaceAll(',', '.')) ?? 8.0) *
-            100;
+        (double.tryParse(_baseRateCtrl.text.replaceAll(',', '.')) ?? 8.0) * 100;
     final longRate =
         (double.tryParse(_longRateCtrl.text.replaceAll(',', '.')) ?? 10.0) *
-            100;
+        100;
     await notifier.updateEarningsConfig(
       baseRateCents: baseRate.round(),
       longSingleDeliveryRateCents: longRate.round(),
     );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Configurações salvas.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Configurações salvas.')));
       Navigator.of(context).maybePop();
     }
   }
@@ -119,8 +120,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
           label: 'Endereço da pizzaria',
           controller: _pizzeriaCtrl,
           hint: 'Rua Exemplo, 123 — Uberlândia',
-          helperText:
-              'Usado como ponto de partida para cálculo de distância.',
+          helperText: 'Usado como ponto de partida para cálculo de distância.',
         ),
         const SizedBox(height: 24),
 
@@ -137,8 +137,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
           label: 'Tarifa longa distância (R\$)',
           controller: _longRateCtrl,
           inputType: const TextInputType.numberWithOptions(decimal: true),
-          helperText:
-              'Aplicada quando: rota com 1 entrega E distância > 8 km',
+          helperText: 'Aplicada quando: rota com 1 entrega E distância > 8 km',
           formatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d,.]'))],
         ),
         const SizedBox(height: 24),
@@ -163,7 +162,8 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
         SwitchListTile(
           title: const Text('Contraste adaptativo (OCR)'),
           subtitle: const Text(
-              'Ative apenas se OCR estiver falhando em comprovantes com desbotamento.'),
+            'Ative apenas se OCR estiver falhando em comprovantes com desbotamento.',
+          ),
           value: _ocrContrast,
           onChanged: (v) => setState(() => _ocrContrast = v),
           contentPadding: EdgeInsets.zero,
@@ -186,10 +186,9 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
         const SizedBox(height: 4),
         Text(
           'OCR Sandbox, logs e geração de dados de teste.',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: Theme.of(context).colorScheme.outline),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
         ),
         const SizedBox(height: 32),
 
@@ -216,9 +215,9 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -286,18 +285,19 @@ class _ExportSectionState extends ConsumerState<_ExportSection> {
       } else if (_rangeIndex == 1) {
         final prev = DateTime(now.year, now.month - 1, 1);
         from = prev;
-        to = DateTime(now.year, now.month, 1)
-            .subtract(const Duration(seconds: 1));
+        to = DateTime(
+          now.year,
+          now.month,
+          1,
+        ).subtract(const Duration(seconds: 1));
       }
 
-      await ref
-          .read(exportServiceProvider)
-          .exportCsv(from: from, to: to);
+      await ref.read(exportServiceProvider).exportCsv(from: from, to: to);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao exportar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao exportar: $e')));
       }
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -340,10 +340,9 @@ class _ExportSectionState extends ConsumerState<_ExportSection> {
         Text(
           'Exporta todas as entregas do período selecionado '
           'em formato CSV compatível com Google Sheets.',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: Theme.of(context).colorScheme.outline),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
         ),
         const SizedBox(height: 16),
         OutlinedButton.icon(
@@ -367,10 +366,9 @@ class _ExportSectionState extends ConsumerState<_ExportSection> {
         const SizedBox(height: 4),
         Text(
           'Compartilha o arquivo de log para diagnóstico de problemas.',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: Theme.of(context).colorScheme.outline),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
         ),
       ],
     );

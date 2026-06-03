@@ -13,7 +13,7 @@ class ReceiptsDao extends DatabaseAccessor<AppDatabase>
       into(db.receiptsTable).insert(entry);
 
   Future<List<ReceiptsTableData>> getReceiptsForDelivery(int deliveryId) =>
-      (select(db.receiptsTable)
-            ..where((t) => t.deliveryId.equals(deliveryId)))
-          .get();
+      (select(
+        db.receiptsTable,
+      )..where((t) => t.deliveryId.equals(deliveryId))).get();
 }

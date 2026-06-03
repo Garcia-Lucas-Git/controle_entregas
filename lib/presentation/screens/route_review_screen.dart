@@ -1,4 +1,5 @@
 import 'package:controle_entregas/application/deliveries/delivery_notifier.dart';
+import 'package:controle_entregas/services/app_logger.dart';
 import 'package:controle_entregas/services/ocr_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +40,24 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
     try {
       for (int i = 0; i < _drafts.length; i++) {
         final d = _drafts[i];
-        await ref.read(deliveryNotifierProvider.notifier).createFromOcr(
+        final locator = d.partnerCollectionCode.isNotEmpty
+            ? d.partnerCollectionCode
+            : d.deliveryIdentifier;
+        if (locator.isNotEmpty) {
+          AppLogger.log(
+            LogEvents.locatorCaptured,
+            module: 'RouteReviewScreen',
+            metadata: {
+              'value': locator,
+              'length': locator.length,
+              'route_id': widget.routeId,
+              'sequence': i + 1,
+            },
+          );
+        }
+        await ref
+            .read(deliveryNotifierProvider.notifier)
+            .createFromOcr(
               routeId: widget.routeId,
               shiftId: widget.shiftId,
               sequenceNumber: i + 1,
@@ -47,9 +65,7 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
             );
       }
       if (!mounted) return;
-      context.go(
-        '/shift/${widget.shiftId}/route/${widget.routeId}/active',
-      );
+      context.go('/shift/${widget.shiftId}/route/${widget.routeId}/active');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -59,8 +75,7 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text('Revisar Rota — ${_drafts.length} entrega(s)'),
+        title: Text('Revisar Rota — ${_drafts.length} entrega(s)'),
       ),
       body: Column(
         children: [
@@ -78,8 +93,7 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
                 key: ValueKey(_drafts[i].id),
                 draft: _drafts[i],
                 index: i,
-                onChanged: (updated) =>
-                    setState(() => _drafts[i] = updated),
+                onChanged: (updated) => setState(() => _drafts[i] = updated),
                 onRemove: _drafts.length > 1
                     ? () => setState(() => _drafts.removeAt(i))
                     : null,
@@ -164,37 +178,35 @@ class _DeliveryDraft {
     bool? hasDrinks,
     bool? needsCard,
     bool? needsChange,
-  }) =>
-      _DeliveryDraft(
-        id: id,
-        customerName: customerName ?? this.customerName,
-        addressText: addressText ?? this.addressText,
-        orderNumber: orderNumber ?? this.orderNumber,
-        deliveryIdentifier: deliveryIdentifier ?? this.deliveryIdentifier,
-        partnerCollectionCode:
-            partnerCollectionCode ?? this.partnerCollectionCode,
-        needsIfoodConfirmation:
-            needsIfoodConfirmation ?? this.needsIfoodConfirmation,
-        hasDrinks: hasDrinks ?? this.hasDrinks,
-        needsCard: needsCard ?? this.needsCard,
-        needsChange: needsChange ?? this.needsChange,
-        rawText: rawText,
-      );
+  }) => _DeliveryDraft(
+    id: id,
+    customerName: customerName ?? this.customerName,
+    addressText: addressText ?? this.addressText,
+    orderNumber: orderNumber ?? this.orderNumber,
+    deliveryIdentifier: deliveryIdentifier ?? this.deliveryIdentifier,
+    partnerCollectionCode: partnerCollectionCode ?? this.partnerCollectionCode,
+    needsIfoodConfirmation:
+        needsIfoodConfirmation ?? this.needsIfoodConfirmation,
+    hasDrinks: hasDrinks ?? this.hasDrinks,
+    needsCard: needsCard ?? this.needsCard,
+    needsChange: needsChange ?? this.needsChange,
+    rawText: rawText,
+  );
 
   OcrResult toOcrResult() => OcrResult(
-        rawText: rawText,
-        customerName: customerName.isEmpty ? null : customerName,
-        addressText: addressText.isEmpty ? null : addressText,
-        orderNumber: orderNumber.isEmpty ? null : orderNumber,
-        deliveryIdentifier:
-            deliveryIdentifier.isEmpty ? null : deliveryIdentifier,
-        partnerCollectionCode:
-            partnerCollectionCode.isEmpty ? null : partnerCollectionCode,
-        needsIfoodConfirmation: needsIfoodConfirmation,
-        hasDrinks: hasDrinks,
-        needsCard: needsCard,
-        needsChange: needsChange,
-      );
+    rawText: rawText,
+    customerName: customerName.isEmpty ? null : customerName,
+    addressText: addressText.isEmpty ? null : addressText,
+    orderNumber: orderNumber.isEmpty ? null : orderNumber,
+    deliveryIdentifier: deliveryIdentifier.isEmpty ? null : deliveryIdentifier,
+    partnerCollectionCode: partnerCollectionCode.isEmpty
+        ? null
+        : partnerCollectionCode,
+    needsIfoodConfirmation: needsIfoodConfirmation,
+    hasDrinks: hasDrinks,
+    needsCard: needsCard,
+    needsChange: needsChange,
+  );
 }
 
 // ── Draft card ─────────────────────────────────────────────────────────────
@@ -247,13 +259,15 @@ class _DraftCardState extends State<_DraftCard> {
   }
 
   void _notify() {
-    widget.onChanged(widget.draft.copyWith(
-      customerName: _nameCtrl.text,
-      addressText: _addrCtrl.text,
-      orderNumber: _orderCtrl.text,
-      deliveryIdentifier: _idCtrl.text,
-      partnerCollectionCode: _codeCtrl.text,
-    ));
+    widget.onChanged(
+      widget.draft.copyWith(
+        customerName: _nameCtrl.text,
+        addressText: _addrCtrl.text,
+        orderNumber: _orderCtrl.text,
+        deliveryIdentifier: _idCtrl.text,
+        partnerCollectionCode: _codeCtrl.text,
+      ),
+    );
   }
 
   @override
@@ -291,7 +305,8 @@ class _DraftCardState extends State<_DraftCard> {
               style: d.addressText.isEmpty
                   ? TextStyle(
                       color: Theme.of(context).colorScheme.error,
-                      fontSize: 12)
+                      fontSize: 12,
+                    )
                   : const TextStyle(fontSize: 12),
             ),
             trailing: Row(
@@ -299,10 +314,8 @@ class _DraftCardState extends State<_DraftCard> {
               children: [
                 const Icon(Icons.drag_handle),
                 IconButton(
-                  icon: Icon(
-                      _expanded ? Icons.expand_less : Icons.expand_more),
-                  onPressed: () =>
-                      setState(() => _expanded = !_expanded),
+                  icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                  onPressed: () => setState(() => _expanded = !_expanded),
                 ),
                 if (widget.onRemove != null)
                   IconButton(
@@ -315,8 +328,7 @@ class _DraftCardState extends State<_DraftCard> {
           ),
           if (_expanded)
             Padding(
-              padding:
-                  const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Column(
                 children: [
                   _EditField(
@@ -354,8 +366,8 @@ class _DraftCardState extends State<_DraftCard> {
                   _FlagRow(
                     label: '🔐 Confirmação iFood',
                     value: d.needsIfoodConfirmation,
-                    onChanged: (v) => widget.onChanged(
-                        d.copyWith(needsIfoodConfirmation: v)),
+                    onChanged: (v) =>
+                        widget.onChanged(d.copyWith(needsIfoodConfirmation: v)),
                   ),
                   _FlagRow(
                     label: '🥤 Bebidas',

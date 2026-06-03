@@ -38,8 +38,7 @@ class ExportService {
         if (route.isOpen) continue;
         final deliveries = await _deliveries.getDeliveriesForRoute(route.id);
         final entries = await _earnings.getEntriesForShift(shift.id);
-        final entry =
-            entries.where((e) => e.routeId == route.id).firstOrNull;
+        final entry = entries.where((e) => e.routeId == route.id).firstOrNull;
 
         for (final d in deliveries.where((d) => d.isCompleted)) {
           final earningsType = entry?.earningsType.toJson() ?? 'normal';
@@ -67,39 +66,34 @@ class ExportService {
     final bom = [0xEF, 0xBB, 0xBF];
     final bytes = Uint8List.fromList([...bom, ...utf8.encode(csv)]);
 
-    await Share.shareXFiles(
-      [
-        XFile.fromData(
-          bytes,
-          name: 'deliveryflow_export.csv',
-          mimeType: 'text/csv',
-        ),
-      ],
-      subject: 'DeliveryFlow — Exportação de dados',
-    );
+    await Share.shareXFiles([
+      XFile.fromData(
+        bytes,
+        name: 'deliveryflow_export.csv',
+        mimeType: 'text/csv',
+      ),
+    ], subject: 'DeliveryFlow — Exportação de dados');
   }
 
   List<String> _headers() => [
-        'data',
-        'turno_id',
-        'numero_rota',
-        'ordem_entrega',
-        'nome_cliente',
-        'endereco',
-        'numero_pedido',
-        'tipo_ganho',
-        'valor_centavos',
-        'valor_reais',
-        'horario_conclusao',
-      ];
+    'data',
+    'turno_id',
+    'numero_rota',
+    'ordem_entrega',
+    'nome_cliente',
+    'endereco',
+    'numero_pedido',
+    'tipo_ganho',
+    'valor_centavos',
+    'valor_reais',
+    'horario_conclusao',
+  ];
 
   String _buildCsv(List<List<String>> rows) =>
       rows.map((row) => row.map(_escapeCsv).join(',')).join('\n');
 
   String _escapeCsv(String value) {
-    if (value.contains(',') ||
-        value.contains('"') ||
-        value.contains('\n')) {
+    if (value.contains(',') || value.contains('"') || value.contains('\n')) {
       return '"${value.replaceAll('"', '""')}"';
     }
     return value;

@@ -28,12 +28,14 @@ class ShiftRepository {
 
   Future<int> openShift(String driverName) {
     final now = DateTime.now().toUtc().toIso8601String();
-    return _dao.insertShift(ShiftsTableCompanion(
-      driverName: Value(driverName),
-      startedAt: Value(now),
-      status: const Value('open'),
-      createdAt: Value(now),
-    ));
+    return _dao.insertShift(
+      ShiftsTableCompanion(
+        driverName: Value(driverName),
+        startedAt: Value(now),
+        status: const Value('open'),
+        createdAt: Value(now),
+      ),
+    );
   }
 
   Future<void> closeShift({
@@ -58,21 +60,26 @@ class ShiftRepository {
     double? hoursWorked,
     String? notes,
   }) {
-    final dateStr =
-        DateTime(date.year, date.month, date.day).toUtc().toIso8601String();
+    final dateStr = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).toUtc().toIso8601String();
     final now = DateTime.now().toUtc().toIso8601String();
-    return _dao.insertShift(ShiftsTableCompanion(
-      driverName: Value(driverName),
-      startedAt: Value(dateStr),
-      endedAt: Value(dateStr),
-      status: const Value('closed'),
-      totalEarningsCents: Value(earningsCents),
-      deliveryCount: Value(deliveryCount),
-      notes: Value(notes),
-      source: const Value('historical'),
-      hoursWorked: Value(hoursWorked),
-      createdAt: Value(now),
-    ));
+    return _dao.insertShift(
+      ShiftsTableCompanion(
+        driverName: Value(driverName),
+        startedAt: Value(dateStr),
+        endedAt: Value(dateStr),
+        status: const Value('closed'),
+        totalEarningsCents: Value(earningsCents),
+        deliveryCount: Value(deliveryCount),
+        notes: Value(notes),
+        source: const Value('historical'),
+        hoursWorked: Value(hoursWorked),
+        createdAt: Value(now),
+      ),
+    );
   }
 
   Future<void> updateHistoricalEntry({
@@ -83,8 +90,11 @@ class ShiftRepository {
     double? hoursWorked,
     String? notes,
   }) {
-    final dateStr =
-        DateTime(date.year, date.month, date.day).toUtc().toIso8601String();
+    final dateStr = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).toUtc().toIso8601String();
     return _dao.updateHistoricalShift(
       id: id,
       dateStr: dateStr,
@@ -95,20 +105,19 @@ class ShiftRepository {
     );
   }
 
-  Future<void> deleteHistoricalEntry(int id) =>
-      _dao.deleteShiftById(id);
+  Future<void> deleteHistoricalEntry(int id) => _dao.deleteShiftById(id);
 
   static Shift _fromRow(ShiftsTableData r) => Shift(
-        id: r.id,
-        driverName: r.driverName,
-        startedAt: DateTime.parse(r.startedAt),
-        endedAt: r.endedAt != null ? DateTime.parse(r.endedAt!) : null,
-        status: ShiftStatus.fromJson(r.status),
-        totalEarnings: Money(r.totalEarningsCents ?? 0),
-        deliveryCount: r.deliveryCount ?? 0,
-        notes: r.notes,
-        createdAt: DateTime.parse(r.createdAt),
-        source: r.source,
-        hoursWorked: r.hoursWorked,
-      );
+    id: r.id,
+    driverName: r.driverName,
+    startedAt: DateTime.parse(r.startedAt),
+    endedAt: r.endedAt != null ? DateTime.parse(r.endedAt!) : null,
+    status: ShiftStatus.fromJson(r.status),
+    totalEarnings: Money(r.totalEarningsCents ?? 0),
+    deliveryCount: r.deliveryCount ?? 0,
+    notes: r.notes,
+    createdAt: DateTime.parse(r.createdAt),
+    source: r.source,
+    hoursWorked: r.hoursWorked,
+  );
 }

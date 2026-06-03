@@ -22,10 +22,8 @@ class ShiftReportData {
       .where((r) => r.entry.earningsType == EarningsType.longSingleDelivery)
       .length;
 
-  Money get totalEarnings => routes.fold(
-        Money.zero,
-        (sum, r) => sum + r.entry.rateApplied,
-      );
+  Money get totalEarnings =>
+      routes.fold(Money.zero, (sum, r) => sum + r.entry.rateApplied);
 }
 
 class RouteWithEarnings {
@@ -52,12 +50,12 @@ abstract final class ReportGenerator {
     sb.writeln('Total de entregas: ${data.totalDeliveries}');
 
     if (data.normalCount > 0) {
-      sb.writeln(
-          'Entregas normais (R\$ 8,00): ${data.normalCount} × R\$ 8,00');
+      sb.writeln('Entregas normais (R\$ 8,00): ${data.normalCount} × R\$ 8,00');
     }
     if (data.longCount > 0) {
       sb.writeln(
-          'Entregas longa distância (R\$ 10,00): ${data.longCount} × R\$ 10,00');
+        'Entregas longa distância (R\$ 10,00): ${data.longCount} × R\$ 10,00',
+      );
     }
 
     sb.writeln('');
@@ -78,7 +76,8 @@ abstract final class ReportGenerator {
 
       if (e.routeDistanceKm != null) {
         sb.writeln(
-            'Distância aprox.: ${e.routeDistanceKm!.toStringAsFixed(1)} km');
+          'Distância aprox.: ${e.routeDistanceKm!.toStringAsFixed(1)} km',
+        );
       }
     }
 
@@ -90,7 +89,7 @@ abstract final class ReportGenerator {
   }
 
   static String _typeLabel(EarningsType type) => switch (type) {
-        EarningsType.longSingleDelivery => 'Longa distância',
-        EarningsType.normal => 'Normal',
-      };
+    EarningsType.longSingleDelivery => 'Longa distância',
+    EarningsType.normal => 'Normal',
+  };
 }

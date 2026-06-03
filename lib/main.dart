@@ -3,11 +3,14 @@ import 'package:controle_entregas/services/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeDateFormatting('pt_BR');
 
   // Logger must initialize before anything else.
   await AppLogger.init();
@@ -46,19 +49,17 @@ void main() async {
   };
 
   // ── Build + device metadata (async, non-blocking) ────────────────────────
-  BuildInfo.collect().then((meta) {
-    AppLogger.log(
-      LogEvents.appBuildMetadata,
-      module: 'Main',
-      className: 'main',
-      method: '_logBuildMetadata',
-      metadata: meta,
-    );
-  }).catchError((_) {});
+  BuildInfo.collect()
+      .then((meta) {
+        AppLogger.log(
+          LogEvents.appBuildMetadata,
+          module: 'Main',
+          className: 'main',
+          method: '_logBuildMetadata',
+          metadata: meta,
+        );
+      })
+      .catchError((_) {});
 
-  runApp(
-    const ProviderScope(
-      child: DeliveryFlowApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: DeliveryFlowApp()));
 }

@@ -17,6 +17,6 @@ class RoutesTable extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {shiftId, routeNumber},
-      ];
+    {shiftId, routeNumber},
+  ];
 }

@@ -5,8 +5,7 @@ import 'package:controle_entregas/data/database/tables/routes_table.dart';
 part 'routes_dao.g.dart';
 
 @DriftAccessor(tables: [RoutesTable])
-class RoutesDao extends DatabaseAccessor<AppDatabase>
-    with _$RoutesDaoMixin {
+class RoutesDao extends DatabaseAccessor<AppDatabase> with _$RoutesDaoMixin {
   RoutesDao(super.db);
 
   Future<int> insertRoute(RoutesTableCompanion entry) =>
@@ -25,12 +24,11 @@ class RoutesDao extends DatabaseAccessor<AppDatabase>
           .get();
 
   Future<RoutesTableData?> getRouteById(int id) =>
-      (select(db.routesTable)..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
+      (select(db.routesTable)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  Stream<RoutesTableData?> watchRouteById(int id) =>
-      (select(db.routesTable)..where((t) => t.id.equals(id)))
-          .watchSingleOrNull();
+  Stream<RoutesTableData?> watchRouteById(int id) => (select(
+    db.routesTable,
+  )..where((t) => t.id.equals(id))).watchSingleOrNull();
 
   Future<int> getNextRouteNumber(int shiftId) async {
     final routes = await getRoutesForShift(shiftId);
@@ -41,12 +39,11 @@ class RoutesDao extends DatabaseAccessor<AppDatabase>
     required int id,
     required String closedAt,
     required int deliveryCountAtClose,
-  }) =>
-      (update(db.routesTable)..where((t) => t.id.equals(id))).write(
-        RoutesTableCompanion(
-          status: const Value('closed'),
-          closedAt: Value(closedAt),
-          deliveryCountAtClose: Value(deliveryCountAtClose),
-        ),
-      );
+  }) => (update(db.routesTable)..where((t) => t.id.equals(id))).write(
+    RoutesTableCompanion(
+      status: const Value('closed'),
+      closedAt: Value(closedAt),
+      deliveryCountAtClose: Value(deliveryCountAtClose),
+    ),
+  );
 }

@@ -22,6 +22,6 @@ class EarningsEntriesTable extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {routeId},
-      ];
+    {routeId},
+  ];
 }

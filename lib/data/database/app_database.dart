@@ -51,43 +51,49 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          AppLogger.info(LogEvents.dbOpen,
-              module: 'AppDatabase',
-              metadata: {'schema_version': schemaVersion, 'action': 'onCreate'});
-          await m.createAll();
-          await _seedInitialData();
-        },
-        onUpgrade: (m, from, to) async {
-          AppLogger.log(
-            LogEvents.dbMigrationStart,
-            module: 'AppDatabase',
-            metadata: {'from': from, 'to': to},
-          );
-          try {
-            if (from < 2) {
-              await m.addColumn(
-                shiftsTable,
-                shiftsTable.source as GeneratedColumn<Object>,
-              );
-              await m.addColumn(
-                shiftsTable,
-                shiftsTable.hoursWorked as GeneratedColumn<Object>,
-              );
-            }
-            AppLogger.info(LogEvents.dbMigrationSuccess,
-                module: 'AppDatabase',
-                metadata: {'from': from, 'to': to});
-          } catch (e, st) {
-            AppLogger.error(LogEvents.dbMigrationFail,
-                module: 'AppDatabase',
-                metadata: {'from': from, 'to': to},
-                exception: e,
-                stackTrace: st);
-            rethrow;
-          }
-        },
+    onCreate: (m) async {
+      AppLogger.info(
+        LogEvents.dbOpen,
+        module: 'AppDatabase',
+        metadata: {'schema_version': schemaVersion, 'action': 'onCreate'},
       );
+      await m.createAll();
+      await _seedInitialData();
+    },
+    onUpgrade: (m, from, to) async {
+      AppLogger.log(
+        LogEvents.dbMigrationStart,
+        module: 'AppDatabase',
+        metadata: {'from': from, 'to': to},
+      );
+      try {
+        if (from < 2) {
+          await m.addColumn(
+            shiftsTable,
+            shiftsTable.source as GeneratedColumn<Object>,
+          );
+          await m.addColumn(
+            shiftsTable,
+            shiftsTable.hoursWorked as GeneratedColumn<Object>,
+          );
+        }
+        AppLogger.info(
+          LogEvents.dbMigrationSuccess,
+          module: 'AppDatabase',
+          metadata: {'from': from, 'to': to},
+        );
+      } catch (e, st) {
+        AppLogger.error(
+          LogEvents.dbMigrationFail,
+          module: 'AppDatabase',
+          metadata: {'from': from, 'to': to},
+          exception: e,
+          stackTrace: st,
+        );
+        rethrow;
+      }
+    },
+  );
 
   Future<void> _seedInitialData() async {
     final now = DateTime.now().toUtc().toIso8601String();
@@ -109,7 +115,8 @@ class AppDatabase extends _$AppDatabase {
         driverName: const Value(''),
         pizzeriaAddress: const Value(''),
         ifoodUrl: const Value(
-            'https://confirmacao-entrega-propria.ifood.com.br/'),
+          'https://confirmacao-entrega-propria.ifood.com.br/',
+        ),
         ifoodFieldSelector: const Value(''),
         ocrContrastEnabled: const Value(false),
         createdAt: Value(now),

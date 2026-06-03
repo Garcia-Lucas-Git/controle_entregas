@@ -22,8 +22,7 @@ Future<ShiftReportData> shiftReportData(
   final routesWithEarnings = routes
       .where((r) => r.isClosed)
       .map((r) {
-        final entry =
-            entries.where((e) => e.routeId == r.id).firstOrNull;
+        final entry = entries.where((e) => e.routeId == r.id).firstOrNull;
         if (entry == null) return null;
         return RouteWithEarnings(route: r, entry: entry);
       })

@@ -49,8 +49,10 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
   }
 
   Future<void> _openMaps(List<Delivery> pending) async {
-    final addresses =
-        pending.map((d) => d.addressText).where((a) => a.isNotEmpty).toList();
+    final addresses = pending
+        .map((d) => d.addressText)
+        .where((a) => a.isNotEmpty)
+        .toList();
     if (addresses.isEmpty) return;
     await MapsLauncher.navigateTo(addresses);
   }
@@ -61,14 +63,17 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
       builder: (ctx) => AlertDialog(
         title: const Text('Fechar rota?'),
         content: const Text(
-            'Os ganhos desta rota serão calculados e registrados.'),
+          'Os ganhos desta rota serão calculados e registrados.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Fechar Rota')),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Fechar Rota'),
+          ),
         ],
       ),
     );
@@ -82,8 +87,9 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
   @override
   Widget build(BuildContext context) {
     final routeAsync = ref.watch(routeByIdProvider(widget.routeId));
-    final deliveriesAsync =
-        ref.watch(deliveriesForRouteProvider(widget.routeId));
+    final deliveriesAsync = ref.watch(
+      deliveriesForRouteProvider(widget.routeId),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -125,45 +131,47 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
             children: [
               // Progress bar
               _ProgressBar(
-                  completed: completed.length, total: deliveries.length),
+                completed: completed.length,
+                total: deliveries.length,
+              ),
 
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (pending.isNotEmpty) ...[
-                      Text('Pendentes (${pending.length})',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary)),
+                      Text(
+                        'Pendentes (${pending.length})',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      ...pending.map((d) => _DeliveryTile(
-                            delivery: d,
-                            shiftId: widget.shiftId,
-                            routeId: widget.routeId,
-                          )),
+                      ...pending.map(
+                        (d) => _DeliveryTile(
+                          delivery: d,
+                          shiftId: widget.shiftId,
+                          routeId: widget.routeId,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                     ],
                     if (completed.isNotEmpty) ...[
-                      Text('Concluídas (${completed.length})',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outline)),
+                      Text(
+                        'Concluídas (${completed.length})',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      ...completed.map((d) => _DeliveryTile(
-                            delivery: d,
-                            shiftId: widget.shiftId,
-                            routeId: widget.routeId,
-                            muted: true,
-                          )),
+                      ...completed.map(
+                        (d) => _DeliveryTile(
+                          delivery: d,
+                          shiftId: widget.shiftId,
+                          routeId: widget.routeId,
+                          muted: true,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -243,12 +251,15 @@ class _DeliveryTile extends ConsumerWidget {
   });
 
   Widget? _buildSubtitle(
-      Delivery delivery, ColorScheme colorScheme, bool muted) {
+    Delivery delivery,
+    ColorScheme colorScheme,
+    bool muted,
+  ) {
     final locator = delivery.partnerCollectionCode?.isNotEmpty == true
         ? delivery.partnerCollectionCode
         : delivery.deliveryIdentifier?.isNotEmpty == true
-            ? delivery.deliveryIdentifier
-            : null;
+        ? delivery.deliveryIdentifier
+        : null;
     final parts = <String>[];
     if (delivery.customerName != null) parts.add(delivery.customerName!);
     if (locator != null) parts.add('# $locator');
@@ -287,15 +298,15 @@ class _DeliveryTile extends ConsumerWidget {
         onTap: muted
             ? null
             : () => showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  useSafeArea: true,
-                  builder: (_) => DeliveryQuickPanel(
-                    delivery: delivery,
-                    shiftId: shiftId,
-                    routeId: routeId,
-                  ),
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => DeliveryQuickPanel(
+                  delivery: delivery,
+                  shiftId: shiftId,
+                  routeId: routeId,
                 ),
+              ),
       ),
     );
   }

@@ -45,7 +45,8 @@ class EarningsRepository {
     final config = await getCurrentConfig();
 
     // For single-delivery routes, use that delivery's distance
-    final distanceKm = deliveryCountAtClose == 1 && completedDeliveries.isNotEmpty
+    final distanceKm =
+        deliveryCountAtClose == 1 && completedDeliveries.isNotEmpty
         ? completedDeliveries.first.distanceKm
         : null;
 
@@ -97,8 +98,9 @@ class EarningsRepository {
     return rows.map(_entryFromRow).toList();
   }
 
-  Stream<List<EarningsEntry>> watchEntriesForShift(int shiftId) =>
-      _dao.watchEntriesForShift(shiftId).map((r) => r.map(_entryFromRow).toList());
+  Stream<List<EarningsEntry>> watchEntriesForShift(int shiftId) => _dao
+      .watchEntriesForShift(shiftId)
+      .map((r) => r.map(_entryFromRow).toList());
 
   static String _buildReason({
     required EarningsType type,

@@ -33,10 +33,7 @@ abstract final class OcrKeywords {
   ];
 
   // Change
-  static const List<String> change = [
-    'TROCO',
-    'DINHEIRO',
-  ];
+  static const List<String> change = ['TROCO', 'DINHEIRO'];
 
   // Receipt field anchors (keyword → next-line value)
   static const List<String> customerNameAnchors = [
@@ -55,9 +52,7 @@ abstract final class OcrKeywords {
     'LOGRADOURO',
   ];
 
-  static const List<String> neighborhoodAnchors = [
-    'BAIRRO',
-  ];
+  static const List<String> neighborhoodAnchors = ['BAIRRO'];
 
   static const List<String> orderNumberAnchors = [
     'PEDIDO',

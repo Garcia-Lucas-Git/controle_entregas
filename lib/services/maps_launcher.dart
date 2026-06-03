@@ -6,15 +6,20 @@ abstract final class MapsLauncher {
     final sid = SessionManager.maps();
 
     if (addresses.isEmpty) {
-      AppLogger.warn(LogEvents.mapsAddressEmpty,
-          module: 'MapsLauncher', sessionId: sid);
+      AppLogger.warn(
+        LogEvents.mapsAddressEmpty,
+        module: 'MapsLauncher',
+        sessionId: sid,
+      );
       return;
     }
 
-    AppLogger.log(LogEvents.mapsOpenStart,
-        module: 'MapsLauncher',
-        sessionId: sid,
-        metadata: {'count': addresses.length, 'destinations': addresses});
+    AppLogger.log(
+      LogEvents.mapsOpenStart,
+      module: 'MapsLauncher',
+      sessionId: sid,
+      metadata: {'count': addresses.length, 'destinations': addresses},
+    );
 
     final encoded = addresses.map(Uri.encodeComponent).toList();
     String primary;
@@ -33,25 +38,35 @@ abstract final class MapsLauncher {
           'https://www.google.com/maps/dir/?api=1&destination=$destination&travelmode=driving';
     }
 
-    AppLogger.log(LogEvents.mapsUriGenerated,
-        module: 'MapsLauncher',
-        sessionId: sid,
-        metadata: {'primary': primary});
+    AppLogger.log(
+      LogEvents.mapsUriGenerated,
+      module: 'MapsLauncher',
+      sessionId: sid,
+      metadata: {'primary': primary},
+    );
 
     final launched = await _launch(primary, fallback: fallback, sid: sid);
     if (launched) {
-      AppLogger.info(LogEvents.mapsOpenSuccess,
-          module: 'MapsLauncher', sessionId: sid);
+      AppLogger.info(
+        LogEvents.mapsOpenSuccess,
+        module: 'MapsLauncher',
+        sessionId: sid,
+      );
     } else {
-      AppLogger.warn(LogEvents.mapsOpenFail,
-          module: 'MapsLauncher',
-          sessionId: sid,
-          metadata: {'primary': primary, 'fallback': fallback});
+      AppLogger.warn(
+        LogEvents.mapsOpenFail,
+        module: 'MapsLauncher',
+        sessionId: sid,
+        metadata: {'primary': primary, 'fallback': fallback},
+      );
     }
   }
 
-  static Future<bool> _launch(String primary,
-      {required String fallback, required String sid}) async {
+  static Future<bool> _launch(
+    String primary, {
+    required String fallback,
+    required String sid,
+  }) async {
     final primaryUri = Uri.parse(primary);
     if (await canLaunchUrl(primaryUri)) {
       await launchUrl(primaryUri, mode: LaunchMode.externalApplication);

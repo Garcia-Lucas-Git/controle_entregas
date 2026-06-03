@@ -14,14 +14,14 @@ class EarningsDao extends DatabaseAccessor<AppDatabase>
       into(db.earningsEntriesTable).insert(entry);
 
   Future<List<EarningsEntriesTableData>> getEntriesForShift(int shiftId) =>
-      (select(db.earningsEntriesTable)
-            ..where((t) => t.shiftId.equals(shiftId)))
-          .get();
+      (select(
+        db.earningsEntriesTable,
+      )..where((t) => t.shiftId.equals(shiftId))).get();
 
   Stream<List<EarningsEntriesTableData>> watchEntriesForShift(int shiftId) =>
-      (select(db.earningsEntriesTable)
-            ..where((t) => t.shiftId.equals(shiftId)))
-          .watch();
+      (select(
+        db.earningsEntriesTable,
+      )..where((t) => t.shiftId.equals(shiftId))).watch();
 
   Future<EarningsConfigTableData?> getCurrentConfig() =>
       (select(db.earningsConfigTable)
@@ -39,9 +39,7 @@ class EarningsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     await (update(db.earningsConfigTable)
           ..where((t) => t.isCurrent.equals(true)))
-        .write(const EarningsConfigTableCompanion(
-      isCurrent: Value(false),
-    ));
+        .write(const EarningsConfigTableCompanion(isCurrent: Value(false)));
     return into(db.earningsConfigTable).insert(
       EarningsConfigTableCompanion(
         baseRateCents: Value(baseRateCents),

@@ -28,13 +28,15 @@ class RouteRepository {
   Future<int> createRoute(int shiftId) async {
     final now = DateTime.now().toUtc().toIso8601String();
     final number = await _dao.getNextRouteNumber(shiftId);
-    return _dao.insertRoute(RoutesTableCompanion(
-      shiftId: Value(shiftId),
-      routeNumber: Value(number),
-      status: const Value('open'),
-      startedAt: Value(now),
-      createdAt: Value(now),
-    ));
+    return _dao.insertRoute(
+      RoutesTableCompanion(
+        shiftId: Value(shiftId),
+        routeNumber: Value(number),
+        status: const Value('open'),
+        startedAt: Value(now),
+        createdAt: Value(now),
+      ),
+    );
   }
 
   Future<void> closeRoute({
@@ -50,13 +52,13 @@ class RouteRepository {
   }
 
   static RouteEntity _fromRow(RoutesTableData r) => RouteEntity(
-        id: r.id,
-        shiftId: r.shiftId,
-        routeNumber: r.routeNumber,
-        status: RouteStatus.fromJson(r.status),
-        startedAt: DateTime.parse(r.startedAt),
-        closedAt: r.closedAt != null ? DateTime.parse(r.closedAt!) : null,
-        deliveryCountAtClose: r.deliveryCountAtClose,
-        createdAt: DateTime.parse(r.createdAt),
-      );
+    id: r.id,
+    shiftId: r.shiftId,
+    routeNumber: r.routeNumber,
+    status: RouteStatus.fromJson(r.status),
+    startedAt: DateTime.parse(r.startedAt),
+    closedAt: r.closedAt != null ? DateTime.parse(r.closedAt!) : null,
+    deliveryCountAtClose: r.deliveryCountAtClose,
+    createdAt: DateTime.parse(r.createdAt),
+  );
 }

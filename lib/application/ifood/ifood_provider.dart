@@ -23,8 +23,14 @@ class IFoodStatus {
 
 @riverpod
 class IFoodNotifier extends _$IFoodNotifier {
+  bool _disposed = false;
+
   @override
-  IFoodStatus build() => const IFoodStatus(state: IFoodState.loading);
+  IFoodStatus build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
+    return const IFoodStatus(state: IFoodState.loading);
+  }
 
   void onWebViewReady() =>
       state = const IFoodStatus(state: IFoodState.webviewActive);
@@ -33,12 +39,10 @@ class IFoodNotifier extends _$IFoodNotifier {
       state = const IFoodStatus(state: IFoodState.success);
 
   void onWebViewFailed(String? reason) {
-    state = IFoodStatus(
-      state: IFoodState.failed,
-      errorMessage: reason,
-    );
+    state = IFoodStatus(state: IFoodState.failed, errorMessage: reason);
     // Auto-transition to manual fallback
     Future.microtask(() {
+      if (_disposed) return;
       state = const IFoodStatus(state: IFoodState.manualFallback);
     });
   }

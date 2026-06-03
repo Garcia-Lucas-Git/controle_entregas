@@ -36,11 +36,7 @@ abstract final class AppLogger {
         ...?metadata,
         if (error != null) 'error': error.toString(),
         if (stackTrace != null)
-          'stack_trace': stackTrace
-              .toString()
-              .split('\n')
-              .take(12)
-              .join('\n'),
+          'stack_trace': stackTrace.toString().split('\n').take(12).join('\n'),
       };
       final entry = LogEntry(
         timestamp: DateTime.now().toUtc(),
@@ -67,13 +63,14 @@ abstract final class AppLogger {
     String? screen,
     String? sessionId,
     Map<String, dynamic>? metadata,
-  }) =>
-      log(event,
-          severity: LogSeverity.verbose,
-          module: module,
-          screen: screen,
-          sessionId: sessionId,
-          metadata: metadata);
+  }) => log(
+    event,
+    severity: LogSeverity.verbose,
+    module: module,
+    screen: screen,
+    sessionId: sessionId,
+    metadata: metadata,
+  );
 
   static void info(
     String event, {
@@ -81,13 +78,14 @@ abstract final class AppLogger {
     String? screen,
     String? sessionId,
     Map<String, dynamic>? metadata,
-  }) =>
-      log(event,
-          severity: LogSeverity.info,
-          module: module,
-          screen: screen,
-          sessionId: sessionId,
-          metadata: metadata);
+  }) => log(
+    event,
+    severity: LogSeverity.info,
+    module: module,
+    screen: screen,
+    sessionId: sessionId,
+    metadata: metadata,
+  );
 
   static void warn(
     String event, {
@@ -95,13 +93,14 @@ abstract final class AppLogger {
     String? screen,
     String? sessionId,
     Map<String, dynamic>? metadata,
-  }) =>
-      log(event,
-          severity: LogSeverity.warning,
-          module: module,
-          screen: screen,
-          sessionId: sessionId,
-          metadata: metadata);
+  }) => log(
+    event,
+    severity: LogSeverity.warning,
+    module: module,
+    screen: screen,
+    sessionId: sessionId,
+    metadata: metadata,
+  );
 
   static void error(
     String event, {
@@ -113,17 +112,18 @@ abstract final class AppLogger {
     Map<String, dynamic>? metadata,
     Object? exception,
     StackTrace? stackTrace,
-  }) =>
-      log(event,
-          severity: LogSeverity.error,
-          module: module,
-          screen: screen,
-          className: className,
-          method: method,
-          sessionId: sessionId,
-          metadata: metadata,
-          error: exception,
-          stackTrace: stackTrace);
+  }) => log(
+    event,
+    severity: LogSeverity.error,
+    module: module,
+    screen: screen,
+    className: className,
+    method: method,
+    sessionId: sessionId,
+    metadata: metadata,
+    error: exception,
+    stackTrace: stackTrace,
+  );
 
   static void critical(
     String event, {
@@ -133,13 +133,14 @@ abstract final class AppLogger {
     Map<String, dynamic>? metadata,
     Object? exception,
     StackTrace? stackTrace,
-  }) =>
-      log(event,
-          severity: LogSeverity.critical,
-          module: module,
-          screen: screen,
-          sessionId: sessionId,
-          metadata: metadata,
-          error: exception,
-          stackTrace: stackTrace);
+  }) => log(
+    event,
+    severity: LogSeverity.critical,
+    module: module,
+    screen: screen,
+    sessionId: sessionId,
+    metadata: metadata,
+    error: exception,
+    stackTrace: stackTrace,
+  );
 }

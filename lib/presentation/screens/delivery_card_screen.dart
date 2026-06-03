@@ -21,8 +21,7 @@ class DeliveryCardScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DeliveryCardScreen> createState() =>
-      _DeliveryCardScreenState();
+  ConsumerState<DeliveryCardScreen> createState() => _DeliveryCardScreenState();
 }
 
 class _DeliveryCardScreenState extends ConsumerState<DeliveryCardScreen> {
@@ -44,39 +43,54 @@ class _DeliveryCardScreenState extends ConsumerState<DeliveryCardScreen> {
   }
 
   Future<void> _complete(Delivery delivery) async {
-    await ref
-        .read(deliveryNotifierProvider.notifier)
-        .complete(delivery.id);
-    AppLogger.log(LogEvents.deliveryCompleted,
-        module: 'DeliveryCardScreen',
-        metadata: {'delivery_id': delivery.id});
+    await ref.read(deliveryNotifierProvider.notifier).complete(delivery.id);
+    AppLogger.log(
+      LogEvents.deliveryCompleted,
+      module: 'DeliveryCardScreen',
+      metadata: {'delivery_id': delivery.id},
+    );
     if (!mounted) return;
     context.pop();
   }
 
   void _openIfood(Delivery delivery) {
-    AppLogger.log(LogEvents.ifoodOpenStart,
+    final locator = delivery.partnerCollectionCode?.isNotEmpty == true
+        ? delivery.partnerCollectionCode
+        : delivery.deliveryIdentifier;
+    if (locator != null && locator.isNotEmpty) {
+      AppLogger.log(
+        LogEvents.locatorRequestSent,
         module: 'DeliveryCardScreen',
-        metadata: {'delivery_id': delivery.id});
+        metadata: {
+          'value': locator,
+          'length': locator.length,
+          'delivery_id': delivery.id,
+          'stage': 'open_ifood',
+        },
+      );
+    }
+    AppLogger.log(
+      LogEvents.ifoodOpenStart,
+      module: 'DeliveryCardScreen',
+      metadata: {'delivery_id': delivery.id},
+    );
     context.push(
       '/shift/${widget.shiftId}/route/${widget.routeId}'
       '/delivery/${widget.deliveryId}/ifood',
       extra: {
         'deliveryIdentifier': delivery.deliveryIdentifier,
-        'partnerCollectionCode': delivery.partnerCollectionCode,
+        'partnerCollectionCode': locator,
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final deliveryAsync =
-        ref.watch(deliveryByIdProvider(widget.deliveryId));
+    final deliveryAsync = ref.watch(deliveryByIdProvider(widget.deliveryId));
 
     return Scaffold(
       body: deliveryAsync.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Erro: $e')),
         data: (delivery) {
           if (delivery == null) {
@@ -106,12 +120,11 @@ class _DeliveryCardContent extends StatelessWidget {
     required this.onOpenIfood,
   });
 
-  String? get _locatorCode =>
-      delivery.partnerCollectionCode?.isNotEmpty == true
-          ? delivery.partnerCollectionCode
-          : delivery.deliveryIdentifier?.isNotEmpty == true
-              ? delivery.deliveryIdentifier
-              : null;
+  String? get _locatorCode => delivery.partnerCollectionCode?.isNotEmpty == true
+      ? delivery.partnerCollectionCode
+      : delivery.deliveryIdentifier?.isNotEmpty == true
+      ? delivery.deliveryIdentifier
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -123,10 +136,7 @@ class _DeliveryCardContent extends StatelessWidget {
         children: [
           // ── Locator code panel (primary, always on top) ────────────────
           if (_locatorCode != null)
-            _LocatorPanel(
-              code: _locatorCode!,
-              colorScheme: colorScheme,
-            ),
+            _LocatorPanel(code: _locatorCode!, colorScheme: colorScheme),
 
           // ── Warnings banner ────────────────────────────────────────────
           if (_hasFlags)
@@ -156,10 +166,9 @@ class _DeliveryCardContent extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         'Entrega ${delivery.sequenceNumber}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelLarge
-                            ?.copyWith(color: colorScheme.outline),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: colorScheme.outline,
+                        ),
                       ),
                     ],
                   ),
@@ -167,20 +176,18 @@ class _DeliveryCardContent extends StatelessWidget {
 
                   Text(
                     delivery.addressText,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
 
                   if (delivery.customerName != null) ...[
                     Text(
                       delivery.customerName!,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(color: colorScheme.onSurfaceVariant),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -188,17 +195,19 @@ class _DeliveryCardContent extends StatelessWidget {
                   if (delivery.orderNumber != null)
                     Text(
                       'Pedido: ${delivery.orderNumber}',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: colorScheme.outline),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.outline,
+                      ),
                     ),
 
                   if (delivery.ifoodConfirmationSuccess == true) ...[
                     const SizedBox(height: 12),
                     Chip(
-                      avatar: Icon(Icons.check_circle,
-                          color: colorScheme.primary, size: 16),
+                      avatar: Icon(
+                        Icons.check_circle,
+                        color: colorScheme.primary,
+                        size: 16,
+                      ),
                       label: const Text('iFood confirmado'),
                       backgroundColor: colorScheme.primaryContainer,
                     ),
@@ -226,8 +235,7 @@ class _DeliveryCardContent extends StatelessWidget {
                     label: const Text('Entrega Concluída'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(double.infinity, 72),
-                      textStyle:
-                          Theme.of(context).textTheme.titleMedium,
+                      textStyle: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
           ),
@@ -268,8 +276,7 @@ class _LocatorPanel extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: colorScheme.onInverseSurface
-                        .withValues(alpha: 0.7),
+                    color: colorScheme.onInverseSurface.withValues(alpha: 0.7),
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -290,8 +297,16 @@ class _LocatorPanel extends StatelessWidget {
           FilledButton.tonal(
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: code));
-              AppLogger.log(LogEvents.ifoodLocatorClipboardCopy,
-                  module: 'DeliveryCardScreen', metadata: {'code': code});
+              AppLogger.log(
+                LogEvents.locatorClipboardCopy,
+                module: 'DeliveryCardScreen',
+                metadata: {'value': code, 'length': code.length},
+              );
+              AppLogger.log(
+                LogEvents.ifoodLocatorClipboardCopy,
+                module: 'DeliveryCardScreen',
+                metadata: {'code': code},
+              );
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -302,8 +317,9 @@ class _LocatorPanel extends StatelessWidget {
               );
             },
             style: FilledButton.styleFrom(
-              backgroundColor:
-                  colorScheme.inversePrimary.withValues(alpha: 0.25),
+              backgroundColor: colorScheme.inversePrimary.withValues(
+                alpha: 0.25,
+              ),
               foregroundColor: colorScheme.onInverseSurface,
               minimumSize: const Size(56, 48),
             ),
@@ -391,15 +407,17 @@ class _BannerItem extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: colorScheme.onErrorContainer,
-                  fontWeight:
-                      isAction ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isAction ? FontWeight.bold : FontWeight.normal,
                   fontSize: 14,
                 ),
               ),
             ),
             if (isAction)
-              Icon(Icons.arrow_forward_ios,
-                  size: 14, color: colorScheme.onErrorContainer),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: colorScheme.onErrorContainer,
+              ),
           ],
         ),
       ),

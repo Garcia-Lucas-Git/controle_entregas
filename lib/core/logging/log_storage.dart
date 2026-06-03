@@ -66,11 +66,13 @@ abstract final class LogStorage {
       if (files.isEmpty) return;
       await Share.shareXFiles(
         files
-            .map((f) => XFile(
-                  f.path,
-                  name: f.uri.pathSegments.last,
-                  mimeType: 'application/x-ndjson',
-                ))
+            .map(
+              (f) => XFile(
+                f.path,
+                name: f.uri.pathSegments.last,
+                mimeType: 'application/x-ndjson',
+              ),
+            )
             .toList(),
         subject: 'DeliveryFlow — Logs de diagnóstico',
       );

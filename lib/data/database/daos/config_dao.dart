@@ -5,8 +5,7 @@ import 'package:controle_entregas/data/database/tables/app_config_table.dart';
 part 'config_dao.g.dart';
 
 @DriftAccessor(tables: [AppConfigTable])
-class ConfigDao extends DatabaseAccessor<AppDatabase>
-    with _$ConfigDaoMixin {
+class ConfigDao extends DatabaseAccessor<AppDatabase> with _$ConfigDaoMixin {
   ConfigDao(super.db);
 
   Future<AppConfigTableData?> getConfig() =>
@@ -20,8 +19,9 @@ class ConfigDao extends DatabaseAccessor<AppDatabase>
     if (existing == null) {
       await into(db.appConfigTable).insert(entry);
     } else {
-      await (update(db.appConfigTable)..where((t) => t.id.equals(existing.id)))
-          .write(entry);
+      await (update(
+        db.appConfigTable,
+      )..where((t) => t.id.equals(existing.id))).write(entry);
     }
   }
 
@@ -30,15 +30,15 @@ class ConfigDao extends DatabaseAccessor<AppDatabase>
     required int? deliveryIndex,
   }) async {
     final now = DateTime.now().toUtc().toIso8601String();
-    await upsertConfig(AppConfigTableCompanion(
-      activeRouteId: Value(routeId),
-      activeDeliveryIndex: Value(deliveryIndex),
-      updatedAt: Value(now),
-    ));
+    await upsertConfig(
+      AppConfigTableCompanion(
+        activeRouteId: Value(routeId),
+        activeDeliveryIndex: Value(deliveryIndex),
+        updatedAt: Value(now),
+      ),
+    );
   }
 
-  Future<void> clearActiveRoute() => setActiveRoute(
-        routeId: null,
-        deliveryIndex: null,
-      );
+  Future<void> clearActiveRoute() =>
+      setActiveRoute(routeId: null, deliveryIndex: null);
 }

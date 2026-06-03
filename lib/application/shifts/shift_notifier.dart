@@ -16,8 +16,7 @@ Stream<List<Shift>> allShifts(AllShiftsRef ref) =>
 @riverpod
 class ShiftNotifier extends _$ShiftNotifier {
   @override
-  Future<Shift?> build() =>
-      ref.watch(shiftRepositoryProvider).getOpenShift();
+  Future<Shift?> build() => ref.watch(shiftRepositoryProvider).getOpenShift();
 
   Future<int> openShift() async {
     final settings = await ref.read(settingsRepositoryProvider).getSettings();
@@ -36,12 +35,15 @@ class ShiftNotifier extends _$ShiftNotifier {
         .read(earningsRepositoryProvider)
         .getEntriesForShift(shift.id);
 
-    final totalCents =
-        entries.fold(0, (sum, e) => sum + e.rateApplied.cents);
+    final totalCents = entries.fold(0, (sum, e) => sum + e.rateApplied.cents);
     final deliveryCount = entries.fold(
-        0, (sum, e) => sum + e.routeDeliveryCount);
+      0,
+      (sum, e) => sum + e.routeDeliveryCount,
+    );
 
-    await ref.read(shiftRepositoryProvider).closeShift(
+    await ref
+        .read(shiftRepositoryProvider)
+        .closeShift(
           id: shift.id,
           totalEarningsCents: totalCents,
           deliveryCount: deliveryCount,
@@ -64,7 +66,9 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
     String? notes,
   }) async {
     final settings = await ref.read(settingsRepositoryProvider).getSettings();
-    await ref.read(shiftRepositoryProvider).insertHistoricalEntry(
+    await ref
+        .read(shiftRepositoryProvider)
+        .insertHistoricalEntry(
           driverName: settings.driverName,
           date: date,
           deliveryCount: deliveryCount,
@@ -72,9 +76,11 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
           hoursWorked: hoursWorked,
           notes: notes,
         );
-    AppLogger.info(LogEvents.historyEntryCreated,
-        module: 'HistoricalEntryNotifier',
-        metadata: {'deliveries': deliveryCount, 'earnings_cents': earningsCents});
+    AppLogger.info(
+      LogEvents.historyEntryCreated,
+      module: 'HistoricalEntryNotifier',
+      metadata: {'deliveries': deliveryCount, 'earnings_cents': earningsCents},
+    );
   }
 
   Future<void> updateEntry({
@@ -85,7 +91,9 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
     double? hoursWorked,
     String? notes,
   }) async {
-    await ref.read(shiftRepositoryProvider).updateHistoricalEntry(
+    await ref
+        .read(shiftRepositoryProvider)
+        .updateHistoricalEntry(
           id: id,
           date: date,
           deliveryCount: deliveryCount,
@@ -93,13 +101,19 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
           hoursWorked: hoursWorked,
           notes: notes,
         );
-    AppLogger.info(LogEvents.historyEntryUpdated,
-        module: 'HistoricalEntryNotifier', metadata: {'id': id});
+    AppLogger.info(
+      LogEvents.historyEntryUpdated,
+      module: 'HistoricalEntryNotifier',
+      metadata: {'id': id},
+    );
   }
 
   Future<void> delete(int id) async {
     await ref.read(shiftRepositoryProvider).deleteHistoricalEntry(id);
-    AppLogger.info(LogEvents.historyEntryDeleted,
-        module: 'HistoricalEntryNotifier', metadata: {'id': id});
+    AppLogger.info(
+      LogEvents.historyEntryDeleted,
+      module: 'HistoricalEntryNotifier',
+      metadata: {'id': id},
+    );
   }
 }

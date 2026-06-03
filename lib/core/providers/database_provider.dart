@@ -38,8 +38,8 @@ SettingsRepository settingsRepository(SettingsRepositoryRef ref) =>
 
 @Riverpod(keepAlive: true)
 ExportService exportService(ExportServiceRef ref) => ExportService(
-      shifts: ref.watch(shiftRepositoryProvider),
-      routes: ref.watch(routeRepositoryProvider),
-      deliveries: ref.watch(deliveryRepositoryProvider),
-      earnings: ref.watch(earningsRepositoryProvider),
-    );
+  shifts: ref.watch(shiftRepositoryProvider),
+  routes: ref.watch(routeRepositoryProvider),
+  deliveries: ref.watch(deliveryRepositoryProvider),
+  earnings: ref.watch(earningsRepositoryProvider),
+);

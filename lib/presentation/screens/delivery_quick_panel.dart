@@ -23,8 +23,7 @@ class DeliveryQuickPanel extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DeliveryQuickPanel> createState() =>
-      _DeliveryQuickPanelState();
+  ConsumerState<DeliveryQuickPanel> createState() => _DeliveryQuickPanelState();
 }
 
 class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
@@ -32,10 +31,10 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
 
   String? get _locator =>
       widget.delivery.partnerCollectionCode?.isNotEmpty == true
-          ? widget.delivery.partnerCollectionCode
-          : widget.delivery.deliveryIdentifier?.isNotEmpty == true
-              ? widget.delivery.deliveryIdentifier
-              : null;
+      ? widget.delivery.partnerCollectionCode
+      : widget.delivery.deliveryIdentifier?.isNotEmpty == true
+      ? widget.delivery.deliveryIdentifier
+      : null;
 
   @override
   void initState() {
@@ -58,8 +57,11 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
     final code = _locator;
     if (code == null) return;
     await Clipboard.setData(ClipboardData(text: code));
-    AppLogger.log(LogEvents.ifoodLocatorClipboardCopy,
-        module: 'DeliveryQuickPanel', metadata: {'code': code});
+    AppLogger.log(
+      LogEvents.ifoodLocatorClipboardCopy,
+      module: 'DeliveryQuickPanel',
+      metadata: {'code': code},
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -76,13 +78,17 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
     final code = _locator;
     if (code != null) {
       await Clipboard.setData(ClipboardData(text: code));
-      AppLogger.log(LogEvents.ifoodLocatorClipboardCopy,
-          module: 'DeliveryQuickPanel',
-          metadata: {'code': code, 'trigger': 'pre-ifood'});
-    }
-    AppLogger.log(LogEvents.ifoodOpenStart,
+      AppLogger.log(
+        LogEvents.ifoodLocatorClipboardCopy,
         module: 'DeliveryQuickPanel',
-        metadata: {'delivery_id': widget.delivery.id});
+        metadata: {'code': code, 'trigger': 'pre-ifood'},
+      );
+    }
+    AppLogger.log(
+      LogEvents.ifoodOpenStart,
+      module: 'DeliveryQuickPanel',
+      metadata: {'delivery_id': widget.delivery.id},
+    );
     if (!mounted) return;
     Navigator.of(context).pop();
     context.push(
@@ -100,9 +106,11 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
     await ref
         .read(deliveryNotifierProvider.notifier)
         .complete(widget.delivery.id);
-    AppLogger.log(LogEvents.deliveryCompleted,
-        module: 'DeliveryQuickPanel',
-        metadata: {'delivery_id': widget.delivery.id});
+    AppLogger.log(
+      LogEvents.deliveryCompleted,
+      module: 'DeliveryQuickPanel',
+      metadata: {'delivery_id': widget.delivery.id},
+    );
     if (!mounted) return;
     Navigator.of(context).pop();
   }
@@ -140,7 +148,9 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: colorScheme.inverseSurface,
                   borderRadius: BorderRadius.circular(12),
@@ -156,8 +166,9 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                             style: TextStyle(
                               fontSize: 10,
                               letterSpacing: 1.2,
-                              color: colorScheme.onInverseSurface
-                                  .withValues(alpha: 0.65),
+                              color: colorScheme.onInverseSurface.withValues(
+                                alpha: 0.65,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -175,8 +186,11 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.copy,
-                          color: colorScheme.onInverseSurface, size: 22),
+                      icon: Icon(
+                        Icons.copy,
+                        color: colorScheme.onInverseSurface,
+                        size: 22,
+                      ),
                       tooltip: 'Copiar código',
                       onPressed: _copyLocator,
                     ),
@@ -205,10 +219,9 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                 Expanded(
                   child: Text(
                     d.addressText,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -220,8 +233,8 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                 child: Text(
                   d.customerName!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
@@ -234,13 +247,19 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                 runSpacing: 4,
                 children: [
                   if (d.hasDrinks)
-                    _Flag(Icons.local_drink_outlined, 'Bebidas',
-                        colorScheme.secondaryContainer,
-                        colorScheme.onSecondaryContainer),
+                    _Flag(
+                      Icons.local_drink_outlined,
+                      'Bebidas',
+                      colorScheme.secondaryContainer,
+                      colorScheme.onSecondaryContainer,
+                    ),
                   if (d.needsCard)
-                    _Flag(Icons.credit_card, 'Maquininha',
-                        colorScheme.tertiaryContainer,
-                        colorScheme.onTertiaryContainer),
+                    _Flag(
+                      Icons.credit_card,
+                      'Maquininha',
+                      colorScheme.tertiaryContainer,
+                      colorScheme.onTertiaryContainer,
+                    ),
                   if (d.needsChange)
                     _Flag(
                       Icons.payments_outlined,
@@ -294,7 +313,8 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                 icon: const Icon(Icons.check_circle),
                 label: const Text('Concluída'),
                 style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 60)),
+                  minimumSize: const Size(double.infinity, 60),
+                ),
               ),
 
             const SizedBox(height: 8),
@@ -302,7 +322,8 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 44)),
+                minimumSize: const Size(double.infinity, 44),
+              ),
               child: const Text('Voltar'),
             ),
           ],
@@ -324,8 +345,10 @@ class _Flag extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
