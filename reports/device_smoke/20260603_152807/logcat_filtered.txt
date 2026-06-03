@@ -1,0 +1,40 @@
+06-03 15:28:13.995  5832  5886 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 15:28:15.236  4406  4406 W ModemStats: [ModemHelper] stringtoBytes: failed to convert from string to hex java.lang.StringIndexOutOfBoundsException: length=63; index=63
+06-03 15:28:15.246  4406  4406 W ModemStats: [ModemHelper] stringtoBytes: failed to convert from string to hex java.lang.StringIndexOutOfBoundsException: length=63; index=63
+06-03 15:28:16.495  5832  5886 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:16.959  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-03 15:28:17.409  5832  5914 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:18.320  5832  5920 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:19.313  5832  5923 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:20.070  5832  5925 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:20.889  5832  5932 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:21.570  5832  5938 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:22.455  5832  5940 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:23.270  5832  5886 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:28:26.873  2444  2476 E ActivityManager: java.lang.RuntimeException: SmartBackground restriction
+06-03 15:28:26.895  2444  2476 E ActivityManager: java.lang.RuntimeException: SmartBackground restriction
+06-03 15:28:26.944 18525 18576 E B       : flxt: No Penpal active account set or account invalid, TachygramErrorReason(tachygramError=TACHYGRAM_EXTERNAL, recoveryType=ERROR_NO_RETRY)
+06-03 15:28:26.954 18525 18750 E B       : flxt: No Penpal active account set or account invalid, TachygramErrorReason(tachygramError=TACHYGRAM_EXTERNAL, recoveryType=ERROR_NO_RETRY)
+06-03 15:28:27.622 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.uwb' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.636 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.widevine.nonupdatable' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.639 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.nfcservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.753 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.motorola.motosecure' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.767 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.apex.cts.shim' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.838 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.appsearch' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.852 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.art' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.866 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.bt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.905 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.mediaprovider' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.940 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.virt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.948 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.resolv' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.976 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.configinfrastructure' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:27.977 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.024 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v31' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.031 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v33' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.031 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v34' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.071 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.crashrecovery' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.098 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.sdkext' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.127 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.131 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tethering' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.179 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.runtime' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.222 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.cellbroadcast' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-03 15:28:28.246 30365 30365 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.rkpd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)

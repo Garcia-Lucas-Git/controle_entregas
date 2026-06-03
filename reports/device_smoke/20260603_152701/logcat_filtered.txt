@@ -1,0 +1,18 @@
+06-03 15:27:09.028  2444  2476 E ActivityManager: java.lang.RuntimeException: SmartBackground restriction
+06-03 15:27:09.043  2444  2476 E ActivityManager: java.lang.RuntimeException: SmartBackground restriction
+06-03 15:27:09.897  2444  2476 E ActivityManager: java.lang.RuntimeException: SmartBackground restriction
+06-03 15:27:09.908  2444  2476 E ActivityManager: java.lang.RuntimeException: SmartBackground restriction
+06-03 15:27:12.471  5189  5387 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 15:27:14.070  5189  5387 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:15.137  5189  5422 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:15.181 21229  1247 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+06-03 15:27:15.298 21229  1247 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+06-03 15:27:15.988  5189  5447 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:16.720  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-03 15:27:17.022  5189  5450 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:17.825  5189  5452 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:18.714  5189  5458 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:19.427  2444  2474 W NotificationHistory: Attempted to remove conversation for locked/gone/disabled user 0
+06-03 15:27:19.486  5189  5465 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:20.579  5189  5476 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 15:27:21.368  5189  5387 D PipelineManager: OCR process succeeded via visionkit pipeline.
