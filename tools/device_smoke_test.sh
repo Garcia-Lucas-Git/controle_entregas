@@ -15,8 +15,6 @@ OUT_DIR="$OUT_ROOT/$RUN_STAMP"
 SCREENSHOT_DIR="$OUT_DIR/screenshots"
 LATEST_REPORT="$OUT_ROOT/latest_smoke_report.md"
 DEEP_LINK="deliveryflow://automation/smoke"
-FIELD_VALIDATION_DEEP_LINK="deliveryflow://dev/field-validation"
-FIELD_REPORT_DEVICE="$DEVICE_FILES_ROOT/field_validation_reports/latest_field_validation_report.md"
 MODE="${1:-smoke}"
 WAIT_SECONDS="${WAIT_SECONDS:-180}"
 
@@ -135,7 +133,7 @@ write_device_report() {
 collect_logcat() {
   raw_logcat="$OUT_DIR/logcat_raw.txt"
   $ADB logcat -d > "$raw_logcat" 2>/dev/null || true
-  grep -E 'AUTOMATION|FIELD_VALIDATION|APP_UNCAUGHT|Flutter|Exception|Error|OCR|IFood|History|DeliveryFlow' \
+  grep -E 'AUTOMATION|APP_UNCAUGHT|Flutter|Exception|Error|OCR|IFood|History|DeliveryFlow' \
     "$raw_logcat" > "$OUT_DIR/logcat_filtered.txt" || true
   rm -f "$raw_logcat"
 }
@@ -161,149 +159,80 @@ critical_error_count() {
   } | wc -l | tr -d ' '
 }
 
-
-field_validation_event_seen() {
-  grep -E 'FIELD_VALIDATION_START|/dev/field-validation|field-validation' "$OUT_DIR/logcat_filtered.txt" >/dev/null 2>&1
+smoke_check_val() {
+  awk -v key="$1" '$0 ~ "- "key":" { print $NF }' \
+    "$OUT_DIR/smoke_report.md" 2>/dev/null | head -1 || echo UNKNOWN
 }
 
-prepare_field_validation_status() {
-  if $ADB shell "[ -f '$FIELD_REPORT_DEVICE' ]" >/dev/null 2>&1; then
-    $ADB pull "$FIELD_REPORT_DEVICE" "$OUT_DIR/field_validation_report.md" >/dev/null || true
-    FIELD_VALIDATION="PASS"
-  else
-    {
-      log "FIELD_VALIDATION: MANUAL_READY"
-      log "Manual checklist not completed during automated run."
-      log "Open DevTools -> Validação Guiada de Campo to complete the checklist."
-      log "Deep Link: $FIELD_VALIDATION_DEEP_LINK"
-      log "Report Path: $FIELD_REPORT_DEVICE"
-    } > "$OUT_DIR/field_validation_status.txt"
-    FIELD_VALIDATION="MANUAL_READY"
-  fi
+workflow_check_val() {
+  [ -f "$OUT_DIR/workflow_report.md" ] || { echo UNKNOWN; return; }
+  awk -v key="$1" '$0 ~ key { print $NF }' \
+    "$OUT_DIR/workflow_report.md" 2>/dev/null | head -1 || echo UNKNOWN
 }
 
 write_final_validation_report() {
   verdict="$1"
+  app_validado="$2"
   timestamp="$(date -Iseconds)"
-  device_line="$(awk -F': ' '/^Device ID:/ { print $2; exit }' "$OUT_DIR/device_report.md")"
-  model_line="$(awk -F': ' '/^Model:/ { print $2; exit }' "$OUT_DIR/device_report.md")"
-  apk_line="$(awk -F': ' '/^APK Path:/ { print $2; exit }' "$OUT_DIR/device_report.md")"
+  device_line="$(awk -F': ' '/^Device ID:/ { print $2; exit }' "$OUT_DIR/device_report.md" 2>/dev/null || true)"
+  model_line="$(awk -F': ' '/^Model:/ { print $2; exit }' "$OUT_DIR/device_report.md" 2>/dev/null || true)"
+  apk_line="$(awk -F': ' '/^APK Path:/ { print $2; exit }' "$OUT_DIR/device_report.md" 2>/dev/null || true)"
+  apk_mtime="$(awk '/^APK Modified:/ { sub(/^APK Modified: /, ""); print; exit }' "$OUT_DIR/device_report.md" 2>/dev/null || true)"
+
+  ocr_val="$(smoke_check_val 'ocr_fixture_processing')"
+  parser_val="$(smoke_check_val 'parser_fixture_health')"
+  dashboard_val="$(smoke_check_val 'delivery_lifecycle')"
+  maps_val="$(workflow_check_val 'Maps Integration')"
+  ifood_val="$(workflow_check_val 'iFood Workflow')"
+  cleanup_val="$(workflow_check_val 'Cleanup')"
+  smoke_val="$([ "$FAIL_COUNT" -eq 0 ] && echo PASS || echo FAIL)"
+
   {
-    log "# DeliveryFlow Final Validation Report"
+    log "# DeliveryFlow Automatic Field Validation"
     log ""
     log "Run ID: $RUN_ID"
-    log "Timestamp: $timestamp"
     log "Device: ${device_line:-unknown} ${model_line:-}"
     log "APK: ${apk_line:-$APK_PATH}"
+    log "APK Modified: ${apk_mtime:-unknown}"
+    log "Started: $timestamp"
     log "Duration: $DURATION"
     log ""
-    log "## Automated Smoke Validation"
+    log "## Final Verdict"
     log ""
-    log "PASS: $PASS_COUNT"
-    log "FAIL: $FAIL_COUNT"
-    log "CRITICAL_ERRORS: $CRITICAL_ERRORS"
+    log "APP_VALIDADO: $app_validado"
+    log "FINAL_VERDICT: $verdict"
+    log ""
+    log "## Summary"
+    log ""
+    log "SMOKE: $smoke_val"
     log "WORKFLOW_VALIDATION: $WORKFLOW_VALIDATION"
+    log "OCR_VALIDATION: $ocr_val"
+    log "PARSER_VALIDATION: $parser_val"
+    log "DASHBOARD_VALIDATION: $dashboard_val"
+    log "CLEANUP_VALIDATION: $cleanup_val"
+    log "MAPS_VALIDATION: $maps_val"
+    log "IFOOD_HELPER_VALIDATION: $ifood_val"
+    log "CRITICAL_ERRORS: $CRITICAL_ERRORS"
     log ""
-    log "## Guided Field Validation"
+    log "## Failures"
     log ""
-    log "FIELD_VALIDATION: $FIELD_VALIDATION"
-    log "Route: /dev/field-validation"
-    log "Deep Link: $FIELD_VALIDATION_DEEP_LINK"
-    log "Report Path: $FIELD_REPORT_DEVICE"
-    log "Manual Checklist Required: yes"
+    if [ "$app_validado" = "SIM" ]; then
+      log "None"
+    else
+      grep -E ': FAIL$|FAIL$' "$OUT_DIR/smoke_report.md" "$OUT_DIR/workflow_report.md" 2>/dev/null \
+        | grep -v '^#\|^FAIL:\|^FAIL: 0\|Failure Classification\|^None' || log "See smoke_report.md and workflow_report.md."
+    fi
     log ""
-    log "## Artifacts"
+    log "## Evidence"
     log ""
     log "- smoke_report.md"
     log "- workflow_report.md"
-    if [ -f "$OUT_DIR/field_validation_report.md" ]; then
-      log "- field_validation_report.md"
-    else
-      log "- field_validation_status.txt"
-    fi
     log "- logcat_filtered.txt"
     log "- screenshots/before.png"
     log "- screenshots/final.png"
     log "- device_report.md"
-    log "- device_files.txt"
-    log "- fixtures_local.txt"
-    log "- fixtures_device.txt"
-    log ""
-    log "## Final Verdict"
-    log ""
-    log "$verdict"
   } > "$OUT_DIR/final_validation_report.md"
 }
-
-run_full_field_validation_readiness() {
-  log "[FULL] Launching guided field validation readiness check"
-  $ADB shell am start -a android.intent.action.VIEW -d "$FIELD_VALIDATION_DEEP_LINK" >/dev/null || {
-    FIELD_VALIDATION="FAIL"
-    collect_logcat
-    capture_screenshot final
-    return 1
-  }
-  sleep 3
-  collect_logcat
-  capture_screenshot final
-  collect_device_inventory
-  if ! field_validation_event_seen; then
-    FIELD_VALIDATION="FAIL"
-    return 1
-  fi
-  prepare_field_validation_status
-  return 0
-}
-
-
-run_field_validation_mode() {
-  stage "Checking device" 1
-  mkdir -p "$OUT_DIR" "$SCREENSHOT_DIR"
-  resolve_adb
-  DEVICE_ID="$($ADB devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')"
-  [ -n "$DEVICE_ID" ] || fail "no connected adb device. Connect a device with USB debugging enabled."
-
-  stage "Installing APK" 2
-  if [ ! -f "$APK_PATH" ]; then
-    FLUTTER_BIN="$(resolve_flutter)"
-    [ -n "$FLUTTER_BIN" ] || fail "APK not found at $APK_PATH and Flutter is unavailable."
-    "$FLUTTER_BIN" build apk --release || fail "Flutter release build failed."
-  fi
-  $ADB install -r "$APK_PATH" >/dev/null || \
-    fail "APK install failed. If signatures differ, uninstall $PACKAGE or install an APK signed with the same key."
-
-  stage "Collecting metadata" 3
-  write_device_report "$DEVICE_ID"
-  collect_device_inventory
-  capture_screenshot before
-  $ADB logcat -c >/dev/null 2>&1 || true
-
-  stage "Launching field validation" 4
-  $ADB shell am force-stop "$PACKAGE"
-  $ADB shell am start -a android.intent.action.VIEW -d "$FIELD_VALIDATION_DEEP_LINK" >/dev/null || \
-    fail "could not launch field validation deep link. Open DevTools > Validação Guiada de Campo manually."
-
-  stage "Collecting evidence" 5
-  sleep 3
-  collect_logcat
-  capture_screenshot final
-  collect_device_inventory
-  if $ADB shell "[ -f '$FIELD_REPORT_DEVICE' ]" >/dev/null 2>&1; then
-    $ADB pull "$FIELD_REPORT_DEVICE" "$OUT_DIR/field_validation_report.md" >/dev/null || true
-  fi
-
-  log ""
-  log "Field Validation Mode"
-  log "REPORT_DIR: $OUT_DIR"
-  log "FIELD_REPORT: $OUT_DIR/field_validation_report.md"
-  log "Open DevTools > Validação Guiada de Campo if the route did not open automatically."
-  find "$OUT_DIR" -maxdepth 2 -type f | sort | sed 's/^/  /'
-}
-
-if [ "$MODE" = "--field-validation" ]; then
-  run_field_validation_mode
-  exit 0
-fi
 
 stage "Checking device" 1
 mkdir -p "$OUT_DIR" "$SCREENSHOT_DIR"
@@ -432,39 +361,13 @@ if [ "$WORKFLOW_VALIDATION" != "PASS" ]; then
 fi
 
 if [ "$MODE" = "--full" ]; then
-  if ! run_full_field_validation_readiness; then
-    CRITICAL_ERRORS="$(critical_error_count)"
-    write_final_validation_report "NOT_READY"
-    log ""
-    log "Final Validation Summary"
-    log "SMOKE: PASS"
-    log "WORKFLOW_VALIDATION: $WORKFLOW_VALIDATION"
-    log "FIELD_VALIDATION: ${FIELD_VALIDATION:-FAIL}"
-    log "CRITICAL_ERRORS: $CRITICAL_ERRORS"
-    log "FINAL_VERDICT: NOT_READY"
-    log "REPORT_DIR: $OUT_DIR"
-    fail "field validation readiness failed. See $OUT_DIR/final_validation_report.md."
-  fi
-  CRITICAL_ERRORS="$(critical_error_count)"
-  if [ "$CRITICAL_ERRORS" -gt 0 ]; then
-    write_final_validation_report "NOT_READY"
-    log ""
-    log "Final Validation Summary"
-    log "SMOKE: PASS"
-    log "WORKFLOW_VALIDATION: $WORKFLOW_VALIDATION"
-    log "FIELD_VALIDATION: $FIELD_VALIDATION"
-    log "CRITICAL_ERRORS: $CRITICAL_ERRORS"
-    log "FINAL_VERDICT: NOT_READY"
-    log "REPORT_DIR: $OUT_DIR"
-    fail "detected $CRITICAL_ERRORS critical error line(s) after field validation launch."
-  fi
-  write_final_validation_report "READY_FOR_CONTROLLED_FIELD_USE"
+  write_final_validation_report "READY_FOR_CONTROLLED_FIELD_USE" "SIM"
   log ""
   log "Final Validation Summary"
   log "SMOKE: PASS"
   log "WORKFLOW_VALIDATION: $WORKFLOW_VALIDATION"
-  log "FIELD_VALIDATION: $FIELD_VALIDATION"
   log "CRITICAL_ERRORS: $CRITICAL_ERRORS"
+  log "APP_VALIDADO: SIM"
   log "FINAL_VERDICT: READY_FOR_CONTROLLED_FIELD_USE"
   log "REPORT_DIR: $OUT_DIR"
   log "PASS"

@@ -62,8 +62,8 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
     }
   }
 
-  Future<void> _exportLogs() async {
-    await AppLogger.exportLogs();
+  Future<void> _exportLogs({bool lastFourHours = true}) async {
+    await AppLogger.exportLogs(lastFourHours: lastFourHours);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -106,13 +106,18 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
     try {
       await LogStorage.close();
       final dir = await getApplicationDocumentsDirectory();
-      for (final name in [
-        'deliveryflow.log',
-        'deliveryflow.1.log',
-        'deliveryflow.2.log',
-      ]) {
-        final f = File('${dir.path}/$name');
-        if (await f.exists()) await f.delete();
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.last;
+        final isHourly = RegExp(
+          r'^\d{4}-\d{2}-\d{2}_\d{2}\.log$',
+        ).hasMatch(name);
+        final isLegacy = {
+          'deliveryflow.log',
+          'deliveryflow.1.log',
+          'deliveryflow.2.log',
+        }.contains(name);
+        if (isHourly || isLegacy) await entity.delete();
       }
       await LogStorage.init();
       await _loadLogFiles();
@@ -266,11 +271,6 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
                 label: 'Automation Runner',
                 onPressed: () => context.push('/dev/automation-runner'),
               ),
-              _NavButton(
-                icon: Icons.fact_check_outlined,
-                label: 'Validação Guiada de Campo',
-                onPressed: () => context.push('/dev/field-validation'),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -296,9 +296,17 @@ class _DevToolsScreenState extends ConsumerState<DevToolsScreen> {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: _exportLogs,
+                      onPressed: () => _exportLogs(lastFourHours: false),
                       icon: const Icon(Icons.upload),
-                      label: const Text('Exportar'),
+                      label: const Text('Hora atual'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _exportLogs(lastFourHours: true),
+                      icon: const Icon(Icons.history),
+                      label: const Text('5 horas'),
                     ),
                   ),
                   const SizedBox(width: 8),
