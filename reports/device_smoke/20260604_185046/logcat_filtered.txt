@@ -1,0 +1,62 @@
+06-04 18:50:53.407 18383 18472 D DecoupledTextDelegate: Start loading thick OCR module.
+06-04 18:50:53.984 18383 18472 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:54.026 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.uwb' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.047 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.widevine.nonupdatable' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.050 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.nfcservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.225 18383 18543 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:54.251 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.motorola.motosecure' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.263 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.apex.cts.shim' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.415 27127 18229 I NetworkScheduler: (REDACTED) Error inserting %s
+06-04 18:50:54.417 27127 18229 I NetworkScheduler: (REDACTED) Error inserting %s
+06-04 18:50:54.439 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.appsearch' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.446 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.art' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.459 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.bt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.469 18383 18558 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:54.511 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.mediaprovider' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.566 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.virt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.579 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.resolv' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.625 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.configinfrastructure' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.627 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.671 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v31' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.674 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v33' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.675 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v34' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.710 18383 18565 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:54.712 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.crashrecovery' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.747 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.sdkext' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.784 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.791 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tethering' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.875 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.runtime' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.932 18383 18568 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:54.933 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.cellbroadcast' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:54.970 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.rkpd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.151 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.motorola.enterprise' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.165 18383 18576 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:55.255 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tzdata6' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.299 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.permission' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.363 18383 18592 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:55.371 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.wifi' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.430 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.mediatek.oemcrypto' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.470 27127 27278 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:50:55.578 18383 18597 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:55.793 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media.swcodec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.796 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.uprobestats' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.796 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.motorola.modules.factorycustomization' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.807 18383 18472 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:55.825 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.profiling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:55.948 18383 18558 D DecoupledTextDelegate: Start loading thick OCR module.
+06-04 18:50:55.964 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adbd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.008 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.i18n' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.023 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.conscrypt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.133 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.hardware.cas' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.159 18383 18558 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:50:56.179 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.neuralnetworks' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.197 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ipsec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.201 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.devicelock' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.224 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ondevicepersonalization' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.243 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.healthfitness' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.313 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.extservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.414 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.os.statsd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.477 21743 21743 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.scheduling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+06-04 18:50:56.843  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-04 18:50:58.128 18383 18383 D DeliveryFlow: DEV_DEEP_LINK_RECEIVED route=/dev/field-validation
+06-04 18:50:58.605 18383 18383 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=io.flutter.embedding.android.FlutterActivity$1@dcebb3b

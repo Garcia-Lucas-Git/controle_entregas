@@ -265,8 +265,7 @@ class AutomationRunner {
           final durationMs = DateTime.now()
               .difference(itemStart)
               .inMilliseconds;
-          final locator =
-              result.partnerCollectionCode ?? result.deliveryIdentifier;
+          final locator = result.deliveryIdentifier;
           final missing = <String>[];
           if (!result.hasRequiredFields) missing.add('address');
           if (locator == null || locator.isEmpty) missing.add('locator');
@@ -360,15 +359,15 @@ class AutomationRunner {
 
   Future<Map<String, dynamic>> _parserHealth() async {
     final fixtures = [
-      'CLIENTE: Ana\nENDERECO: Rua Um, 123\nCOD: ABC1234',
-      'Pedido 98765\nLocalizador:\nZXCV9876\nEndereco: Avenida Dois, 45',
-      'COD #AA9988\nTROCO R\$ 20,00',
+      'CLIENTE: Ana\nENDERECO: Rua Um, 123\nPEDIDO: 12345\nIDENTIFICADOR: 1032 2187',
+      'Pedido 98765\nIDENTIFICADOR:\n8765 4321\nEndereco: Avenida Dois, 45',
+      'CLIENTE: Bia\nENDERECO: Rua Tres, 9\nPEDIDO: 54321\nCODIGO DE COLETA: 0905',
     ];
     var locatorCount = 0;
     var addressCount = 0;
     for (final text in fixtures) {
       final result = OcrService.parseRawText(text);
-      final locator = result.partnerCollectionCode ?? result.deliveryIdentifier;
+      final locator = result.deliveryIdentifier;
       if (locator != null && locator.isNotEmpty) locatorCount++;
       if (result.hasRequiredFields) addressCount++;
     }
@@ -413,7 +412,7 @@ class AutomationRunner {
         sequenceNumber: const Value(1),
         addressText: Value('$marker Rua Smoke, 123'),
         customerName: Value('$marker Cliente'),
-        partnerCollectionCode: const Value('AUTO1234'),
+        deliveryIdentifier: const Value('12345678'),
         createdAt: Value(now),
       ),
     );
@@ -656,7 +655,7 @@ class AutomationRunner {
     } finally {
       await service.dispose();
     }
-    final locator = result.partnerCollectionCode ?? result.deliveryIdentifier;
+    final locator = result.deliveryIdentifier;
     if (!result.hasRequiredFields) throw StateError('OCR address missing.');
     if (locator == null || locator.isEmpty) {
       throw StateError('OCR locator missing.');
@@ -678,7 +677,7 @@ class AutomationRunner {
       sequenceNumber: 1,
       customerName: '$marker OCR Cliente',
       addressText: result.addressText ?? '$marker Rua OCR, 100',
-      partnerCollectionCode: locator,
+      deliveryIdentifier: locator,
       ocrRawText: '${result.rawText}\nautomation_run_id=${ctx.runId}',
     );
     ctx.routeId = routeId;
@@ -706,7 +705,8 @@ class AutomationRunner {
           sequenceNumber: i,
           customerName: '$marker Cliente $i',
           addressText: '$marker Rua Sequencial, $i',
-          partnerCollectionCode: 'AUTO${ctx.runId.hashCode.abs()}$i',
+          deliveryIdentifier:
+              '${(ctx.runId.hashCode.abs() % 90000000 + 10000000 + i).toString().substring(0, 8)}',
         ),
       );
     }
@@ -720,7 +720,8 @@ class AutomationRunner {
           sequenceNumber: i,
           customerName: '$marker Cliente $i',
           addressText: '$marker Rua Sequencial, $i',
-          partnerCollectionCode: 'AUTO${ctx.runId.hashCode.abs()}$i',
+          deliveryIdentifier:
+              '${(ctx.runId.hashCode.abs() % 90000000 + 10000000 + i).toString().substring(0, 8)}',
         ),
       );
     }
@@ -779,8 +780,7 @@ class AutomationRunner {
     final delivery = await _db.deliveriesDao.getDeliveryById(
       ctx.deliveryIds.first,
     );
-    final locator =
-        delivery?.partnerCollectionCode ?? delivery?.deliveryIdentifier;
+    final locator = delivery?.deliveryIdentifier;
     if (locator == null || locator != ctx.locator) {
       throw StateError('Locator was not preserved end-to-end.');
     }
@@ -790,7 +790,7 @@ class AutomationRunner {
       confirmedAt: DateTime.now().toUtc().toIso8601String(),
     );
     final updated = await _db.deliveriesDao.getDeliveryById(delivery.id);
-    if (updated?.partnerCollectionCode != locator) {
+    if (updated?.deliveryIdentifier != locator) {
       throw StateError('Locator changed after iFood helper update.');
     }
     final helperUrl = Uri.https('portal.ifood.com.br', '/delivery', {
@@ -824,12 +824,13 @@ class AutomationRunner {
       sequenceNumber: 1,
       customerName: '$marker Manual Cliente',
       addressText: '$marker Rua Manual, 200',
-      partnerCollectionCode: 'MANUAL${ctx.runId.hashCode.abs()}',
+      deliveryIdentifier:
+          '${(ctx.runId.hashCode.abs() % 90000000 + 10000000).toString().substring(0, 8)}',
     );
     ctx.manualRouteId = routeId;
     ctx.deliveryIds.add(deliveryId);
     final delivery = await _db.deliveriesDao.getDeliveryById(deliveryId);
-    if (delivery == null || delivery.partnerCollectionCode == null) {
+    if (delivery == null || delivery.deliveryIdentifier == null) {
       throw StateError('Manual delivery was not persisted.');
     }
     return {'manual_route_id': routeId, 'manual_delivery_id': deliveryId};
@@ -921,7 +922,7 @@ class AutomationRunner {
     required int sequenceNumber,
     required String customerName,
     required String addressText,
-    String? partnerCollectionCode,
+    String? deliveryIdentifier,
     String? ocrRawText,
   }) {
     final now = DateTime.now().toUtc().toIso8601String();
@@ -932,12 +933,12 @@ class AutomationRunner {
         sequenceNumber: Value(sequenceNumber),
         customerName: Value(customerName),
         addressText: Value('$addressText automation_run_id=${ctx.runId}'),
-        partnerCollectionCode: Value(partnerCollectionCode),
+        deliveryIdentifier: Value(deliveryIdentifier),
         ocrRawText: Value(
           ocrRawText ?? '$marker automation_run_id=${ctx.runId}',
         ),
         createdAt: Value(now),
-        needsIfoodConfirmation: Value(partnerCollectionCode != null),
+        needsIfoodConfirmation: Value(deliveryIdentifier != null),
       ),
     );
   }

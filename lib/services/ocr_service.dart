@@ -19,6 +19,7 @@ class OcrResult {
   final bool needsChange;
   final int? changeAmountCents;
   final double confidence;
+  final String parserStatus;
 
   const OcrResult({
     required this.rawText,
@@ -35,6 +36,7 @@ class OcrResult {
     this.needsChange = false,
     this.changeAmountCents,
     this.confidence = 1.0,
+    this.parserStatus = 'sucesso_completo',
   });
 
   bool get hasRequiredFields =>
@@ -276,6 +278,7 @@ class OcrService {
 
     final parsed = _parseLines(recognized.text, lines);
     final result = parsed.result;
+    _logParserDetails(parsed, sid);
 
     // Log each found field individually for traceability
     if (result.addressText != null) {
@@ -320,8 +323,7 @@ class OcrService {
       );
     }
 
-    final capturedLocator =
-        result.partnerCollectionCode ?? result.deliveryIdentifier;
+    final capturedLocator = result.deliveryIdentifier;
     if (capturedLocator != null && capturedLocator.isNotEmpty) {
       AppLogger.log(
         LogEvents.locatorCaptured,
@@ -377,7 +379,7 @@ class OcrService {
           'reason': 'no_address',
           'lines': lines.length,
           'duration_ms': totalMs,
-          'has_locator': result.partnerCollectionCode != null,
+          'has_locator': result.deliveryIdentifier != null,
         },
       );
     }
@@ -395,7 +397,9 @@ class OcrService {
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
         .toList();
-    return _parseLines(rawText, lines).result;
+    final parsed = _parseLines(rawText, lines);
+    _logParserDetails(parsed, null);
+    return parsed.result;
   }
 
   static _OcrParseDetails _parseLines(String rawText, List<String> lines) {
@@ -412,17 +416,19 @@ class OcrService {
       OcrKeywords.neighborhoodAnchors,
     );
     final orderNumber = _extractOrderNumber(fullText, lines);
-    final deliveryId = _extractAfterAnchor(
-      lines,
-      OcrKeywords.deliveryIdAnchors,
-    );
-    final collectionResult = _extractCollectionCode(fullText, lines);
-    final collectionCode = collectionResult.$1;
-    final collectionMethod = collectionResult.$2;
+    final locatorResult = _extractLocator(fullText, lines);
+    final deliveryId = locatorResult.$1;
+    final locatorInvalid = locatorResult.$2;
 
     final missing = <String>[];
     if (address == null) missing.add('address');
-    if (collectionCode == null && deliveryId == null) missing.add('locator');
+    if (orderNumber == null) missing.add('order');
+    if (deliveryId == null) missing.add('locator');
+    final parserStatus = missing.isEmpty
+        ? 'sucesso_completo'
+        : missing.length < 3
+        ? 'sucesso_parcial'
+        : 'falha_total';
 
     return _OcrParseDetails(
       result: OcrResult(
@@ -432,7 +438,7 @@ class OcrService {
         neighborhood: neighborhood,
         orderNumber: orderNumber,
         deliveryIdentifier: deliveryId,
-        partnerCollectionCode: collectionCode,
+        partnerCollectionCode: null,
         needsIfoodConfirmation: _containsAny(
           fullText,
           OcrKeywords.ifoodConfirmation,
@@ -441,51 +447,83 @@ class OcrService {
         needsCard: _containsAny(fullText, OcrKeywords.cardMachine),
         needsChange: _containsAny(fullText, OcrKeywords.change),
         changeAmountCents: _extractChangeAmount(fullText),
-        confidence: 1.0,
+        confidence: parserStatus == 'falha_total' ? 0.0 : 1.0,
+        parserStatus: parserStatus,
       ),
-      collectionMethod: collectionMethod,
+      collectionMethod: 'ignored',
       missingFields: missing,
+      locatorInvalid: locatorInvalid,
     );
   }
 
-  // ── Collection code extraction (standard + relaxed passes) ───────────────
+  // ── iFood locator extraction ─────────────────────────────────────────────
 
-  /// Returns (code, method) where method is 'anchor' or the regex pattern used.
-  static (String?, String) _extractCollectionCode(
-    String fullText,
-    List<String> lines,
-  ) {
-    final fromAnchor = _extractAfterAnchor(
-      lines,
-      OcrKeywords.collectionCodeAnchors,
+  static (String?, bool) _extractLocator(String fullText, List<String> lines) {
+    final anchored = _extractAfterAnchor(lines, OcrKeywords.deliveryIdAnchors);
+    final candidates = <String>[];
+    if (anchored != null) candidates.add(anchored);
+    candidates.addAll(
+      RegExp(
+        r'\b(\d{4})\s+(\d{4})\b',
+      ).allMatches(fullText).map((m) => '${m.group(1)}${m.group(2)}'),
     );
-    if (fromAnchor != null && fromAnchor.isNotEmpty) {
-      return (fromAnchor, 'anchor');
-    }
+    candidates.addAll(
+      RegExp(r'\b\d{8}\b').allMatches(fullText).map((m) => m.group(0)!),
+    );
 
-    final relaxed = [
-      (
-        RegExp(r'COD[^\n\d]{0,10}(\w{4,10})', caseSensitive: false),
-        'cod_prefix',
-      ),
-      (RegExp(r'#\s*([A-Z0-9]{4,10})'), 'hash_prefix'),
-      (
-        RegExp(r'CODE[^\n\d]{0,5}(\w{4,10})', caseSensitive: false),
-        'code_prefix',
-      ),
-      (RegExp(r'\b([A-Z]{2,4}[\s\-]?\d{4,8})\b'), 'alphanum_pattern'),
-    ];
-
-    for (final (pattern, label) in relaxed) {
-      final match = pattern.firstMatch(fullText);
-      if (match != null) {
-        final candidate = match.group(1)?.replaceAll(RegExp(r'\s'), '');
-        if (candidate != null && candidate.length >= 4) {
-          return (candidate, label);
-        }
-      }
+    var invalid = false;
+    for (final candidate in candidates) {
+      final digits = candidate.replaceAll(RegExp(r'\D'), '');
+      if (RegExp(r'^\d{8}$').hasMatch(digits)) return (digits, invalid);
+      if (digits.isNotEmpty) invalid = true;
     }
-    return (null, 'not_found');
+    return (null, invalid);
+  }
+
+  static void _logParserDetails(_OcrParseDetails parsed, String? sessionId) {
+    final result = parsed.result;
+    if (parsed.locatorInvalid) {
+      AppLogger.warn(
+        LogEvents.parserLocatorInvalid,
+        module: 'OcrService',
+        sessionId: sessionId,
+      );
+    }
+    if (result.addressText == null) {
+      AppLogger.warn(
+        LogEvents.parserAddressNotFound,
+        module: 'OcrService',
+        sessionId: sessionId,
+      );
+    }
+    if (result.orderNumber == null) {
+      AppLogger.warn(
+        LogEvents.parserOrderNotFound,
+        module: 'OcrService',
+        sessionId: sessionId,
+      );
+    }
+    final event = switch (result.parserStatus) {
+      'sucesso_completo' => LogEvents.parserSuccessComplete,
+      'sucesso_parcial' => LogEvents.parserSuccessPartial,
+      _ => LogEvents.parserFail,
+    };
+    AppLogger.log(
+      event,
+      severity: result.parserStatus == 'falha_total'
+          ? LogSeverity.warning
+          : LogSeverity.info,
+      module: 'OcrService',
+      sessionId: sessionId,
+      metadata: {
+        'status': result.parserStatus,
+        'has_order': result.orderNumber != null,
+        'has_locator': result.deliveryIdentifier != null,
+        'has_address': result.addressText != null,
+        'has_name': result.customerName != null,
+        'has_neighborhood': result.neighborhood != null,
+      },
+    );
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
@@ -519,8 +557,6 @@ class OcrService {
       final digits = RegExp(r'\d{4,}').firstMatch(fromAnchor)?.group(0);
       if (digits != null) return digits;
     }
-    final matches = RegExp(r'\b\d{4,6}\b').allMatches(fullText);
-    if (matches.isNotEmpty) return matches.first.group(0);
     return null;
   }
 
@@ -556,16 +592,22 @@ class _OcrParseDetails {
   final OcrResult result;
   final String collectionMethod;
   final List<String> missingFields;
+  final bool locatorInvalid;
 
   const _OcrParseDetails({
     required this.result,
     required this.collectionMethod,
     required this.missingFields,
+    this.locatorInvalid = false,
   });
 
   factory _OcrParseDetails.empty(String rawText) => _OcrParseDetails(
-    result: OcrResult(rawText: rawText, confidence: 0.0),
+    result: OcrResult(
+      rawText: rawText,
+      confidence: 0.0,
+      parserStatus: 'falha_total',
+    ),
     collectionMethod: 'not_found',
-    missingFields: const ['address', 'locator'],
+    missingFields: const ['address', 'order', 'locator'],
   );
 }
