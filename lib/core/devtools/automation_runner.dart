@@ -793,6 +793,15 @@ class AutomationRunner {
     if (updated?.deliveryIdentifier != locator) {
       throw StateError('Locator changed after iFood helper update.');
     }
+    AppLogger.log(
+      LogEvents.localizerCopied,
+      module: 'AutomationRunner',
+      metadata: {
+        'locator': locator,
+        'length': locator.length,
+        'source': 'automation',
+      },
+    );
     final helperUrl = Uri.https('portal.ifood.com.br', '/delivery', {
       'code': locator,
     });
@@ -800,6 +809,7 @@ class AutomationRunner {
       'locator': locator,
       'length': locator.length,
       'helper_url': helperUrl.toString(),
+      'localizer_copied': true,
     };
   }
 
@@ -824,8 +834,9 @@ class AutomationRunner {
       sequenceNumber: 1,
       customerName: '$marker Manual Cliente',
       addressText: '$marker Rua Manual, 200',
-      deliveryIdentifier:
-          '${(ctx.runId.hashCode.abs() % 90000000 + 10000000).toString().substring(0, 8)}',
+      deliveryIdentifier: (ctx.runId.hashCode.abs() % 90000000 + 10000000)
+          .toString()
+          .substring(0, 8),
     );
     ctx.manualRouteId = routeId;
     ctx.deliveryIds.add(deliveryId);

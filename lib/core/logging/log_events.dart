@@ -25,6 +25,9 @@ abstract final class LogEvents {
   static const ocrProcessSuccess = 'OCR_PROCESS_SUCCESS';
   static const ocrProcessFail = 'OCR_PROCESS_FAIL';
   static const ocrLowConfidence = 'OCR_LOW_CONFIDENCE';
+  static const ocrConfidenceHigh = 'OCR_CONFIDENCE_HIGH';
+  static const ocrConfidenceMedium = 'OCR_CONFIDENCE_MEDIUM';
+  static const ocrConfidenceLow = 'OCR_CONFIDENCE_LOW';
   static const ocrTextPreview = 'OCR_TEXT_PREVIEW';
   static const ocrFieldLocatorFound = 'OCR_FIELD_LOCATOR_FOUND';
   static const ocrFieldCollectionFound = 'OCR_FIELD_COLLECTION_FOUND';
@@ -46,6 +49,10 @@ abstract final class LogEvents {
   static const deliveryCreateSuccess = 'DELIVERY_CREATE_SUCCESS';
   static const deliveryCreateFail = 'DELIVERY_CREATE_FAIL';
   static const deliveryCompleted = 'DELIVERY_COMPLETED';
+  static const deliveryDeleteRequest = 'DELIVERY_DELETE_REQUEST';
+  static const deliveryDeleteSuccess = 'DELIVERY_DELETE_SUCCESS';
+  static const routeDeleteRequest = 'ROUTE_DELETE_REQUEST';
+  static const routeDeleteSuccess = 'ROUTE_DELETE_SUCCESS';
 
   // ── Shift ─────────────────────────────────────────────────────────────────
   static const shiftEndManualCheck = 'SHIFT_END_MANUAL_CHECK';
@@ -61,6 +68,10 @@ abstract final class LogEvents {
   static const historyEntryCreated = 'HISTORY_ENTRY_CREATED';
   static const historyEntryUpdated = 'HISTORY_ENTRY_UPDATED';
   static const historyEntryDeleted = 'HISTORY_ENTRY_DELETED';
+  static const historyDeleteRequest = 'HISTORY_DELETE_REQUEST';
+  static const historyDeleteSuccess = 'HISTORY_DELETE_SUCCESS';
+  static const cleanupStart = 'CLEANUP_START';
+  static const cleanupComplete = 'CLEANUP_COMPLETE';
 
   // ── Google Maps ───────────────────────────────────────────────────────────
   static const mapsOpenStart = 'MAPS_OPEN_START';
@@ -68,6 +79,11 @@ abstract final class LogEvents {
   static const mapsOpenFail = 'MAPS_OPEN_FAIL';
   static const mapsUriGenerated = 'MAPS_URI_GENERATED';
   static const mapsAddressEmpty = 'MAPS_VALIDATION_ADDRESS_EMPTY';
+  static const mapsLaunchCallback = 'MAPS_LAUNCH_CALLBACK';
+  static const mapsLaunchReturn = 'MAPS_LAUNCH_RETURN';
+  static const mapsLaunchError = 'MAPS_LAUNCH_ERROR';
+  static const mapsRouteCreated = 'MAPS_ROUTE_CREATED';
+  static const mapsRouteOpened = 'MAPS_ROUTE_OPENED';
 
   // ── iFood ─────────────────────────────────────────────────────────────────
   static const ifoodOpenStart = 'IFOOD_OPEN_START';
@@ -91,6 +107,19 @@ abstract final class LogEvents {
   static const ifoodConfirmSuccess = 'IFOOD_CONFIRM_SUCCESS';
   static const ifoodConfirmFail = 'IFOOD_CONFIRM_FAIL';
   static const ifoodManualFallback = 'IFOOD_MANUAL_FALLBACK';
+
+  // ── Parser ───────────────────────────────────────────────────────────────
+  static const parserSuccessComplete = 'PARSER_SUCCESS_COMPLETE';
+  static const parserSuccessPartial = 'PARSER_SUCCESS_PARTIAL';
+  static const parserFail = 'PARSER_FAIL';
+  static const parserLocatorInvalid = 'PARSER_LOCATOR_INVALID';
+  static const parserAddressNotFound = 'PARSER_ADDRESS_NOT_FOUND';
+  static const parserOrderNotFound = 'PARSER_ORDER_NOT_FOUND';
+
+  // ── Operational highlights ────────────────────────────────────────────────
+  static const localizerCopied = 'LOCALIZER_COPIED';
+  static const paymentDetected = 'PAYMENT_DETECTED';
+  static const drinkDetected = 'DRINK_DETECTED';
 
   // ── Locator pipeline diagnostics ─────────────────────────────────────────
   static const locatorCaptured = 'LOCATOR_CAPTURED';

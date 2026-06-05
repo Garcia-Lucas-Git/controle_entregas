@@ -50,7 +50,13 @@ abstract final class MapsLauncher {
       LogEvents.mapsUriGenerated,
       module: 'MapsLauncher',
       sessionId: sid,
-      metadata: {'primary': request.primary},
+      metadata: {'primary': request.primary, 'fallback': request.fallback},
+    );
+    AppLogger.log(
+      LogEvents.mapsRouteCreated,
+      module: 'MapsLauncher',
+      sessionId: sid,
+      metadata: {'stop_count': addresses.length, 'destinations': addresses},
     );
 
     final launched = await _launch(
@@ -63,6 +69,12 @@ abstract final class MapsLauncher {
         LogEvents.mapsOpenSuccess,
         module: 'MapsLauncher',
         sessionId: sid,
+      );
+      AppLogger.log(
+        LogEvents.mapsRouteOpened,
+        module: 'MapsLauncher',
+        sessionId: sid,
+        metadata: {'stop_count': addresses.length},
       );
     } else {
       AppLogger.warn(
@@ -80,16 +92,54 @@ abstract final class MapsLauncher {
     required String sid,
   }) async {
     final primaryUri = Uri.parse(primary);
-    if (await canLaunchUrl(primaryUri)) {
-      await launchUrl(primaryUri, mode: LaunchMode.externalApplication);
-      return true;
-    }
     final fallbackUri = Uri.parse(fallback);
-    if (await canLaunchUrl(fallbackUri)) {
-      await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
-      return true;
+    if (await _tryLaunch(primaryUri, sid: sid, label: 'primary')) return true;
+    return _tryLaunch(fallbackUri, sid: sid, label: 'fallback');
+  }
+
+  static Future<bool> _tryLaunch(
+    Uri uri, {
+    required String sid,
+    required String label,
+  }) async {
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      AppLogger.log(
+        LogEvents.mapsLaunchCallback,
+        module: 'MapsLauncher',
+        sessionId: sid,
+        metadata: {
+          'target': label,
+          'uri': uri.toString(),
+          'can_launch': canLaunch,
+        },
+      );
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      AppLogger.log(
+        LogEvents.mapsLaunchReturn,
+        module: 'MapsLauncher',
+        sessionId: sid,
+        metadata: {
+          'target': label,
+          'uri': uri.toString(),
+          'launched': launched,
+        },
+      );
+      return launched;
+    } catch (e, st) {
+      AppLogger.error(
+        LogEvents.mapsLaunchError,
+        module: 'MapsLauncher',
+        sessionId: sid,
+        metadata: {'target': label, 'uri': uri.toString()},
+        exception: e,
+        stackTrace: st,
+      );
+      return false;
     }
-    return false;
   }
 }
 

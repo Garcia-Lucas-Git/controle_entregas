@@ -355,6 +355,44 @@ class OcrService {
 
     final totalMs = DateTime.now().difference(t0).inMilliseconds;
 
+    // ── Confidence level log ───────────────────────────────────────────────
+    final confidenceEvent = result.confidence >= 0.8
+        ? LogEvents.ocrConfidenceHigh
+        : result.confidence >= 0.5
+        ? LogEvents.ocrConfidenceMedium
+        : LogEvents.ocrConfidenceLow;
+    AppLogger.log(
+      confidenceEvent,
+      module: 'OcrService',
+      sessionId: sid,
+      metadata: {
+        'confidence': result.confidence,
+        'parser_status': result.parserStatus,
+      },
+    );
+
+    // ── Operational detection logs ─────────────────────────────────────────
+    if (result.needsCard || result.needsChange) {
+      AppLogger.log(
+        LogEvents.paymentDetected,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {
+          'needs_card': result.needsCard,
+          'needs_change': result.needsChange,
+          'change_amount_cents': result.changeAmountCents,
+        },
+      );
+    }
+    if (result.hasDrinks) {
+      AppLogger.log(
+        LogEvents.drinkDetected,
+        module: 'OcrService',
+        sessionId: sid,
+        metadata: {'has_drinks': true},
+      );
+    }
+
     if (result.hasRequiredFields) {
       AppLogger.log(
         LogEvents.ocrProcessSuccess,
@@ -447,7 +485,11 @@ class OcrService {
         needsCard: _containsAny(fullText, OcrKeywords.cardMachine),
         needsChange: _containsAny(fullText, OcrKeywords.change),
         changeAmountCents: _extractChangeAmount(fullText),
-        confidence: parserStatus == 'falha_total' ? 0.0 : 1.0,
+        confidence: parserStatus == 'sucesso_completo'
+            ? 1.0
+            : parserStatus == 'sucesso_parcial'
+            ? 0.6
+            : 0.0,
         parserStatus: parserStatus,
       ),
       collectionMethod: 'ignored',
