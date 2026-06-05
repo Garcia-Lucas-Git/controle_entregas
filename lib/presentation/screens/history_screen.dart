@@ -40,6 +40,16 @@ class HistoryScreen extends ConsumerWidget {
         title: const Text('Histórico'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.payments_outlined),
+            tooltip: 'Previsão de Pagamento',
+            onPressed: () => context.push('/history/payment-forecast'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_outlined),
+            tooltip: 'Limpar histórico',
+            onPressed: () => _confirmClearHistory(context, ref),
+          ),
+          IconButton(
             icon: const Icon(Icons.add_chart),
             tooltip: 'Adicionar Histórico',
             onPressed: () => context.push('/history/add'),
@@ -73,6 +83,34 @@ class HistoryScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Future<void> _confirmClearHistory(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Limpar histórico?'),
+        content: const Text(
+          'Todos os registros fechados do histórico serão removidos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Limpar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(historicalEntryNotifierProvider.notifier).clearHistory();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Histórico limpo.')));
   }
 
   List<MapEntry<String, List<Shift>>> _groupByMonth(List<Shift> shifts) {

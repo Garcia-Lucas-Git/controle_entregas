@@ -54,6 +54,12 @@ abstract final class LogEvents {
   static const routeDeleteRequest = 'ROUTE_DELETE_REQUEST';
   static const routeDeleteSuccess = 'ROUTE_DELETE_SUCCESS';
 
+  // ── Payment cycle ─────────────────────────────────────────────────────────
+  static const paymentPeriodCreated = 'PAYMENT_PERIOD_CREATED';
+  static const paymentPeriodUpdated = 'PAYMENT_PERIOD_UPDATED';
+  static const paymentForecastUpdated = 'PAYMENT_FORECAST_UPDATED';
+  static const paymentHistoryGenerated = 'PAYMENT_HISTORY_GENERATED';
+
   // ── Shift ─────────────────────────────────────────────────────────────────
   static const shiftEndManualCheck = 'SHIFT_END_MANUAL_CHECK';
   static const shiftEndManualAdded = 'SHIFT_END_MANUAL_ADDED';

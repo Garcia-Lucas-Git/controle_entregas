@@ -9,6 +9,7 @@ import 'package:controle_entregas/presentation/screens/manual_delivery_screen.da
 import 'package:controle_entregas/presentation/screens/log_viewer_screen.dart';
 import 'package:controle_entregas/presentation/screens/delivery_card_screen.dart';
 import 'package:controle_entregas/presentation/screens/history_screen.dart';
+import 'package:controle_entregas/presentation/screens/payment_forecast_screen.dart';
 import 'package:controle_entregas/presentation/screens/home_screen.dart';
 import 'package:controle_entregas/presentation/screens/ifood_confirmation_screen.dart';
 import 'package:controle_entregas/presentation/screens/new_route_screen.dart';
@@ -110,6 +111,10 @@ GoRouter appRouter(AppRouterRef ref) {
         path: '/history/add',
         builder: (context, state) =>
             AddHistoryScreen(entry: state.extra as Shift?),
+      ),
+      GoRoute(
+        path: '/history/payment-forecast',
+        builder: (context, state) => const PaymentForecastScreen(),
       ),
       GoRoute(
         path: '/shift/:shiftId/manual',
