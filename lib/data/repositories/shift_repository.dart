@@ -3,6 +3,7 @@ import 'package:controle_entregas/data/database/daos/shifts_dao.dart';
 import 'package:controle_entregas/domain/entities/shift.dart';
 import 'package:controle_entregas/domain/enums/shift_status.dart';
 import 'package:controle_entregas/domain/value_objects/money.dart';
+import 'package:controle_entregas/services/app_logger.dart';
 import 'package:drift/drift.dart';
 
 class ShiftRepository {
@@ -42,6 +43,7 @@ class ShiftRepository {
     required int id,
     required int totalEarningsCents,
     required int deliveryCount,
+    int? fuelExpenseCents,
   }) {
     final now = DateTime.now().toUtc().toIso8601String();
     return _dao.closeShift(
@@ -49,6 +51,7 @@ class ShiftRepository {
       endedAt: now,
       totalEarningsCents: totalEarningsCents,
       deliveryCount: deliveryCount,
+      fuelExpenseCents: fuelExpenseCents,
     );
   }
 
@@ -105,7 +108,35 @@ class ShiftRepository {
     );
   }
 
-  Future<void> deleteHistoricalEntry(int id) => _dao.deleteShiftById(id);
+  Future<void> deleteHistoricalEntry(int id) async {
+    AppLogger.info(
+      LogEvents.historyDeleteRequest,
+      module: 'ShiftRepository',
+      metadata: {'shift_id': id},
+    );
+    await _dao.deleteShiftById(id);
+    AppLogger.info(
+      LogEvents.historyDeleteSuccess,
+      module: 'ShiftRepository',
+      metadata: {'shift_id': id},
+    );
+  }
+
+  Future<void> clearHistory() async {
+    AppLogger.info(LogEvents.cleanupStart, module: 'ShiftRepository');
+    AppLogger.info(LogEvents.historyDeleteRequest, module: 'ShiftRepository');
+    final count = await _dao.deleteClosedShifts();
+    AppLogger.info(
+      LogEvents.historyDeleteSuccess,
+      module: 'ShiftRepository',
+      metadata: {'deleted': count},
+    );
+    AppLogger.info(
+      LogEvents.cleanupComplete,
+      module: 'ShiftRepository',
+      metadata: {'deleted': count},
+    );
+  }
 
   static Shift _fromRow(ShiftsTableData r) => Shift(
     id: r.id,
@@ -119,5 +150,6 @@ class ShiftRepository {
     createdAt: DateTime.parse(r.createdAt),
     source: r.source,
     hoursWorked: r.hoursWorked,
+    fuelExpenseCents: r.fuelExpenseCents,
   );
 }

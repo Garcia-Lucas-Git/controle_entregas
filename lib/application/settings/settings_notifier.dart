@@ -1,6 +1,7 @@
 import 'package:controle_entregas/core/providers/database_provider.dart';
 import 'package:controle_entregas/domain/entities/app_settings.dart';
 import 'package:controle_entregas/domain/value_objects/earnings_rules.dart';
+import 'package:controle_entregas/services/app_logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'settings_notifier.g.dart';
@@ -52,6 +53,19 @@ class SettingsNotifier extends _$SettingsNotifier {
     await ref
         .read(settingsRepositoryProvider)
         .saveSettings(current.copyWith(ocrContrastEnabled: enabled));
+    ref.invalidateSelf();
+  }
+
+  Future<void> updateDailyGoal(int cents) async {
+    final current = await future;
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveSettings(current.copyWith(dailyGoalCents: cents));
+    AppLogger.info(
+      LogEvents.dailyGoal,
+      module: 'SettingsNotifier',
+      metadata: {'value_cents': cents, 'value_reals': cents / 100},
+    );
     ref.invalidateSelf();
   }
 

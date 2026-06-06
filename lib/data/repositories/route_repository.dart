@@ -2,6 +2,7 @@ import 'package:controle_entregas/data/database/app_database.dart';
 import 'package:controle_entregas/data/database/daos/routes_dao.dart';
 import 'package:controle_entregas/domain/entities/route_entity.dart';
 import 'package:controle_entregas/domain/enums/route_status.dart';
+import 'package:controle_entregas/services/app_logger.dart';
 import 'package:drift/drift.dart';
 
 class RouteRepository {
@@ -48,6 +49,23 @@ class RouteRepository {
       id: id,
       closedAt: now,
       deliveryCountAtClose: deliveryCountAtClose,
+    );
+  }
+
+  Future<void> deleteRoute(int id) async {
+    final sid = SessionManager.generate('ROUTE');
+    AppLogger.info(
+      LogEvents.routeDeleteRequest,
+      module: 'RouteRepository',
+      sessionId: sid,
+      metadata: {'route_id': id},
+    );
+    await _dao.deleteRouteById(id);
+    AppLogger.info(
+      LogEvents.routeDeleteSuccess,
+      module: 'RouteRepository',
+      sessionId: sid,
+      metadata: {'route_id': id},
     );
   }
 

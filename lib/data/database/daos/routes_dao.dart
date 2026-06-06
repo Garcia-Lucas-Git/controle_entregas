@@ -46,4 +46,7 @@ class RoutesDao extends DatabaseAccessor<AppDatabase> with _$RoutesDaoMixin {
       deliveryCountAtClose: Value(deliveryCountAtClose),
     ),
   );
+
+  Future<int> deleteRouteById(int id) =>
+      (delete(db.routesTable)..where((t) => t.id.equals(id))).go();
 }

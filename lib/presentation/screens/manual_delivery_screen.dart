@@ -65,7 +65,7 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
             addressText: address.isEmpty ? '—' : address,
             customerName: customer.isEmpty ? null : customer,
             orderNumber: locator,
-            partnerCollectionCode: locator,
+            deliveryIdentifier: locator,
           );
 
       AppLogger.info(

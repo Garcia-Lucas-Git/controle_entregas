@@ -79,7 +79,7 @@ class TestDataGeneratorService {
       sequenceNumber: 1,
       customerName: '$marker Manual',
       addressText: '$marker Rua Manual, 45',
-      partnerCollectionCode: 'DEV1234',
+      deliveryIdentifier: '12345678',
     );
   }
 
@@ -93,8 +93,9 @@ class TestDataGeneratorService {
       customerName: '$marker OCR',
       addressText: '$marker Rua OCR, 88',
       orderNumber: '778899',
-      ocrRawText: '$marker OCR fixture\nENDERECO: Rua OCR, 88\nCOD: DEV7788',
-      partnerCollectionCode: 'DEV7788',
+      ocrRawText:
+          '$marker OCR fixture\nENDERECO: Rua OCR, 88\nIDENTIFICADOR: 2234 5678',
+      deliveryIdentifier: '22345678',
     );
   }
 
@@ -108,8 +109,7 @@ class TestDataGeneratorService {
       customerName: '$marker iFood',
       addressText: '$marker Rua iFood, 99',
       needsIfoodConfirmation: true,
-      deliveryIdentifier: 'IFOOD-DEV',
-      partnerCollectionCode: 'IFD1234',
+      deliveryIdentifier: '32345678',
       ocrRawText: '$marker iFood fixture',
     );
   }
@@ -123,7 +123,7 @@ class TestDataGeneratorService {
       sequenceNumber: 1,
       customerName: '$marker Manual',
       addressText: '$marker Rua Mista Manual, 1',
-      partnerCollectionCode: 'MIX0001',
+      deliveryIdentifier: '42345678',
     );
     await _insertDelivery(
       shiftId: shiftId,
@@ -132,7 +132,7 @@ class TestDataGeneratorService {
       customerName: '$marker OCR',
       addressText: '$marker Rua Mista OCR, 2',
       ocrRawText: '$marker OCR mixed fixture',
-      partnerCollectionCode: 'MIX0002',
+      deliveryIdentifier: '52345678',
     );
     await _insertDelivery(
       shiftId: shiftId,
@@ -141,7 +141,7 @@ class TestDataGeneratorService {
       customerName: '$marker iFood',
       addressText: '$marker Rua Mista iFood, 3',
       needsIfoodConfirmation: true,
-      partnerCollectionCode: 'MIX0003',
+      deliveryIdentifier: '62345678',
     );
     return routeId;
   }

@@ -39,9 +39,7 @@ class _IFoodConfirmationScreenState
   bool _disposed = false;
 
   String? get _locatorCode =>
-      widget.partnerCollectionCode?.trim().isNotEmpty == true
-      ? widget.partnerCollectionCode!.trim()
-      : widget.deliveryIdentifier?.trim().isNotEmpty == true
+      widget.deliveryIdentifier?.trim().isNotEmpty == true
       ? widget.deliveryIdentifier!.trim()
       : null;
 
@@ -116,6 +114,7 @@ class _IFoodConfirmationScreenState
               sessionId: _sid,
               metadata: {'url': url},
             );
+            _attemptAssistedFill();
           },
           onWebResourceError: (error) {
             if (_disposed || !mounted) return;
@@ -186,6 +185,76 @@ class _IFoodConfirmationScreenState
       sessionId: _sid,
       metadata: {'value': value, 'length': value.length, ...?extra},
     );
+  }
+
+  Future<void> _attemptAssistedFill() async {
+    final code = _locatorCode;
+    if (code == null || _disposed || !mounted) return;
+    await Clipboard.setData(ClipboardData(text: code));
+    AppLogger.log(
+      LogEvents.ifoodLocatorClipboardCopy,
+      module: 'IFoodConfirmationScreen',
+      sessionId: _sid,
+      metadata: {'code': code, 'trigger': 'assisted_fill'},
+    );
+    final settings = await ref.read(settingsNotifierProvider.future);
+    if (_disposed || !mounted) return;
+    final selector = settings.ifoodFieldSelector.trim();
+    if (selector.isNotEmpty) {
+      await _injectCode(code, selector);
+      return;
+    }
+    AppLogger.log(
+      LogEvents.ifoodJsInjectionStart,
+      module: 'IFoodConfirmationScreen',
+      sessionId: _sid,
+      metadata: {'mode': 'best_effort'},
+    );
+    try {
+      final codeLiteral = jsonEncode(code);
+      await _webViewController.runJavaScript('''
+        (function() {
+          var selectors = [
+            'input[type="tel"]',
+            'input[inputmode="numeric"]',
+            'input[name*="code" i]',
+            'input[name*="codigo" i]',
+            'input[name*="locator" i]',
+            'input'
+          ];
+          for (var i = 0; i < selectors.length; i++) {
+            var el = document.querySelector(selectors[i]);
+            if (el) {
+              el.focus();
+              el.value = $codeLiteral;
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+              return true;
+            }
+          }
+          return false;
+        })();
+      ''');
+      AppLogger.log(
+        LogEvents.ifoodJsInjectionSuccess,
+        module: 'IFoodConfirmationScreen',
+        sessionId: _sid,
+        metadata: {'mode': 'best_effort'},
+      );
+    } catch (e, st) {
+      AppLogger.error(
+        LogEvents.ifoodJsInjectionFail,
+        module: 'IFoodConfirmationScreen',
+        sessionId: _sid,
+        exception: e,
+        stackTrace: st,
+      );
+      AppLogger.info(
+        LogEvents.ifoodManualFallback,
+        module: 'IFoodConfirmationScreen',
+        sessionId: _sid,
+      );
+    }
   }
 
   Future<void> _injectCode(String code, String selector) async {
@@ -572,7 +641,7 @@ class _LocatorReference extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: colorScheme.secondaryContainer,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
           Expanded(
@@ -593,9 +662,9 @@ class _LocatorReference extends StatelessWidget {
                 Text(
                   code,
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 3,
+                    letterSpacing: 2,
                     color: colorScheme.onSecondaryContainer,
                   ),
                 ),

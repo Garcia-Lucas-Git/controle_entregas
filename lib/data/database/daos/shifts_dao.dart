@@ -38,12 +38,14 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
     required String endedAt,
     required int totalEarningsCents,
     required int deliveryCount,
+    int? fuelExpenseCents,
   }) => (update(db.shiftsTable)..where((t) => t.id.equals(id))).write(
     ShiftsTableCompanion(
       endedAt: Value(endedAt),
       status: const Value('closed'),
       totalEarningsCents: Value(totalEarningsCents),
       deliveryCount: Value(deliveryCount),
+      fuelExpenseCents: Value(fuelExpenseCents),
     ),
   );
 
@@ -67,4 +69,7 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
 
   Future<int> deleteShiftById(int id) =>
       (delete(db.shiftsTable)..where((t) => t.id.equals(id))).go();
+
+  Future<int> deleteClosedShifts() =>
+      (delete(db.shiftsTable)..where((t) => t.status.equals('closed'))).go();
 }

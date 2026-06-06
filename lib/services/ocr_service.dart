@@ -269,6 +269,14 @@ class OcrService {
       return OcrResult(rawText: recognized.text, confidence: 0.0);
     }
 
+    // ── Raw text captured log ──────────────────────────────────────────────
+    AppLogger.log(
+      LogEvents.ocrRawTextCaptured,
+      module: 'OcrService',
+      sessionId: sid,
+      metadata: {'lines': lines.length, 'chars': recognized.text.length},
+    );
+
     // ── Field extraction ──────────────────────────────────────────────────
     AppLogger.log(
       LogEvents.ocrRegexStart,
@@ -444,17 +452,25 @@ class OcrService {
     if (lines.isEmpty) return _OcrParseDetails.empty(rawText);
 
     final fullText = lines.join('\n').toUpperCase();
-    final address = _extractAfterAnchor(lines, OcrKeywords.addressAnchors);
+
+    // Address: collect up to 2 lines to handle OCR line splits.
+    final address = _extractAfterAnchor(
+      lines,
+      OcrKeywords.addressAnchors,
+      maxLines: 2,
+    );
+    // Customer: collect up to 2 lines (first+last name may be on separate lines).
     final customerName = _extractAfterAnchor(
       lines,
       OcrKeywords.customerNameAnchors,
+      maxLines: 2,
     );
     final neighborhood = _extractAfterAnchor(
       lines,
       OcrKeywords.neighborhoodAnchors,
     );
     final orderNumber = _extractOrderNumber(fullText, lines);
-    final locatorResult = _extractLocator(fullText, lines);
+    final locatorResult = _extractLocator(lines);
     final deliveryId = locatorResult.$1;
     final locatorInvalid = locatorResult.$2;
 
@@ -462,11 +478,14 @@ class OcrService {
     if (address == null) missing.add('address');
     if (orderNumber == null) missing.add('order');
     if (deliveryId == null) missing.add('locator');
-    final parserStatus = missing.isEmpty
-        ? 'sucesso_completo'
-        : missing.length < 3
-        ? 'sucesso_parcial'
-        : 'falha_total';
+
+    // FAIL only when BOTH address AND order are missing (OCR unusable).
+    // Missing only locator → PARTIAL (field warning, not total fail).
+    final parserStatus = (address != null && orderNumber != null)
+        ? (deliveryId != null ? 'sucesso_completo' : 'sucesso_parcial')
+        : missing.length >= 2
+        ? 'falha_total'
+        : 'sucesso_parcial';
 
     return _OcrParseDetails(
       result: OcrResult(
@@ -492,38 +511,40 @@ class OcrService {
             : 0.0,
         parserStatus: parserStatus,
       ),
-      collectionMethod: 'ignored',
+      collectionMethod: 'anchor',
       missingFields: missing,
       locatorInvalid: locatorInvalid,
     );
   }
 
   // ── iFood locator extraction ─────────────────────────────────────────────
+  // ONLY from the "Localizador:" label. Never from generic numeric patterns.
 
-  static (String?, bool) _extractLocator(String fullText, List<String> lines) {
+  static (String?, bool) _extractLocator(List<String> lines) {
     final anchored = _extractAfterAnchor(lines, OcrKeywords.deliveryIdAnchors);
-    final candidates = <String>[];
-    if (anchored != null) candidates.add(anchored);
-    candidates.addAll(
-      RegExp(
-        r'\b(\d{4})\s+(\d{4})\b',
-      ).allMatches(fullText).map((m) => '${m.group(1)}${m.group(2)}'),
-    );
-    candidates.addAll(
-      RegExp(r'\b\d{8}\b').allMatches(fullText).map((m) => m.group(0)!),
-    );
+    if (anchored == null) return (null, false);
 
-    var invalid = false;
-    for (final candidate in candidates) {
-      final digits = candidate.replaceAll(RegExp(r'\D'), '');
-      if (RegExp(r'^\d{8}$').hasMatch(digits)) return (digits, invalid);
-      if (digits.isNotEmpty) invalid = true;
-    }
-    return (null, invalid);
+    final digits = anchored.replaceAll(RegExp(r'\D'), '');
+    if (RegExp(r'^\d{8}$').hasMatch(digits)) return (digits, false);
+
+    // Anchor was found but value is not 8 digits — log invalid but don't fallback.
+    return (null, digits.isNotEmpty);
   }
 
   static void _logParserDetails(_OcrParseDetails parsed, String? sessionId) {
     final result = parsed.result;
+
+    if (result.deliveryIdentifier != null) {
+      AppLogger.log(
+        LogEvents.parserLocatorValidated,
+        module: 'OcrService',
+        sessionId: sessionId,
+        metadata: {
+          'value': result.deliveryIdentifier,
+          'length': result.deliveryIdentifier!.length,
+        },
+      );
+    }
     if (parsed.locatorInvalid) {
       AppLogger.warn(
         LogEvents.parserLocatorInvalid,
@@ -545,6 +566,15 @@ class OcrService {
         sessionId: sessionId,
       );
     }
+    if (result.parserStatus == 'falha_total') {
+      AppLogger.warn(
+        LogEvents.parserManualReviewRequired,
+        module: 'OcrService',
+        sessionId: sessionId,
+        metadata: {'reason': 'mandatory_fields_missing'},
+      );
+    }
+
     final event = switch (result.parserStatus) {
       'sucesso_completo' => LogEvents.parserSuccessComplete,
       'sucesso_parcial' => LogEvents.parserSuccessPartial,
@@ -570,19 +600,61 @@ class OcrService {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  static String? _extractAfterAnchor(List<String> lines, List<String> anchors) {
+  // Finds the first line containing an anchor keyword and extracts the value.
+  // Inline value (after ':' on same line) takes priority.
+  // Otherwise collects up to [maxLines] subsequent non-anchor lines.
+  static String? _extractAfterAnchor(
+    List<String> lines,
+    List<String> anchors, {
+    int maxLines = 1,
+  }) {
     for (int i = 0; i < lines.length; i++) {
       final upper = lines[i].toUpperCase();
       for (final anchor in anchors) {
         if (upper.contains(anchor)) {
+          AppLogger.log(
+            LogEvents.parserLabelFound,
+            module: 'OcrService',
+            metadata: {'label': anchor, 'line': lines[i]},
+          );
+
+          // Inline value after colon on the same line.
           final colonIdx = lines[i].indexOf(':');
           if (colonIdx != -1 && colonIdx < lines[i].length - 1) {
             final value = lines[i].substring(colonIdx + 1).trim();
-            if (value.isNotEmpty) return value;
+            if (value.isNotEmpty) {
+              AppLogger.log(
+                LogEvents.parserLabelValueExtracted,
+                module: 'OcrService',
+                metadata: {'label': anchor, 'value': value, 'source': 'inline'},
+              );
+              return value;
+            }
           }
-          if (i + 1 < lines.length) {
-            final next = lines[i + 1].trim();
-            if (next.isNotEmpty && !_isAnchorLine(next)) return next;
+
+          // Collect subsequent lines until next anchor or boundary.
+          final parts = <String>[];
+          for (int j = i + 1;
+              j < lines.length && parts.length < maxLines;
+              j++) {
+            final next = lines[j].trim();
+            if (next.isEmpty) continue;
+            if (_isAnchorLine(next)) break;
+            parts.add(next);
+          }
+          if (parts.isNotEmpty) {
+            final value = parts.join(' ');
+            AppLogger.log(
+              LogEvents.parserLabelValueExtracted,
+              module: 'OcrService',
+              metadata: {
+                'label': anchor,
+                'value': value,
+                'source': 'next_lines',
+                'parts': parts.length,
+              },
+            );
+            return value;
           }
         }
       }
@@ -625,6 +697,7 @@ class OcrService {
       ...OcrKeywords.orderNumberAnchors,
       ...OcrKeywords.deliveryIdAnchors,
       ...OcrKeywords.collectionCodeAnchors,
+      ...OcrKeywords.sectionBoundaryAnchors,
     ];
     return allAnchors.any((a) => upper.contains(a));
   }

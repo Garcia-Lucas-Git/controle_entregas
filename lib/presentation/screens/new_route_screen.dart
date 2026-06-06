@@ -208,7 +208,7 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
     String sid, {
     required String source,
   }) {
-    final locator = result.partnerCollectionCode ?? result.deliveryIdentifier;
+    final locator = result.deliveryIdentifier;
     if (locator == null || locator.isEmpty) return;
     AppLogger.log(
       LogEvents.locatorCaptured,

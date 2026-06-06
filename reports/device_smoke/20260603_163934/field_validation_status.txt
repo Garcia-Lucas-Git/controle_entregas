@@ -1,0 +1,5 @@
+FIELD_VALIDATION: MANUAL_READY
+Manual checklist not completed during automated run.
+Open DevTools -> Validação Guiada de Campo to complete the checklist.
+Deep Link: deliveryflow://dev/field-validation
+Report Path: /sdcard/Android/data/com.example.controle_entregas/files/field_validation_reports/latest_field_validation_report.md

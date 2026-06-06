@@ -265,7 +265,7 @@ class _RouteByIdProviderElement
   int get routeId => (origin as RouteByIdProvider).routeId;
 }
 
-String _$routeNotifierHash() => r'1acdaf24f8cc2891e7ed365b631dd4991ebb5fd2';
+String _$routeNotifierHash() => r'cfdc315e4a087eca01aa6f2a6bd8d5e77dee403a';
 
 /// See also [RouteNotifier].
 @ProviderFor(RouteNotifier)

@@ -6,7 +6,7 @@ part of 'ifood_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$iFoodNotifierHash() => r'78edde9ea8057319f524d59beb99fc4dbc8275dd';
+String _$iFoodNotifierHash() => r'5dfade018922960bae8edcd72f3a35a9d75aa68f';
 
 /// See also [IFoodNotifier].
 @ProviderFor(IFoodNotifier)

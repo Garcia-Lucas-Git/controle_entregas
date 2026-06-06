@@ -706,7 +706,9 @@ class AutomationRunner {
           customerName: '$marker Cliente $i',
           addressText: '$marker Rua Sequencial, $i',
           deliveryIdentifier:
-              '${(ctx.runId.hashCode.abs() % 90000000 + 10000000 + i).toString().substring(0, 8)}',
+              (ctx.runId.hashCode.abs() % 90000000 + 10000000 + i)
+                  .toString()
+                  .substring(0, 8),
         ),
       );
     }
@@ -721,7 +723,9 @@ class AutomationRunner {
           customerName: '$marker Cliente $i',
           addressText: '$marker Rua Sequencial, $i',
           deliveryIdentifier:
-              '${(ctx.runId.hashCode.abs() % 90000000 + 10000000 + i).toString().substring(0, 8)}',
+              (ctx.runId.hashCode.abs() % 90000000 + 10000000 + i)
+                  .toString()
+                  .substring(0, 8),
         ),
       );
     }

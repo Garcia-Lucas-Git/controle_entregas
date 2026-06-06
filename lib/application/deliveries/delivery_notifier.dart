@@ -51,6 +51,7 @@ class DeliveryNotifier extends _$DeliveryNotifier {
     required String addressText,
     String? customerName,
     String? orderNumber,
+    String? deliveryIdentifier,
     String? partnerCollectionCode,
   }) => ref
       .read(deliveryRepositoryProvider)
@@ -61,6 +62,7 @@ class DeliveryNotifier extends _$DeliveryNotifier {
         addressText: addressText,
         customerName: customerName,
         orderNumber: orderNumber,
+        deliveryIdentifier: deliveryIdentifier,
         partnerCollectionCode: partnerCollectionCode,
       );
 
@@ -74,4 +76,14 @@ class DeliveryNotifier extends _$DeliveryNotifier {
   Future<void> updateIfood(int id, {required bool success}) => ref
       .read(deliveryRepositoryProvider)
       .updateIfoodConfirmation(id: id, success: success);
+
+  Future<void> delete(
+    int id, {
+    required int routeId,
+    required int shiftId,
+  }) async {
+    await ref.read(deliveryRepositoryProvider).deleteDelivery(id);
+    ref.invalidate(deliveriesForRouteProvider(routeId));
+    ref.invalidate(deliveryByIdProvider(id));
+  }
 }

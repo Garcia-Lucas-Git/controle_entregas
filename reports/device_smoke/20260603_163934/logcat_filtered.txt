@@ -1,0 +1,17 @@
+06-03 16:39:40.861 22135 22189 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:39:41.459 22135 22189 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:41.710 22135 22213 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:41.961 22135 22219 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:42.226 22135 22220 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:42.447 22135 22222 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:42.701 22135 22228 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:42.908 22135 22234 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:43.118 22135 22236 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:43.344 22135 22189 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:43.461 22135 22219 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:39:43.680 22135 22219 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:39:45.970 22135 22135 D DeliveryFlow: DEV_DEEP_LINK_RECEIVED route=/dev/field-validation
+06-03 16:39:46.434 22135 22135 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=io.flutter.embedding.android.FlutterActivity$1@f8645d4
+06-03 16:39:48.196 21234 21703 E jwsj    : java.lang.RuntimeException: ManagedChannel allocation site
+06-03 16:39:48.559 21234 21299 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+06-03 16:39:48.708 21234 21299 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed

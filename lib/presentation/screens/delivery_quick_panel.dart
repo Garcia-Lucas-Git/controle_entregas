@@ -29,10 +29,7 @@ class DeliveryQuickPanel extends ConsumerStatefulWidget {
 class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
   bool _completing = false;
 
-  String? get _locator =>
-      widget.delivery.partnerCollectionCode?.isNotEmpty == true
-      ? widget.delivery.partnerCollectionCode
-      : widget.delivery.deliveryIdentifier?.isNotEmpty == true
+  String? get _locator => widget.delivery.deliveryIdentifier?.isNotEmpty == true
       ? widget.delivery.deliveryIdentifier
       : null;
 
@@ -96,9 +93,39 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
       '/delivery/${widget.delivery.id}/ifood',
       extra: {
         'deliveryIdentifier': widget.delivery.deliveryIdentifier,
-        'partnerCollectionCode': widget.delivery.partnerCollectionCode,
+        'partnerCollectionCode': null,
       },
     );
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir entrega?'),
+        content: const Text('A entrega será removida desta rota.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref
+        .read(deliveryNotifierProvider.notifier)
+        .delete(
+          widget.delivery.id,
+          routeId: widget.routeId,
+          shiftId: widget.shiftId,
+        );
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 
   Future<void> _complete() async {
@@ -149,11 +176,11 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.inverseSurface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
                   children: [
@@ -175,9 +202,9 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                           Text(
                             _locator!,
                             style: TextStyle(
-                              fontSize: 30,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 4,
+                              letterSpacing: 2,
                               color: colorScheme.onInverseSurface,
                               fontFamily: 'monospace',
                             ),
@@ -197,7 +224,7 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
             ],
 
             // ── Address ───────────────────────────────────────────────────
@@ -319,12 +346,29 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
 
             const SizedBox(height: 8),
 
-            OutlinedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 44),
-              ),
-              child: const Text('Voltar'),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _delete,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Excluir'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 44),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 44),
+                    ),
+                    child: const Text('Voltar'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

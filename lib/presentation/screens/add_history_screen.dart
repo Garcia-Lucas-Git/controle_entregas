@@ -16,21 +16,35 @@ class AddHistoryScreen extends ConsumerStatefulWidget {
 class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
   late DateTime _selectedDate;
   late final TextEditingController _deliveriesCtrl;
+  late final TextEditingController _r8Ctrl;
+  late final TextEditingController _r10Ctrl;
   late final TextEditingController _earningsCtrl;
   late final TextEditingController _hoursCtrl;
   late final TextEditingController _notesCtrl;
   bool _saving = false;
+  bool _syncing = false;
 
   bool get _isEditing => widget.entry != null;
+
+  int get _totalDeliveries => int.tryParse(_deliveriesCtrl.text.trim()) ?? 0;
+  int get _r8Count => int.tryParse(_r8Ctrl.text.trim()) ?? 0;
+  int get _r10Count => int.tryParse(_r10Ctrl.text.trim()) ?? 0;
+
+  bool get _splitExceedsTotal => _r8Count + _r10Count > _totalDeliveries;
 
   @override
   void initState() {
     super.initState();
     final e = widget.entry;
     _selectedDate = e != null ? e.startedAt.toLocal() : DateTime.now();
+    final deliveries = e?.deliveryCount ?? 0;
     _deliveriesCtrl = TextEditingController(
-      text: e != null ? '${e.deliveryCount}' : '',
+      text: e != null ? '$deliveries' : '',
     );
+    _r8Ctrl = TextEditingController(
+      text: e != null ? '$deliveries' : '',
+    );
+    _r10Ctrl = TextEditingController(text: e != null ? '0' : '');
     _earningsCtrl = TextEditingController(
       text: e != null ? (e.totalEarnings.cents / 100).toStringAsFixed(2) : '',
     );
@@ -38,15 +52,66 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
       text: e?.hoursWorked != null ? e!.hoursWorked!.toStringAsFixed(0) : '',
     );
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
+
+    _deliveriesCtrl.addListener(_onTotalChanged);
+    _r8Ctrl.addListener(_onR8Changed);
+    _r10Ctrl.addListener(_onR10Changed);
   }
 
   @override
   void dispose() {
+    _deliveriesCtrl.removeListener(_onTotalChanged);
+    _r8Ctrl.removeListener(_onR8Changed);
+    _r10Ctrl.removeListener(_onR10Changed);
     _deliveriesCtrl.dispose();
+    _r8Ctrl.dispose();
+    _r10Ctrl.dispose();
     _earningsCtrl.dispose();
     _hoursCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
+  }
+
+  void _onTotalChanged() {
+    if (_syncing) return;
+    _syncing = true;
+    final total = _totalDeliveries;
+    _r8Ctrl.text = '$total';
+    _r10Ctrl.text = '0';
+    _recalcEarnings();
+    _syncing = false;
+    setState(() {});
+  }
+
+  void _onR8Changed() {
+    if (_syncing) return;
+    _syncing = true;
+    final r8 = _r8Count;
+    final total = _totalDeliveries;
+    final r10 = (total - r8).clamp(0, total > 0 ? total : 9999);
+    _r10Ctrl.text = '$r10';
+    _recalcEarnings();
+    _syncing = false;
+    setState(() {});
+  }
+
+  void _onR10Changed() {
+    if (_syncing) return;
+    _syncing = true;
+    final r10 = _r10Count;
+    final total = _totalDeliveries;
+    final r8 = (total - r10).clamp(0, total > 0 ? total : 9999);
+    _r8Ctrl.text = '$r8';
+    _recalcEarnings();
+    _syncing = false;
+    setState(() {});
+  }
+
+  void _recalcEarnings() {
+    final r8 = _r8Count;
+    final r10 = _r10Count;
+    final earnings = r8 * 8 + r10 * 10;
+    _earningsCtrl.text = earnings.toStringAsFixed(2);
   }
 
   Future<void> _pickDate() async {
@@ -139,16 +204,64 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // ── Total deliveries ───────────────────────────────────────────
             TextField(
               controller: _deliveriesCtrl,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Total de Entregas *',
                 border: OutlineInputBorder(),
-                hintText: 'Ex: 25',
+                hintText: 'Ex: 18',
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+
+            // ── R$8 / R$10 split ───────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _r8Ctrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Entregas R\$8',
+                      border: const OutlineInputBorder(),
+                      hintText: '0',
+                      errorText: _splitExceedsTotal ? '' : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _r10Ctrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Entregas R\$10',
+                      border: const OutlineInputBorder(),
+                      hintText: '0',
+                      errorText: _splitExceedsTotal ? '' : null,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (_splitExceedsTotal)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'R\$8 + R\$10 (${_r8Count + _r10Count}) exceede o total ($_totalDeliveries)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12),
+
+            // ── Estimated earnings ─────────────────────────────────────────
             TextField(
               controller: _earningsCtrl,
               keyboardType: const TextInputType.numberWithOptions(
@@ -159,9 +272,11 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
                 border: OutlineInputBorder(),
                 prefixText: 'R\$ ',
                 hintText: '0,00',
+                helperText: 'Editável — inclua bônus ou ajustes',
               ),
             ),
             const SizedBox(height: 16),
+
             TextField(
               controller: _hoursCtrl,
               keyboardType: const TextInputType.numberWithOptions(

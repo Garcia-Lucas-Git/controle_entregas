@@ -1,0 +1,22 @@
+06-04 18:43:10.412  2444  2466 I ActivityManager: 10528 handleShowAppErrorUi: shouldThottle=false,showFirstCrash=false,repeating=false,shouldForceShowError=false
+06-04 18:43:11.169  2444  3116 W WindowManager: Exception thrown during dispatchAppVisibility Window{50c89f u0 com.example.controle_entregas/com.example.controle_entregas.MainActivity EXITING}
+06-04 18:43:11.169  2444  3116 W WindowManager: android.os.DeadObjectException
+06-04 18:44:29.209  2444  2474 W NotificationHistory: Attempted to remove conversation for locked/gone/disabled user 0
+06-04 18:44:29.424  2444  2474 W NotificationHistory: Attempted to remove conversation for locked/gone/disabled user 0
+06-04 18:44:29.900  2444  2444 W NotificationHistory: Attempted to add notif for locked/gone/disabled user 0
+06-04 18:44:30.282  2444  2474 W NotificationHistory: Attempted to remove conversation for locked/gone/disabled user 0
+06-04 18:45:38.406 27127 27276 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:45:41.419 27127 27277 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:45:43.017  3277  3499 D DefaultWosExt: setWfcRegErrorCode is empty
+06-04 18:45:43.021  3277  3499 D ImsRegistrationOemPluginImpl: broadcastImsRegistration phoneId=0, regErrorCode=1400, imsRat=18, regState=2, mLastImsRegState=2
+06-04 18:45:43.029  3277  3499 D DefaultWosExt: showPDNErrorMessages is empty
+06-04 18:45:43.238  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-04 18:45:44.437 27127 27277 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:45:47.451 27127 27277 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:45:50.469 27127 27277 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:45:55.303  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-04 18:45:56.523 27127 27277 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:46:02.576 27127 27278 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+06-04 18:46:05.770  2444  2474 W NotificationHistory: Attempted to remove conversation for locked/gone/disabled user 0
+06-04 18:46:07.373  1991  2436 E thermal_core: dump_thermal_log:"Error: sccanf error, ret=9\n"
+06-04 18:46:08.611 27127 27277 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0

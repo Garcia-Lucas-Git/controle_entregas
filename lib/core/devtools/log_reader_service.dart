@@ -108,7 +108,7 @@ class SessionTimeline {
 }
 
 abstract final class LogReaderService {
-  static const _logNames = [
+  static const _legacyLogNames = [
     'deliveryflow.log',
     'deliveryflow.1.log',
     'deliveryflow.2.log',
@@ -123,9 +123,10 @@ abstract final class LogReaderService {
     var malformed = 0;
     var skipped = 0;
 
-    for (final name in _logNames) {
-      final file = File('${dir.path}/$name');
-      if (!await file.exists()) continue;
+    final logFiles = await _discoverLogFiles(dir.path);
+
+    for (final file in logFiles) {
+      final name = file.uri.pathSegments.last;
       final size = await file.length();
       files.add(DevLogFileInfo(name: name, sizeBytes: size));
 
@@ -150,6 +151,27 @@ abstract final class LogReaderService {
       skippedLines: skipped,
     );
   }
+
+  static Future<List<File>> _discoverLogFiles(String dirPath) async {
+    final result = <File>[];
+    final seen = <String>{};
+    try {
+      await for (final entity in Directory(dirPath).list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.last;
+        if (_isHourlyLogName(name) && seen.add(entity.path)) result.add(entity);
+      }
+    } catch (_) {}
+    for (final name in _legacyLogNames) {
+      final file = File('$dirPath/$name');
+      if (await file.exists() && seen.add(file.path)) result.add(file);
+    }
+    result.sort((a, b) => b.path.compareTo(a.path));
+    return result;
+  }
+
+  static bool _isHourlyLogName(String name) =>
+      RegExp(r'^\d{4}-\d{2}-\d{2}_\d{2}\.log$').hasMatch(name);
 
   static List<DevLogEntry> filter(
     List<DevLogEntry> entries, {

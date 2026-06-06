@@ -269,7 +269,7 @@ class _DeliveryByIdProviderElement
   int get deliveryId => (origin as DeliveryByIdProvider).deliveryId;
 }
 
-String _$deliveryNotifierHash() => r'82dfab2aba912426421ce44ecd5ffcbccd1b3cb7';
+String _$deliveryNotifierHash() => r'be90c972a29541d17e994a874a867afb5f1f16a8';
 
 /// See also [DeliveryNotifier].
 @ProviderFor(DeliveryNotifier)

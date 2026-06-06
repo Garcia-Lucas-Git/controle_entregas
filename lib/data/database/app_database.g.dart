@@ -127,6 +127,17 @@ class $ShiftsTableTable extends ShiftsTable
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _fuelExpenseCentsMeta = const VerificationMeta(
+    'fuelExpenseCents',
+  );
+  @override
+  late final GeneratedColumn<int> fuelExpenseCents = GeneratedColumn<int>(
+    'fuel_expense_cents',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -140,6 +151,7 @@ class $ShiftsTableTable extends ShiftsTable
     createdAt,
     source,
     hoursWorked,
+    fuelExpenseCents,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -231,6 +243,15 @@ class $ShiftsTableTable extends ShiftsTable
         ),
       );
     }
+    if (data.containsKey('fuel_expense_cents')) {
+      context.handle(
+        _fuelExpenseCentsMeta,
+        fuelExpenseCents.isAcceptableOrUnknown(
+          data['fuel_expense_cents']!,
+          _fuelExpenseCentsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -284,6 +305,10 @@ class $ShiftsTableTable extends ShiftsTable
         DriftSqlType.double,
         data['${effectivePrefix}hours_worked'],
       ),
+      fuelExpenseCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fuel_expense_cents'],
+      ),
     );
   }
 
@@ -305,6 +330,7 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
   final String createdAt;
   final String source;
   final double? hoursWorked;
+  final int? fuelExpenseCents;
   const ShiftsTableData({
     required this.id,
     required this.driverName,
@@ -317,6 +343,7 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     required this.createdAt,
     required this.source,
     this.hoursWorked,
+    this.fuelExpenseCents,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -341,6 +368,9 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || hoursWorked != null) {
       map['hours_worked'] = Variable<double>(hoursWorked);
+    }
+    if (!nullToAbsent || fuelExpenseCents != null) {
+      map['fuel_expense_cents'] = Variable<int>(fuelExpenseCents);
     }
     return map;
   }
@@ -368,6 +398,9 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       hoursWorked: hoursWorked == null && nullToAbsent
           ? const Value.absent()
           : Value(hoursWorked),
+      fuelExpenseCents: fuelExpenseCents == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fuelExpenseCents),
     );
   }
 
@@ -388,6 +421,7 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       createdAt: serializer.fromJson<String>(json['createdAt']),
       source: serializer.fromJson<String>(json['source']),
       hoursWorked: serializer.fromJson<double?>(json['hoursWorked']),
+      fuelExpenseCents: serializer.fromJson<int?>(json['fuelExpenseCents']),
     );
   }
   @override
@@ -405,6 +439,7 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       'createdAt': serializer.toJson<String>(createdAt),
       'source': serializer.toJson<String>(source),
       'hoursWorked': serializer.toJson<double?>(hoursWorked),
+      'fuelExpenseCents': serializer.toJson<int?>(fuelExpenseCents),
     };
   }
 
@@ -420,6 +455,7 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     String? createdAt,
     String? source,
     Value<double?> hoursWorked = const Value.absent(),
+    Value<int?> fuelExpenseCents = const Value.absent(),
   }) => ShiftsTableData(
     id: id ?? this.id,
     driverName: driverName ?? this.driverName,
@@ -436,6 +472,9 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     createdAt: createdAt ?? this.createdAt,
     source: source ?? this.source,
     hoursWorked: hoursWorked.present ? hoursWorked.value : this.hoursWorked,
+    fuelExpenseCents: fuelExpenseCents.present
+        ? fuelExpenseCents.value
+        : this.fuelExpenseCents,
   );
   ShiftsTableData copyWithCompanion(ShiftsTableCompanion data) {
     return ShiftsTableData(
@@ -458,6 +497,9 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       hoursWorked: data.hoursWorked.present
           ? data.hoursWorked.value
           : this.hoursWorked,
+      fuelExpenseCents: data.fuelExpenseCents.present
+          ? data.fuelExpenseCents.value
+          : this.fuelExpenseCents,
     );
   }
 
@@ -474,7 +516,8 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('source: $source, ')
-          ..write('hoursWorked: $hoursWorked')
+          ..write('hoursWorked: $hoursWorked, ')
+          ..write('fuelExpenseCents: $fuelExpenseCents')
           ..write(')'))
         .toString();
   }
@@ -492,6 +535,7 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     createdAt,
     source,
     hoursWorked,
+    fuelExpenseCents,
   );
   @override
   bool operator ==(Object other) =>
@@ -507,7 +551,8 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           other.notes == this.notes &&
           other.createdAt == this.createdAt &&
           other.source == this.source &&
-          other.hoursWorked == this.hoursWorked);
+          other.hoursWorked == this.hoursWorked &&
+          other.fuelExpenseCents == this.fuelExpenseCents);
 }
 
 class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
@@ -522,6 +567,7 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
   final Value<String> createdAt;
   final Value<String> source;
   final Value<double?> hoursWorked;
+  final Value<int?> fuelExpenseCents;
   const ShiftsTableCompanion({
     this.id = const Value.absent(),
     this.driverName = const Value.absent(),
@@ -534,6 +580,7 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     this.createdAt = const Value.absent(),
     this.source = const Value.absent(),
     this.hoursWorked = const Value.absent(),
+    this.fuelExpenseCents = const Value.absent(),
   });
   ShiftsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -547,6 +594,7 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     required String createdAt,
     this.source = const Value.absent(),
     this.hoursWorked = const Value.absent(),
+    this.fuelExpenseCents = const Value.absent(),
   }) : driverName = Value(driverName),
        startedAt = Value(startedAt),
        createdAt = Value(createdAt);
@@ -562,6 +610,7 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     Expression<String>? createdAt,
     Expression<String>? source,
     Expression<double>? hoursWorked,
+    Expression<int>? fuelExpenseCents,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -576,6 +625,7 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
       if (createdAt != null) 'created_at': createdAt,
       if (source != null) 'source': source,
       if (hoursWorked != null) 'hours_worked': hoursWorked,
+      if (fuelExpenseCents != null) 'fuel_expense_cents': fuelExpenseCents,
     });
   }
 
@@ -591,6 +641,7 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     Value<String>? createdAt,
     Value<String>? source,
     Value<double?>? hoursWorked,
+    Value<int?>? fuelExpenseCents,
   }) {
     return ShiftsTableCompanion(
       id: id ?? this.id,
@@ -604,6 +655,7 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
       createdAt: createdAt ?? this.createdAt,
       source: source ?? this.source,
       hoursWorked: hoursWorked ?? this.hoursWorked,
+      fuelExpenseCents: fuelExpenseCents ?? this.fuelExpenseCents,
     );
   }
 
@@ -643,6 +695,9 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     if (hoursWorked.present) {
       map['hours_worked'] = Variable<double>(hoursWorked.value);
     }
+    if (fuelExpenseCents.present) {
+      map['fuel_expense_cents'] = Variable<int>(fuelExpenseCents.value);
+    }
     return map;
   }
 
@@ -659,7 +714,8 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('source: $source, ')
-          ..write('hoursWorked: $hoursWorked')
+          ..write('hoursWorked: $hoursWorked, ')
+          ..write('fuelExpenseCents: $fuelExpenseCents')
           ..write(')'))
         .toString();
   }
@@ -4220,6 +4276,18 @@ class $AppConfigTableTable extends AppConfigTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _dailyGoalCentsMeta = const VerificationMeta(
+    'dailyGoalCents',
+  );
+  @override
+  late final GeneratedColumn<int> dailyGoalCents = GeneratedColumn<int>(
+    'daily_goal_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(12000),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -4252,6 +4320,7 @@ class $AppConfigTableTable extends AppConfigTable
     ocrContrastEnabled,
     activeRouteId,
     activeDeliveryIndex,
+    dailyGoalCents,
     createdAt,
     updatedAt,
   ];
@@ -4327,6 +4396,15 @@ class $AppConfigTableTable extends AppConfigTable
         ),
       );
     }
+    if (data.containsKey('daily_goal_cents')) {
+      context.handle(
+        _dailyGoalCentsMeta,
+        dailyGoalCents.isAcceptableOrUnknown(
+          data['daily_goal_cents']!,
+          _dailyGoalCentsMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -4384,6 +4462,10 @@ class $AppConfigTableTable extends AppConfigTable
         DriftSqlType.int,
         data['${effectivePrefix}active_delivery_index'],
       ),
+      dailyGoalCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}daily_goal_cents'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -4411,6 +4493,7 @@ class AppConfigTableData extends DataClass
   final bool ocrContrastEnabled;
   final int? activeRouteId;
   final int? activeDeliveryIndex;
+  final int dailyGoalCents;
   final String createdAt;
   final String updatedAt;
   const AppConfigTableData({
@@ -4422,6 +4505,7 @@ class AppConfigTableData extends DataClass
     required this.ocrContrastEnabled,
     this.activeRouteId,
     this.activeDeliveryIndex,
+    required this.dailyGoalCents,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -4440,6 +4524,7 @@ class AppConfigTableData extends DataClass
     if (!nullToAbsent || activeDeliveryIndex != null) {
       map['active_delivery_index'] = Variable<int>(activeDeliveryIndex);
     }
+    map['daily_goal_cents'] = Variable<int>(dailyGoalCents);
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     return map;
@@ -4459,6 +4544,7 @@ class AppConfigTableData extends DataClass
       activeDeliveryIndex: activeDeliveryIndex == null && nullToAbsent
           ? const Value.absent()
           : Value(activeDeliveryIndex),
+      dailyGoalCents: Value(dailyGoalCents),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -4482,6 +4568,7 @@ class AppConfigTableData extends DataClass
       activeDeliveryIndex: serializer.fromJson<int?>(
         json['activeDeliveryIndex'],
       ),
+      dailyGoalCents: serializer.fromJson<int>(json['dailyGoalCents']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
     );
@@ -4498,6 +4585,7 @@ class AppConfigTableData extends DataClass
       'ocrContrastEnabled': serializer.toJson<bool>(ocrContrastEnabled),
       'activeRouteId': serializer.toJson<int?>(activeRouteId),
       'activeDeliveryIndex': serializer.toJson<int?>(activeDeliveryIndex),
+      'dailyGoalCents': serializer.toJson<int>(dailyGoalCents),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
     };
@@ -4512,6 +4600,7 @@ class AppConfigTableData extends DataClass
     bool? ocrContrastEnabled,
     Value<int?> activeRouteId = const Value.absent(),
     Value<int?> activeDeliveryIndex = const Value.absent(),
+    int? dailyGoalCents,
     String? createdAt,
     String? updatedAt,
   }) => AppConfigTableData(
@@ -4527,6 +4616,7 @@ class AppConfigTableData extends DataClass
     activeDeliveryIndex: activeDeliveryIndex.present
         ? activeDeliveryIndex.value
         : this.activeDeliveryIndex,
+    dailyGoalCents: dailyGoalCents ?? this.dailyGoalCents,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -4552,6 +4642,9 @@ class AppConfigTableData extends DataClass
       activeDeliveryIndex: data.activeDeliveryIndex.present
           ? data.activeDeliveryIndex.value
           : this.activeDeliveryIndex,
+      dailyGoalCents: data.dailyGoalCents.present
+          ? data.dailyGoalCents.value
+          : this.dailyGoalCents,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -4568,6 +4661,7 @@ class AppConfigTableData extends DataClass
           ..write('ocrContrastEnabled: $ocrContrastEnabled, ')
           ..write('activeRouteId: $activeRouteId, ')
           ..write('activeDeliveryIndex: $activeDeliveryIndex, ')
+          ..write('dailyGoalCents: $dailyGoalCents, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -4584,6 +4678,7 @@ class AppConfigTableData extends DataClass
     ocrContrastEnabled,
     activeRouteId,
     activeDeliveryIndex,
+    dailyGoalCents,
     createdAt,
     updatedAt,
   );
@@ -4599,6 +4694,7 @@ class AppConfigTableData extends DataClass
           other.ocrContrastEnabled == this.ocrContrastEnabled &&
           other.activeRouteId == this.activeRouteId &&
           other.activeDeliveryIndex == this.activeDeliveryIndex &&
+          other.dailyGoalCents == this.dailyGoalCents &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -4612,6 +4708,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
   final Value<bool> ocrContrastEnabled;
   final Value<int?> activeRouteId;
   final Value<int?> activeDeliveryIndex;
+  final Value<int> dailyGoalCents;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   const AppConfigTableCompanion({
@@ -4623,6 +4720,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     this.ocrContrastEnabled = const Value.absent(),
     this.activeRouteId = const Value.absent(),
     this.activeDeliveryIndex = const Value.absent(),
+    this.dailyGoalCents = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -4635,6 +4733,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     this.ocrContrastEnabled = const Value.absent(),
     this.activeRouteId = const Value.absent(),
     this.activeDeliveryIndex = const Value.absent(),
+    this.dailyGoalCents = const Value.absent(),
     required String createdAt,
     required String updatedAt,
   }) : createdAt = Value(createdAt),
@@ -4648,6 +4747,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     Expression<bool>? ocrContrastEnabled,
     Expression<int>? activeRouteId,
     Expression<int>? activeDeliveryIndex,
+    Expression<int>? dailyGoalCents,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
   }) {
@@ -4663,6 +4763,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
       if (activeRouteId != null) 'active_route_id': activeRouteId,
       if (activeDeliveryIndex != null)
         'active_delivery_index': activeDeliveryIndex,
+      if (dailyGoalCents != null) 'daily_goal_cents': dailyGoalCents,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -4677,6 +4778,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     Value<bool>? ocrContrastEnabled,
     Value<int?>? activeRouteId,
     Value<int?>? activeDeliveryIndex,
+    Value<int>? dailyGoalCents,
     Value<String>? createdAt,
     Value<String>? updatedAt,
   }) {
@@ -4689,6 +4791,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
       ocrContrastEnabled: ocrContrastEnabled ?? this.ocrContrastEnabled,
       activeRouteId: activeRouteId ?? this.activeRouteId,
       activeDeliveryIndex: activeDeliveryIndex ?? this.activeDeliveryIndex,
+      dailyGoalCents: dailyGoalCents ?? this.dailyGoalCents,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -4721,6 +4824,9 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     if (activeDeliveryIndex.present) {
       map['active_delivery_index'] = Variable<int>(activeDeliveryIndex.value);
     }
+    if (dailyGoalCents.present) {
+      map['daily_goal_cents'] = Variable<int>(dailyGoalCents.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
     }
@@ -4741,6 +4847,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
           ..write('ocrContrastEnabled: $ocrContrastEnabled, ')
           ..write('activeRouteId: $activeRouteId, ')
           ..write('activeDeliveryIndex: $activeDeliveryIndex, ')
+          ..write('dailyGoalCents: $dailyGoalCents, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -4841,6 +4948,7 @@ typedef $$ShiftsTableTableCreateCompanionBuilder =
       required String createdAt,
       Value<String> source,
       Value<double?> hoursWorked,
+      Value<int?> fuelExpenseCents,
     });
 typedef $$ShiftsTableTableUpdateCompanionBuilder =
     ShiftsTableCompanion Function({
@@ -4855,6 +4963,7 @@ typedef $$ShiftsTableTableUpdateCompanionBuilder =
       Value<String> createdAt,
       Value<String> source,
       Value<double?> hoursWorked,
+      Value<int?> fuelExpenseCents,
     });
 
 final class $$ShiftsTableTableReferences
@@ -4992,6 +5101,11 @@ class $$ShiftsTableTableFilterComposer
 
   ColumnFilters<double> get hoursWorked => $composableBuilder(
     column: $table.hoursWorked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fuelExpenseCents => $composableBuilder(
+    column: $table.fuelExpenseCents,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5134,6 +5248,11 @@ class $$ShiftsTableTableOrderingComposer
     column: $table.hoursWorked,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get fuelExpenseCents => $composableBuilder(
+    column: $table.fuelExpenseCents,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ShiftsTableTableAnnotationComposer
@@ -5183,6 +5302,11 @@ class $$ShiftsTableTableAnnotationComposer
 
   GeneratedColumn<double> get hoursWorked => $composableBuilder(
     column: $table.hoursWorked,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get fuelExpenseCents => $composableBuilder(
+    column: $table.fuelExpenseCents,
     builder: (column) => column,
   );
 
@@ -5306,6 +5430,7 @@ class $$ShiftsTableTableTableManager
                 Value<String> createdAt = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<double?> hoursWorked = const Value.absent(),
+                Value<int?> fuelExpenseCents = const Value.absent(),
               }) => ShiftsTableCompanion(
                 id: id,
                 driverName: driverName,
@@ -5318,6 +5443,7 @@ class $$ShiftsTableTableTableManager
                 createdAt: createdAt,
                 source: source,
                 hoursWorked: hoursWorked,
+                fuelExpenseCents: fuelExpenseCents,
               ),
           createCompanionCallback:
               ({
@@ -5332,6 +5458,7 @@ class $$ShiftsTableTableTableManager
                 required String createdAt,
                 Value<String> source = const Value.absent(),
                 Value<double?> hoursWorked = const Value.absent(),
+                Value<int?> fuelExpenseCents = const Value.absent(),
               }) => ShiftsTableCompanion.insert(
                 id: id,
                 driverName: driverName,
@@ -5344,6 +5471,7 @@ class $$ShiftsTableTableTableManager
                 createdAt: createdAt,
                 source: source,
                 hoursWorked: hoursWorked,
+                fuelExpenseCents: fuelExpenseCents,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -8084,6 +8212,7 @@ typedef $$AppConfigTableTableCreateCompanionBuilder =
       Value<bool> ocrContrastEnabled,
       Value<int?> activeRouteId,
       Value<int?> activeDeliveryIndex,
+      Value<int> dailyGoalCents,
       required String createdAt,
       required String updatedAt,
     });
@@ -8097,6 +8226,7 @@ typedef $$AppConfigTableTableUpdateCompanionBuilder =
       Value<bool> ocrContrastEnabled,
       Value<int?> activeRouteId,
       Value<int?> activeDeliveryIndex,
+      Value<int> dailyGoalCents,
       Value<String> createdAt,
       Value<String> updatedAt,
     });
@@ -8147,6 +8277,11 @@ class $$AppConfigTableTableFilterComposer
 
   ColumnFilters<int> get activeDeliveryIndex => $composableBuilder(
     column: $table.activeDeliveryIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dailyGoalCents => $composableBuilder(
+    column: $table.dailyGoalCents,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8210,6 +8345,11 @@ class $$AppConfigTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get dailyGoalCents => $composableBuilder(
+    column: $table.dailyGoalCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -8266,6 +8406,11 @@ class $$AppConfigTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get dailyGoalCents => $composableBuilder(
+    column: $table.dailyGoalCents,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -8318,6 +8463,7 @@ class $$AppConfigTableTableTableManager
                 Value<bool> ocrContrastEnabled = const Value.absent(),
                 Value<int?> activeRouteId = const Value.absent(),
                 Value<int?> activeDeliveryIndex = const Value.absent(),
+                Value<int> dailyGoalCents = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
               }) => AppConfigTableCompanion(
@@ -8329,6 +8475,7 @@ class $$AppConfigTableTableTableManager
                 ocrContrastEnabled: ocrContrastEnabled,
                 activeRouteId: activeRouteId,
                 activeDeliveryIndex: activeDeliveryIndex,
+                dailyGoalCents: dailyGoalCents,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -8342,6 +8489,7 @@ class $$AppConfigTableTableTableManager
                 Value<bool> ocrContrastEnabled = const Value.absent(),
                 Value<int?> activeRouteId = const Value.absent(),
                 Value<int?> activeDeliveryIndex = const Value.absent(),
+                Value<int> dailyGoalCents = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
               }) => AppConfigTableCompanion.insert(
@@ -8353,6 +8501,7 @@ class $$AppConfigTableTableTableManager
                 ocrContrastEnabled: ocrContrastEnabled,
                 activeRouteId: activeRouteId,
                 activeDeliveryIndex: activeDeliveryIndex,
+                dailyGoalCents: dailyGoalCents,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

@@ -1,0 +1,12 @@
+/sdcard/Android/data/com.example.controle_entregas/files/automation_reports/latest_smoke_report.md
+/sdcard/Android/data/com.example.controle_entregas/files/automation_reports/workflow_report.md
+/sdcard/Android/data/com.example.controle_entregas/files/field_validation_reports/latest_field_validation_report.md
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.16 (1).jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.16 (2).jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.16.jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.17 (1).jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.17.jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.18 (1).jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.18 (2).jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.18 (3).jpeg
+/sdcard/Android/data/com.example.controle_entregas/files/test_fixtures/pedidos/WhatsApp Image 2026-06-03 at 13.55.18.jpeg

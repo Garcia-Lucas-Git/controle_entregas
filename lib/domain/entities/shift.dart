@@ -13,6 +13,7 @@ class Shift {
   final DateTime createdAt;
   final String source;
   final double? hoursWorked;
+  final int? fuelExpenseCents;
 
   const Shift({
     required this.id,
@@ -26,6 +27,7 @@ class Shift {
     required this.createdAt,
     this.source = 'app',
     this.hoursWorked,
+    this.fuelExpenseCents,
   });
 
   bool get isOpen => status == ShiftStatus.open;

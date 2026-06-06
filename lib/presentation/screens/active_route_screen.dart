@@ -57,6 +57,32 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
     await MapsLauncher.navigateTo(addresses);
   }
 
+  Future<void> _deleteRoute(RouteEntity route) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir rota?'),
+        content: const Text('A rota e suas entregas serão removidas.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref
+        .read(routeNotifierProvider.notifier)
+        .delete(route.id, shiftId: widget.shiftId);
+    if (!mounted) return;
+    context.go('/');
+  }
+
   Future<void> _closeRoute(RouteEntity route) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -99,6 +125,17 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
           error: (e, s) => const Text('Rota'),
         ),
         actions: [
+          routeAsync.when(
+            data: (route) => route == null
+                ? const SizedBox.shrink()
+                : IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Excluir rota',
+                    onPressed: () => _deleteRoute(route),
+                  ),
+            loading: () => const SizedBox.shrink(),
+            error: (e, s) => const SizedBox.shrink(),
+          ),
           deliveriesAsync.when(
             data: (deliveries) {
               final pending = deliveries
@@ -255,9 +292,7 @@ class _DeliveryTile extends ConsumerWidget {
     ColorScheme colorScheme,
     bool muted,
   ) {
-    final locator = delivery.partnerCollectionCode?.isNotEmpty == true
-        ? delivery.partnerCollectionCode
-        : delivery.deliveryIdentifier?.isNotEmpty == true
+    final locator = delivery.deliveryIdentifier?.isNotEmpty == true
         ? delivery.deliveryIdentifier
         : null;
     final parts = <String>[];

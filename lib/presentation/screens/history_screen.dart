@@ -31,6 +31,7 @@ class HistoryScreen extends ConsumerWidget {
               'open': shifts.length - closed,
             },
           );
+          _logPeriodReports(shifts);
         }
       });
     });
@@ -71,12 +72,18 @@ class HistoryScreen extends ConsumerWidget {
               ),
             );
           }
+          final now = DateTime.now();
+          final weekStart = _weekStart(now);
+          final weekShifts = shifts
+              .where((s) => !s.startedAt.toLocal().isBefore(weekStart))
+              .toList();
           final grouped = _groupByMonth(shifts);
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: grouped.length,
+            itemCount: grouped.length + 1,
             itemBuilder: (ctx, i) {
-              final entry = grouped[i];
+              if (i == 0) return _WeekSummaryCard(shifts: weekShifts);
+              final entry = grouped[i - 1];
               return _MonthGroup(monthLabel: entry.key, shifts: entry.value);
             },
           );
@@ -122,6 +129,135 @@ class HistoryScreen extends ConsumerWidget {
     }
     return map.entries.toList();
   }
+
+  static DateTime _weekStart(DateTime now) {
+    final local = now.toLocal();
+    return DateTime(local.year, local.month, local.day - (local.weekday - 1));
+  }
+
+  static void _logPeriodReports(List<Shift> shifts) {
+    final now = DateTime.now();
+    final weekStart = _weekStart(now);
+    final monthStart = DateTime(now.year, now.month, 1);
+
+    _logPeriod(
+      'week',
+      shifts
+          .where((s) => !s.startedAt.toLocal().isBefore(weekStart))
+          .toList(),
+    );
+    _logPeriod(
+      'month',
+      shifts
+          .where((s) => !s.startedAt.toLocal().isBefore(monthStart))
+          .toList(),
+    );
+  }
+
+  static void _logPeriod(String period, List<Shift> shifts) {
+    if (shifts.isEmpty) return;
+    final revenue = shifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
+    final fuel = shifts.fold(
+      0,
+      (sum, s) => sum + (s.fuelExpenseCents ?? 0),
+    );
+    AppLogger.log(
+      LogEvents.periodReport,
+      module: 'HistoryScreen',
+      metadata: {
+        'period': period,
+        'revenue': revenue,
+        'fuel': fuel,
+        'net': revenue - fuel,
+      },
+    );
+  }
+}
+
+class _WeekSummaryCard extends StatelessWidget {
+  final List<Shift> shifts;
+  const _WeekSummaryCard({required this.shifts});
+
+  @override
+  Widget build(BuildContext context) {
+    if (shifts.isEmpty) return const SizedBox.shrink();
+
+    final revenue = shifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
+    final fuel = shifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
+    final net = revenue - fuel;
+    final hasFuel = fuel > 0;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'ESTA SEMANA',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _SummaryCell(
+                  label: 'Receita',
+                  value: 'R\$ ${(revenue / 100).toStringAsFixed(2)}',
+                ),
+                if (hasFuel) ...[
+                  const SizedBox(width: 24),
+                  _SummaryCell(
+                    label: 'Combustível',
+                    value: 'R\$ ${(fuel / 100).toStringAsFixed(2)}',
+                  ),
+                  const SizedBox(width: 24),
+                  _SummaryCell(
+                    label: 'Líquido',
+                    value: 'R\$ ${(net / 100).toStringAsFixed(2)}',
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryCell extends StatelessWidget {
+  final String label;
+  final String value;
+  const _SummaryCell({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: colorScheme.onPrimaryContainer,
+          ),
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onPrimaryContainer,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _MonthGroup extends StatefulWidget {
@@ -146,6 +282,12 @@ class _MonthGroupState extends State<_MonthGroup> {
       0,
       (sum, s) => sum + s.deliveryCount,
     );
+    final totalFuel = widget.shifts.fold(
+      0,
+      (sum, s) => sum + (s.fuelExpenseCents ?? 0),
+    );
+    final netRevenue = totalEarnings - totalFuel;
+    final hasFuel = totalFuel > 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -160,8 +302,13 @@ class _MonthGroupState extends State<_MonthGroup> {
               ),
             ),
             subtitle: Text(
-              '$totalDeliveries entregas · '
-              'R\$ ${(totalEarnings / 100).toStringAsFixed(2)}',
+              hasFuel
+                  ? '$totalDeliveries entregas · '
+                    'R\$ ${(totalEarnings / 100).toStringAsFixed(2)} · '
+                    'Comb. R\$ ${(totalFuel / 100).toStringAsFixed(2)} · '
+                    'Líq. R\$ ${(netRevenue / 100).toStringAsFixed(2)}'
+                  : '$totalDeliveries entregas · '
+                    'R\$ ${(totalEarnings / 100).toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
@@ -303,13 +450,18 @@ class _ShiftTile extends ConsumerWidget {
       context.push('/history/add', extra: shift);
       return;
     }
+
+    AppLogger.info(
+      LogEvents.historyDeleteItem,
+      module: 'HistoryScreen',
+      metadata: {'shift_id': shift.id},
+    );
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir registro?'),
-        content: const Text(
-          'Este registro histórico será excluído permanentemente.',
-        ),
+        content: const Text('Este registro histórico será excluído.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -322,9 +474,42 @@ class _ShiftTile extends ConsumerWidget {
         ],
       ),
     );
-    if (confirmed == true) {
-      await ref.read(historicalEntryNotifierProvider.notifier).delete(shift.id);
-    }
+    if (confirmed != true) return;
+
+    AppLogger.info(
+      LogEvents.historyDeleteItemConfirmed,
+      module: 'HistoryScreen',
+      metadata: {'shift_id': shift.id},
+    );
+
+    // Capture data before deletion so UNDO can re-insert.
+    final savedShift = shift;
+    await ref.read(historicalEntryNotifierProvider.notifier).delete(shift.id);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Registro removido'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'DESFAZER',
+          onPressed: () async {
+            AppLogger.info(
+              LogEvents.historyRestoreItem,
+              module: 'HistoryScreen',
+              metadata: {'shift_id': savedShift.id},
+            );
+            await ref.read(historicalEntryNotifierProvider.notifier).save(
+              date: savedShift.startedAt,
+              deliveryCount: savedShift.deliveryCount,
+              earningsCents: savedShift.totalEarnings.cents,
+              hoursWorked: savedShift.hoursWorked,
+              notes: savedShift.notes,
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 

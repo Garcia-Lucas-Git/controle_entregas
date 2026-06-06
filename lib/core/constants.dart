@@ -63,15 +63,20 @@ abstract final class OcrKeywords {
   ];
 
   static const List<String> deliveryIdAnchors = [
+    'LOCALIZADOR',
     'IDENTIFICADOR',
     'IDENTIFICADOR DE ENTREGA',
     'DELIVERY ID',
   ];
 
   static const List<String> collectionCodeAnchors = [
+    'CODIGO DE COLETA PARCEIRA',
     'CODIGO DE COLETA',
     'COD. COLETA',
     'COLETA',
     'PARTNER COLLECTION',
   ];
+
+  // Used only to stop multi-line collection; not extracted as field values.
+  static const List<String> sectionBoundaryAnchors = ['COMP', 'CIDADE'];
 }

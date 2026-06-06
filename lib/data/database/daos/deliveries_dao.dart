@@ -79,4 +79,17 @@ class DeliveriesDao extends DatabaseAccessor<AppDatabase>
             )
             ..orderBy([(t) => OrderingTerm.asc(t.completedAt)]))
           .get();
+
+  Stream<List<DeliveriesTableData>> watchCompletedDeliveriesForShift(
+    int shiftId,
+  ) =>
+      (select(db.deliveriesTable)
+            ..where(
+              (t) => t.shiftId.equals(shiftId) & t.status.equals('completed'),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.completedAt)]))
+          .watch();
+
+  Future<int> deleteDeliveryById(int id) =>
+      (delete(db.deliveriesTable)..where((t) => t.id.equals(id))).go();
 }

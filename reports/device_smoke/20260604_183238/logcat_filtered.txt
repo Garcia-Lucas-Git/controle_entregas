@@ -1,0 +1,13 @@
+06-04 18:32:47.438 26821 26893 W ModelSpecificDistanceCalculator: Cannot updated distance models from online database at java.net.MalformedURLException: no protocol: 
+06-04 18:32:47.448 11845 11906 D DecoupledTextDelegate: Start loading thick OCR module.
+06-04 18:32:48.293 11845 11906 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:48.541 11845 11933 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:48.792 11845 11941 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:49.054 11845 11943 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:49.300 11845 11944 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:49.643 11845 11951 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:49.864 11845 11957 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:50.103 11845 11961 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:50.360 11845 11906 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-04 18:32:50.489 11845 11941 D DecoupledTextDelegate: Start loading thick OCR module.
+06-04 18:32:50.731 11845 11941 D PipelineManager: OCR process succeeded via visionkit pipeline.

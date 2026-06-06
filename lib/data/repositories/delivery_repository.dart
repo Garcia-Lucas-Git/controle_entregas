@@ -24,6 +24,10 @@ class DeliveryRepository {
     return rows.map(_fromRow).toList();
   }
 
+  Stream<List<Delivery>> watchCompletedDeliveriesForShift(int shiftId) => _dao
+      .watchCompletedDeliveriesForShift(shiftId)
+      .map((r) => r.map(_fromRow).toList());
+
   Future<Delivery?> getById(int id) async {
     final row = await _dao.getDeliveryById(id);
     return row != null ? _fromRow(row) : null;
@@ -76,7 +80,7 @@ class DeliveryRepository {
           createdAt: Value(now),
         ),
       );
-      final locator = partnerCollectionCode ?? deliveryIdentifier;
+      final locator = deliveryIdentifier;
       if (locator != null && locator.isNotEmpty) {
         AppLogger.log(
           LogEvents.locatorStored,
@@ -124,6 +128,23 @@ class DeliveryRepository {
   }
 
   Future<void> setInProgress(int id) => _dao.setInProgress(id);
+
+  Future<void> deleteDelivery(int id) async {
+    final sid = SessionManager.delivery();
+    AppLogger.info(
+      LogEvents.deliveryDeleteRequest,
+      module: 'DeliveryRepository',
+      sessionId: sid,
+      metadata: {'delivery_id': id},
+    );
+    await _dao.deleteDeliveryById(id);
+    AppLogger.info(
+      LogEvents.deliveryDeleteSuccess,
+      module: 'DeliveryRepository',
+      sessionId: sid,
+      metadata: {'delivery_id': id},
+    );
+  }
 
   Future<void> completeDelivery({required int id, double? distanceKm}) {
     final now = DateTime.now().toUtc().toIso8601String();

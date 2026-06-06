@@ -54,9 +54,7 @@ class _DeliveryCardScreenState extends ConsumerState<DeliveryCardScreen> {
   }
 
   void _openIfood(Delivery delivery) {
-    final locator = delivery.partnerCollectionCode?.isNotEmpty == true
-        ? delivery.partnerCollectionCode
-        : delivery.deliveryIdentifier;
+    final locator = delivery.deliveryIdentifier;
     if (locator != null && locator.isNotEmpty) {
       AppLogger.log(
         LogEvents.locatorRequestSent,
@@ -79,7 +77,7 @@ class _DeliveryCardScreenState extends ConsumerState<DeliveryCardScreen> {
       '/delivery/${widget.deliveryId}/ifood',
       extra: {
         'deliveryIdentifier': delivery.deliveryIdentifier,
-        'partnerCollectionCode': locator,
+        'partnerCollectionCode': null,
       },
     );
   }
@@ -120,9 +118,7 @@ class _DeliveryCardContent extends StatelessWidget {
     required this.onOpenIfood,
   });
 
-  String? get _locatorCode => delivery.partnerCollectionCode?.isNotEmpty == true
-      ? delivery.partnerCollectionCode
-      : delivery.deliveryIdentifier?.isNotEmpty == true
+  String? get _locatorCode => delivery.deliveryIdentifier?.isNotEmpty == true
       ? delivery.deliveryIdentifier
       : null;
 

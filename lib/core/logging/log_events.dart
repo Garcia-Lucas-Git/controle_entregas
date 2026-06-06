@@ -76,8 +76,18 @@ abstract final class LogEvents {
   static const historyEntryDeleted = 'HISTORY_ENTRY_DELETED';
   static const historyDeleteRequest = 'HISTORY_DELETE_REQUEST';
   static const historyDeleteSuccess = 'HISTORY_DELETE_SUCCESS';
+  static const historyDeleteItem = 'HISTORY_DELETE';
+  static const historyDeleteItemConfirmed = 'HISTORY_DELETE_CONFIRMED';
+  static const historyRestoreItem = 'HISTORY_RESTORE';
   static const cleanupStart = 'CLEANUP_START';
   static const cleanupComplete = 'CLEANUP_COMPLETE';
+
+  // ── Fuel tracking ─────────────────────────────────────────────────────────
+  static const fuelExpenseRecorded = 'FUEL_EXPENSE_RECORDED';
+  static const dailyGoal = 'DAILY_GOAL';
+  static const dailyGoalProgress = 'DAILY_GOAL_PROGRESS';
+  static const dailyGoalReached = 'DAILY_GOAL_REACHED';
+  static const periodReport = 'REPORT';
 
   // ── Google Maps ───────────────────────────────────────────────────────────
   static const mapsOpenStart = 'MAPS_OPEN_START';
@@ -121,6 +131,12 @@ abstract final class LogEvents {
   static const parserLocatorInvalid = 'PARSER_LOCATOR_INVALID';
   static const parserAddressNotFound = 'PARSER_ADDRESS_NOT_FOUND';
   static const parserOrderNotFound = 'PARSER_ORDER_NOT_FOUND';
+  static const ocrRawTextCaptured = 'OCR_RAW_TEXT_CAPTURED';
+  static const parserLabelFound = 'LABEL_FOUND';
+  static const parserLabelValueExtracted = 'LABEL_VALUE_EXTRACTED';
+  static const parserFieldConflictDetected = 'FIELD_CONFLICT_DETECTED';
+  static const parserLocatorValidated = 'LOCATOR_VALIDATED';
+  static const parserManualReviewRequired = 'MANUAL_REVIEW_REQUIRED';
 
   // ── Operational highlights ────────────────────────────────────────────────
   static const localizerCopied = 'LOCALIZER_COPIED';

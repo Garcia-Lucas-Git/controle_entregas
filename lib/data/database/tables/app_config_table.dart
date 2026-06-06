@@ -15,6 +15,7 @@ class AppConfigTable extends Table {
       boolean().withDefault(const Constant(false))();
   IntColumn get activeRouteId => integer().nullable()();
   IntColumn get activeDeliveryIndex => integer().nullable()();
+  IntColumn get dailyGoalCents => integer().withDefault(const Constant(12000))();
   TextColumn get createdAt => text()();
   TextColumn get updatedAt => text()();
 }

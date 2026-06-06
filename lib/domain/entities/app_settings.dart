@@ -12,6 +12,9 @@ class AppSettings {
   final int? activeRouteId;
   final int? activeDeliveryIndex;
 
+  // Daily revenue goal in cents. Default R$120.
+  final int dailyGoalCents;
+
   const AppSettings({
     required this.driverName,
     required this.pizzeriaAddress,
@@ -21,6 +24,7 @@ class AppSettings {
     required this.earningsConfig,
     this.activeRouteId,
     this.activeDeliveryIndex,
+    this.dailyGoalCents = 12000,
   });
 
   static AppSettings get defaults => const AppSettings(
@@ -30,6 +34,7 @@ class AppSettings {
     ifoodFieldSelector: '',
     ocrContrastEnabled: false,
     earningsConfig: EarningsConfig.defaults(),
+    dailyGoalCents: 12000,
   );
 
   bool get isSetupComplete =>
@@ -44,6 +49,7 @@ class AppSettings {
     EarningsConfig? earningsConfig,
     int? activeRouteId,
     int? activeDeliveryIndex,
+    int? dailyGoalCents,
   }) => AppSettings(
     driverName: driverName ?? this.driverName,
     pizzeriaAddress: pizzeriaAddress ?? this.pizzeriaAddress,
@@ -53,5 +59,6 @@ class AppSettings {
     earningsConfig: earningsConfig ?? this.earningsConfig,
     activeRouteId: activeRouteId ?? this.activeRouteId,
     activeDeliveryIndex: activeDeliveryIndex ?? this.activeDeliveryIndex,
+    dailyGoalCents: dailyGoalCents ?? this.dailyGoalCents,
   );
 }

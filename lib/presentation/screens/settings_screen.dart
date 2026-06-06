@@ -38,6 +38,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   late final TextEditingController _pizzeriaCtrl;
   late final TextEditingController _ifoodUrlCtrl;
   late final TextEditingController _ifoodSelectorCtrl;
+  late final TextEditingController _dailyGoalCtrl;
   late final TextEditingController _baseRateCtrl;
   late final TextEditingController _longRateCtrl;
   late bool _ocrContrast;
@@ -52,6 +53,9 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
     _ifoodUrlCtrl = TextEditingController(text: widget.settings.ifoodUrl);
     _ifoodSelectorCtrl = TextEditingController(
       text: widget.settings.ifoodFieldSelector,
+    );
+    _dailyGoalCtrl = TextEditingController(
+      text: (widget.settings.dailyGoalCents / 100).toStringAsFixed(0),
     );
     _baseRateCtrl = TextEditingController(
       text: (widget.settings.earningsConfig.baseRateCents / 100)
@@ -70,6 +74,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
     _pizzeriaCtrl.dispose();
     _ifoodUrlCtrl.dispose();
     _ifoodSelectorCtrl.dispose();
+    _dailyGoalCtrl.dispose();
     _baseRateCtrl.dispose();
     _longRateCtrl.dispose();
     super.dispose();
@@ -83,6 +88,10 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
     await notifier.updateIfoodUrl(_ifoodUrlCtrl.text.trim());
     await notifier.updateIfoodFieldSelector(_ifoodSelectorCtrl.text.trim());
     await notifier.updateOcrContrast(_ocrContrast);
+
+    final goalReals =
+        double.tryParse(_dailyGoalCtrl.text.replaceAll(',', '.')) ?? 120.0;
+    await notifier.updateDailyGoal((goalReals * 100).round());
 
     final baseRate =
         (double.tryParse(_baseRateCtrl.text.replaceAll(',', '.')) ?? 8.0) * 100;
@@ -125,6 +134,14 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
         const SizedBox(height: 24),
 
         _SectionHeader('Remuneração'),
+        _Field(
+          label: 'Meta Diária (R\$)',
+          controller: _dailyGoalCtrl,
+          inputType: TextInputType.number,
+          helperText: 'Padrão: R\$ 120. Exibida como barra de progresso no turno.',
+          formatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d]'))],
+        ),
+        const SizedBox(height: 12),
         _Field(
           label: 'Tarifa normal (R\$)',
           controller: _baseRateCtrl,
@@ -345,23 +362,50 @@ class _ExportSectionState extends ConsumerState<_ExportSection> {
           ),
         ),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () async {
-            final messenger = ScaffoldMessenger.of(context);
-            await AppLogger.exportLogs();
-            if (!mounted) return;
-            messenger.showSnackBar(
-              const SnackBar(
-                content: Text('Logs exportados com sucesso.'),
-                behavior: SnackBarBehavior.floating,
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  await AppLogger.exportLogs(lastFourHours: false);
+                  if (!mounted) return;
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Logs exportados com sucesso.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.bug_report_outlined),
+                label: const Text('Hora atual'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                ),
               ),
-            );
-          },
-          icon: const Icon(Icons.bug_report_outlined),
-          label: const Text('Exportar Logs de Diagnóstico'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48),
-          ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  await AppLogger.exportLogs(lastFourHours: true);
+                  if (!mounted) return;
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Logs exportados com sucesso.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.history),
+                label: const Text('5 horas'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(

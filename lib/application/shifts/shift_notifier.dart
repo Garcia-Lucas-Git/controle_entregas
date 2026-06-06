@@ -27,7 +27,7 @@ class ShiftNotifier extends _$ShiftNotifier {
     return id;
   }
 
-  Future<void> closeShift() async {
+  Future<void> closeShift({int? fuelExpenseCents}) async {
     final shift = await future;
     if (shift == null) return;
 
@@ -41,12 +41,26 @@ class ShiftNotifier extends _$ShiftNotifier {
       (sum, e) => sum + e.routeDeliveryCount,
     );
 
+    if (fuelExpenseCents != null && fuelExpenseCents > 0) {
+      AppLogger.info(
+        LogEvents.fuelExpenseRecorded,
+        module: 'ShiftNotifier',
+        metadata: {
+          'shift_id': shift.id,
+          'fuel_cents': fuelExpenseCents,
+          'revenue_cents': totalCents,
+          'profit_cents': totalCents - fuelExpenseCents,
+        },
+      );
+    }
+
     await ref
         .read(shiftRepositoryProvider)
         .closeShift(
           id: shift.id,
           totalEarningsCents: totalCents,
           deliveryCount: deliveryCount,
+          fuelExpenseCents: fuelExpenseCents,
         );
 
     ref.invalidateSelf();
@@ -115,5 +129,11 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
       module: 'HistoricalEntryNotifier',
       metadata: {'id': id},
     );
+    ref.invalidate(allShiftsProvider);
+  }
+
+  Future<void> clearHistory() async {
+    await ref.read(shiftRepositoryProvider).clearHistory();
+    ref.invalidate(allShiftsProvider);
   }
 }

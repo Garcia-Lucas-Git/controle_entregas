@@ -59,12 +59,13 @@ class DiagnosticsService {
         'files': logs.files
             .map((f) => {'name': f.name, 'size_bytes': f.sizeBytes})
             .toList(),
-        'current_file_size': logs.files
-            .where((f) => f.name == 'deliveryflow.log')
-            .map((f) => f.sizeBytes)
-            .firstOrNull,
-        'rotated_count': logs.files
-            .where((f) => f.name != 'deliveryflow.log')
+        'current_file_size': logs.files.isEmpty
+            ? null
+            : logs.files.first.sizeBytes,
+        'hourly_count': logs.files
+            .where(
+              (f) => RegExp(r'^\d{4}-\d{2}-\d{2}_\d{2}\.log$').hasMatch(f.name),
+            )
             .length,
         'entry_count': logs.entries.length,
         'malformed_lines': logs.malformedLines,

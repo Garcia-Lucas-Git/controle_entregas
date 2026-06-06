@@ -29,6 +29,7 @@ class SettingsRepository {
         ocrContrastEnabled: Value(settings.ocrContrastEnabled),
         activeRouteId: Value(settings.activeRouteId),
         activeDeliveryIndex: Value(settings.activeDeliveryIndex),
+        dailyGoalCents: Value(settings.dailyGoalCents),
         updatedAt: Value(now),
       ),
     );
@@ -48,5 +49,6 @@ class SettingsRepository {
     earningsConfig: const EarningsConfig.defaults(),
     activeRouteId: r.activeRouteId,
     activeDeliveryIndex: r.activeDeliveryIndex,
+    dailyGoalCents: r.dailyGoalCents,
   );
 }

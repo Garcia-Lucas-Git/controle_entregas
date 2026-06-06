@@ -1,0 +1,14 @@
+06-03 16:38:31.868 20764 20820 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:38:32.568 20764 20820 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:32.819 20764 20844 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:33.070 20764 20852 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:33.335 20764 20853 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:33.561 20764 20856 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:33.809 20764 20862 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:34.017 20764 20871 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:34.242 20764 20873 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:34.443 11153 11403 E msys    : E[N MQTT]onReadError(657)=>Read Error: AsyncSocketException: recv() failed (peer=57.144.136.144:443), type = Internal error, errno = 103 (Software caused connection abort)
+06-03 16:38:34.447  2444  2476 E ActivityManager: java.lang.RuntimeException: SmartBackground restriction
+06-03 16:38:34.475 20764 20820 D PipelineManager: OCR process succeeded via visionkit pipeline.
+06-03 16:38:34.586 20764 20852 D DecoupledTextDelegate: Start loading thick OCR module.
+06-03 16:38:34.809 20764 20852 D PipelineManager: OCR process succeeded via visionkit pipeline.

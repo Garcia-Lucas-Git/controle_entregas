@@ -11,11 +11,12 @@ export 'package:controle_entregas/core/logging/session_manager.dart';
 ///
 /// All writes are async (queued via [LogStorage]).
 /// Never throws. Never blocks UI.
-/// Output: JSONL file at `<documents>/deliveryflow.log` with 2 MB rotation.
+/// Output: JSONL files at `<documents>/YYYY-MM-DD_HH.log`.
 abstract final class AppLogger {
   static Future<void> init() => LogStorage.init();
 
-  static Future<void> exportLogs() => LogStorage.export();
+  static Future<void> exportLogs({bool lastFourHours = true}) =>
+      LogStorage.export(lastFourHours: lastFourHours);
 
   // ── Primary write method ──────────────────────────────────────────────────
 

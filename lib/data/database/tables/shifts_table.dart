@@ -15,4 +15,5 @@ class ShiftsTable extends Table {
   TextColumn get createdAt => text()();
   TextColumn get source => text().withDefault(const Constant('app'))();
   RealColumn get hoursWorked => real().nullable()();
+  IntColumn get fuelExpenseCents => integer().nullable()();
 }

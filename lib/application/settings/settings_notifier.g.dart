@@ -23,7 +23,7 @@ final settingsStreamProvider = AutoDisposeStreamProvider<AppSettings>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SettingsStreamRef = AutoDisposeStreamProviderRef<AppSettings>;
-String _$settingsNotifierHash() => r'98b8e7fb0d84c7077884dc54222418f4798ae70c';
+String _$settingsNotifierHash() => r'21a8f350e96f2a8b263b787a4e443efcc237d2a1';
 
 /// See also [SettingsNotifier].
 @ProviderFor(SettingsNotifier)

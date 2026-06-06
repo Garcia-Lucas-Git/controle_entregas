@@ -44,5 +44,13 @@ class RouteNotifier extends _$RouteNotifier {
           deliveryCountAtClose: completed.length,
           completedDeliveries: completed,
         );
+    ref.invalidate(routesForShiftProvider(route.shiftId));
+    ref.invalidate(routeByIdProvider(routeId));
+  }
+
+  Future<void> delete(int routeId, {required int shiftId}) async {
+    await ref.read(routeRepositoryProvider).deleteRoute(routeId);
+    ref.invalidate(routesForShiftProvider(shiftId));
+    ref.invalidate(routeByIdProvider(routeId));
   }
 }
