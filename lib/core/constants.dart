@@ -44,6 +44,9 @@ abstract final class OcrKeywords {
 
   static const List<String> addressAnchors = [
     'ENDERECO',
+    'ENDEREC0',  // OCR confusion: digit 0 instead of letter O
+    'ERNDERECO', // OCR noise: extra N inserted
+    'ENDEREÇO', // accented Ç variant (ENDEREÇO)
     'END.',
     'RUA',
     'AV.',

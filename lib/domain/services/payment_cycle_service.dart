@@ -5,6 +5,8 @@ import 'package:controle_entregas/domain/value_objects/money.dart';
 class PaymentCycleSummary {
   final Money earningsToday;
   final Money earningsThisWeek;
+  final Money fuelThisWeek;
+  final Money netThisWeek;
   final int deliveriesToday;
   final int deliveriesThisWeek;
   final DateTime nextPaymentDate;
@@ -13,6 +15,8 @@ class PaymentCycleSummary {
   const PaymentCycleSummary({
     required this.earningsToday,
     required this.earningsThisWeek,
+    required this.fuelThisWeek,
+    required this.netThisWeek,
     required this.deliveriesToday,
     required this.deliveriesThisWeek,
     required this.nextPaymentDate,
@@ -25,6 +29,8 @@ class PaymentPeriod {
   final DateTime weekEnd;
   final DateTime paymentDate;
   final Money totalEarnings;
+  final Money fuelTotal;
+  final Money netTotal;
   final int deliveryCount;
 
   const PaymentPeriod({
@@ -32,6 +38,8 @@ class PaymentPeriod {
     required this.weekEnd,
     required this.paymentDate,
     required this.totalEarnings,
+    required this.fuelTotal,
+    required this.netTotal,
     required this.deliveryCount,
   });
 }
@@ -65,21 +73,22 @@ abstract final class PaymentCycleService {
   static PaymentCycleSummary buildSummary(List<Shift> shifts, DateTime today) {
     final closed = shifts.where((s) => s.status == ShiftStatus.closed);
     final todayShifts = closed.where((s) => isSameDay(s.startedAt, today));
-    final weekShifts = closed.where((s) => isSameWeek(s.startedAt, today));
+    final weekShifts = closed.where((s) => isSameWeek(s.startedAt, today)).toList();
+
+    final weekEarnings = weekShifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
+    final weekFuel = weekShifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
 
     return PaymentCycleSummary(
       earningsToday: Money(
         todayShifts.fold(0, (sum, s) => sum + s.totalEarnings.cents),
       ),
-      earningsThisWeek: Money(
-        weekShifts.fold(0, (sum, s) => sum + s.totalEarnings.cents),
-      ),
+      earningsThisWeek: Money(weekEarnings),
+      fuelThisWeek: Money(weekFuel),
+      netThisWeek: Money(weekEarnings - weekFuel),
       deliveriesToday: todayShifts.fold(0, (sum, s) => sum + s.deliveryCount),
       deliveriesThisWeek: weekShifts.fold(0, (sum, s) => sum + s.deliveryCount),
       nextPaymentDate: nextPaymentDate(today),
-      forecastedPayment: Money(
-        weekShifts.fold(0, (sum, s) => sum + s.totalEarnings.cents),
-      ),
+      forecastedPayment: Money(weekEarnings),
     );
   }
 
@@ -92,13 +101,15 @@ abstract final class PaymentCycleService {
     final periods = weekMap.entries.map((e) {
       final ws = e.key;
       final list = e.value;
+      final earnings = list.fold(0, (sum, s) => sum + s.totalEarnings.cents);
+      final fuel = list.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
       return PaymentPeriod(
         weekStart: ws,
         weekEnd: weekEnd(ws),
         paymentDate: paymentDateForWeek(ws),
-        totalEarnings: Money(
-          list.fold(0, (sum, s) => sum + s.totalEarnings.cents),
-        ),
+        totalEarnings: Money(earnings),
+        fuelTotal: Money(fuel),
+        netTotal: Money(earnings - fuel),
         deliveryCount: list.fold(0, (sum, s) => sum + s.deliveryCount),
       );
     }).toList();

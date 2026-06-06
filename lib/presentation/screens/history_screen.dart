@@ -1,11 +1,26 @@
+import 'dart:math';
+
+import 'package:controle_entregas/application/settings/settings_notifier.dart';
 import 'package:controle_entregas/application/shifts/shift_notifier.dart';
 import 'package:controle_entregas/domain/entities/shift.dart';
 import 'package:controle_entregas/domain/enums/shift_status.dart';
 import 'package:controle_entregas/services/app_logger.dart';
+import 'package:controle_entregas/services/report_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+
+// Visual hierarchy brown palette
+const _kMonthHeaderBg = Color(0xFF3E1F0A); // dark brown — Level 1
+const _kWeekHeaderBg = Color(0xFF6B3D20);  // medium brown — Level 2
+const _kRevenueBg = Color(0xFF2C1508);     // deepest brown — Revenue emphasis
+
+// Week label → list of shifts within that week
+typedef _WeekEntry = MapEntry<String, List<Shift>>;
+// Month label → list of week entries for that month
+typedef _MonthEntry = MapEntry<String, List<_WeekEntry>>;
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -19,9 +34,8 @@ class HistoryScreen extends ConsumerWidget {
         if (shifts.isEmpty) {
           AppLogger.info(LogEvents.historyLoadEmpty, module: 'HistoryScreen');
         } else {
-          final closed = shifts
-              .where((s) => s.status == ShiftStatus.closed)
-              .length;
+          final closed =
+              shifts.where((s) => s.status == ShiftStatus.closed).length;
           AppLogger.log(
             LogEvents.historyRowsFound,
             module: 'HistoryScreen',
@@ -72,19 +86,21 @@ class HistoryScreen extends ConsumerWidget {
               ),
             );
           }
+
           final now = DateTime.now();
-          final weekStart = _weekStart(now);
+          final thisWeek = _weekStart(now);
           final weekShifts = shifts
-              .where((s) => !s.startedAt.toLocal().isBefore(weekStart))
+              .where((s) => !s.startedAt.toLocal().isBefore(thisWeek))
               .toList();
-          final grouped = _groupByMonth(shifts);
+          final grouped = _groupByMonthAndWeek(shifts);
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: grouped.length + 1,
             itemBuilder: (ctx, i) {
               if (i == 0) return _WeekSummaryCard(shifts: weekShifts);
               final entry = grouped[i - 1];
-              return _MonthGroup(monthLabel: entry.key, shifts: entry.value);
+              return _MonthGroup(monthLabel: entry.key, weekData: entry.value);
             },
           );
         },
@@ -120,18 +136,57 @@ class HistoryScreen extends ConsumerWidget {
     ).showSnackBar(const SnackBar(content: Text('Histórico limpo.')));
   }
 
-  List<MapEntry<String, List<Shift>>> _groupByMonth(List<Shift> shifts) {
-    final map = <String, List<Shift>>{};
-    final fmt = DateFormat('MMMM yyyy', 'pt_BR');
+  // Groups shifts into a 2-level hierarchy: month → week → shifts (all descending).
+  List<_MonthEntry> _groupByMonthAndWeek(List<Shift> shifts) {
+    final now = DateTime.now().toLocal();
+    final thisWeek = _weekStart(now);
+    final fmtMonth = DateFormat('MMMM yyyy', 'pt_BR');
+
+    // Preserve order: shifts arrive most-recent-first, so months and weeks
+    // will naturally be ordered descending as well.
+    final monthOrder = <String>[];
+    final monthMap = <String, List<Shift>>{};
     for (final s in shifts) {
-      final key = fmt.format(s.startedAt.toLocal());
-      map.putIfAbsent(key, () => []).add(s);
+      final key = fmtMonth.format(s.startedAt.toLocal());
+      if (!monthMap.containsKey(key)) {
+        monthOrder.add(key);
+        monthMap[key] = [];
+      }
+      monthMap[key]!.add(s);
     }
-    return map.entries.toList();
+
+    return monthOrder.map((monthKey) {
+      final monthShifts = monthMap[monthKey]!;
+
+      final weekOrder = <DateTime>[];
+      final weekMap = <DateTime, List<Shift>>{};
+      for (final s in monthShifts) {
+        final ws = _weekStart(s.startedAt.toLocal());
+        if (!weekMap.containsKey(ws)) {
+          weekOrder.add(ws);
+          weekMap[ws] = [];
+        }
+        weekMap[ws]!.add(s);
+      }
+
+      // Most-recent week first.
+      weekOrder.sort((a, b) => b.compareTo(a));
+
+      final weeks = <_WeekEntry>[];
+      for (int i = 0; i < weekOrder.length; i++) {
+        final ws = weekOrder[i];
+        final label = ws == thisWeek ? 'Semana Atual' : 'Semana ${i + 1}';
+        final weekShifts = weekMap[ws]!
+          ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
+        weeks.add(MapEntry(label, weekShifts));
+      }
+
+      return MapEntry(monthKey, weeks);
+    }).toList();
   }
 
-  static DateTime _weekStart(DateTime now) {
-    final local = now.toLocal();
+  static DateTime _weekStart(DateTime dt) {
+    final local = dt.toLocal();
     return DateTime(local.year, local.month, local.day - (local.weekday - 1));
   }
 
@@ -139,12 +194,9 @@ class HistoryScreen extends ConsumerWidget {
     final now = DateTime.now();
     final weekStart = _weekStart(now);
     final monthStart = DateTime(now.year, now.month, 1);
-
     _logPeriod(
       'week',
-      shifts
-          .where((s) => !s.startedAt.toLocal().isBefore(weekStart))
-          .toList(),
+      shifts.where((s) => !s.startedAt.toLocal().isBefore(weekStart)).toList(),
     );
     _logPeriod(
       'month',
@@ -157,10 +209,7 @@ class HistoryScreen extends ConsumerWidget {
   static void _logPeriod(String period, List<Shift> shifts) {
     if (shifts.isEmpty) return;
     final revenue = shifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
-    final fuel = shifts.fold(
-      0,
-      (sum, s) => sum + (s.fuelExpenseCents ?? 0),
-    );
+    final fuel = shifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
     AppLogger.log(
       LogEvents.periodReport,
       module: 'HistoryScreen',
@@ -174,18 +223,35 @@ class HistoryScreen extends ConsumerWidget {
   }
 }
 
-class _WeekSummaryCard extends StatelessWidget {
+// ── Weekly summary card ───────────────────────────────────────────────────────
+
+class _WeekSummaryCard extends ConsumerWidget {
   final List<Shift> shifts;
   const _WeekSummaryCard({required this.shifts});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (shifts.isEmpty) return const SizedBox.shrink();
+
+    final settings = ref.watch(settingsStreamProvider);
+    final dailyGoalCents = settings.valueOrNull?.dailyGoalCents ?? 12000;
+    const workingDays = 6;
+    final weeklyGoalCents = dailyGoalCents * workingDays;
 
     final revenue = shifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
     final fuel = shifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
-    final net = revenue - fuel;
     final hasFuel = fuel > 0;
+
+    final progress = weeklyGoalCents > 0
+        ? (revenue / weeklyGoalCents).clamp(0.0, 1.0)
+        : 0.0;
+    final goalReached = revenue >= weeklyGoalCents;
+    final pct =
+        weeklyGoalCents > 0 ? (revenue / weeklyGoalCents * 100).round() : 0;
+    final remainingCents = max(0, weeklyGoalCents - revenue);
+    final remainingDeliveries =
+        remainingCents > 0 ? (remainingCents / 800).ceil() : 0;
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
@@ -196,34 +262,130 @@ class _WeekSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'ESTA SEMANA',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: 10),
+            // ── Header ────────────────────────────────────────────────────────
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _SummaryCell(
-                  label: 'Receita',
-                  value: 'R\$ ${(revenue / 100).toStringAsFixed(2)}',
+                Text(
+                  'ESTA SEMANA',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
                 ),
-                if (hasFuel) ...[
-                  const SizedBox(width: 24),
-                  _SummaryCell(
-                    label: 'Combustível',
-                    value: 'R\$ ${(fuel / 100).toStringAsFixed(2)}',
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
                   ),
-                  const SizedBox(width: 24),
-                  _SummaryCell(
-                    label: 'Líquido',
-                    value: 'R\$ ${(net / 100).toStringAsFixed(2)}',
+                  decoration: BoxDecoration(
+                    color: goalReached
+                        ? colorScheme.primary
+                        : colorScheme.onPrimaryContainer.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
+                  child: Text(
+                    goalReached ? 'Meta Atingida' : 'Meta Semanal: $pct%',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: goalReached
+                          ? colorScheme.onPrimary
+                          : colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ],
             ),
+            const SizedBox(height: 10),
+
+            // ── Progress bar ──────────────────────────────────────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor:
+                    colorScheme.onPrimaryContainer.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  goalReached
+                      ? colorScheme.primary
+                      : colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Revenue highlight ─────────────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: _kRevenueBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Receita',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
+                  Text(
+                    'R\$ ${(revenue / 100).toStringAsFixed(2)}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // ── Line 1: Meta semanal · Faltam ────────────────────────────────
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _SummaryCell(
+                    label: 'Meta semanal',
+                    value: 'R\$ ${(weeklyGoalCents / 100).toStringAsFixed(0)}',
+                  ),
+                ),
+                if (!goalReached && remainingCents > 0)
+                  Expanded(
+                    child: _SummaryCell(
+                      label: 'Faltam',
+                      value:
+                          'R\$ ${(remainingCents / 100).toStringAsFixed(2)}',
+                    ),
+                  ),
+              ],
+            ),
+
+            // ── Line 2: Entregas necessárias · Combustível ────────────────────
+            if ((!goalReached && remainingDeliveries > 0) || hasFuel) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (!goalReached && remainingDeliveries > 0)
+                    Expanded(
+                      child: _SummaryCell(
+                        label: 'Entregas necessárias',
+                        value: '$remainingDeliveries',
+                      ),
+                    ),
+                  if (hasFuel)
+                    Expanded(
+                      child: _SummaryCell(
+                        label: 'Combustível',
+                        value: 'R\$ ${(fuel / 100).toStringAsFixed(2)}',
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -260,10 +422,12 @@ class _SummaryCell extends StatelessWidget {
   }
 }
 
+// ── Month group ───────────────────────────────────────────────────────────────
+
 class _MonthGroup extends StatefulWidget {
   final String monthLabel;
-  final List<Shift> shifts;
-  const _MonthGroup({required this.monthLabel, required this.shifts});
+  final List<_WeekEntry> weekData;
+  const _MonthGroup({required this.monthLabel, required this.weekData});
 
   @override
   State<_MonthGroup> createState() => _MonthGroupState();
@@ -274,70 +438,171 @@ class _MonthGroupState extends State<_MonthGroup> {
 
   @override
   Widget build(BuildContext context) {
-    final totalEarnings = widget.shifts.fold(
-      0,
-      (sum, s) => sum + s.totalEarnings.cents,
-    );
-    final totalDeliveries = widget.shifts.fold(
-      0,
-      (sum, s) => sum + s.deliveryCount,
-    );
-    final totalFuel = widget.shifts.fold(
-      0,
-      (sum, s) => sum + (s.fuelExpenseCents ?? 0),
-    );
-    final netRevenue = totalEarnings - totalFuel;
+    final allShifts = widget.weekData.expand((w) => w.value).toList();
+    final totalEarnings =
+        allShifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
+    final totalDeliveries =
+        allShifts.fold(0, (sum, s) => sum + s.deliveryCount);
+    final totalFuel =
+        allShifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
     final hasFuel = totalFuel > 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          ListTile(
-            title: Text(
-              widget.monthLabel.toUpperCase(),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+          // Month header — Level 1 (darkest brown)
+          Container(
+            color: _kMonthHeaderBg,
+            child: ListTile(
+              title: Text(
+                widget.monthLabel.toUpperCase(),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.8,
+                ),
               ),
+              subtitle: Text(
+                hasFuel
+                    ? '$totalDeliveries entregas · '
+                      'R\$ ${(totalEarnings / 100).toStringAsFixed(2)} · '
+                      'Comb. R\$ ${(totalFuel / 100).toStringAsFixed(2)}'
+                    : '$totalDeliveries entregas · '
+                      'R\$ ${(totalEarnings / 100).toStringAsFixed(2)}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white70,
+                ),
+              ),
+              trailing: Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                color: Colors.white70,
+              ),
+              onTap: () => setState(() => _expanded = !_expanded),
             ),
-            subtitle: Text(
-              hasFuel
-                  ? '$totalDeliveries entregas · '
-                    'R\$ ${(totalEarnings / 100).toStringAsFixed(2)} · '
-                    'Comb. R\$ ${(totalFuel / 100).toStringAsFixed(2)} · '
-                    'Líq. R\$ ${(netRevenue / 100).toStringAsFixed(2)}'
-                  : '$totalDeliveries entregas · '
-                    'R\$ ${(totalEarnings / 100).toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-            onTap: () => setState(() => _expanded = !_expanded),
           ),
-          if (_expanded) ...widget.shifts.map((s) => _ShiftTile(shift: s)),
+          if (_expanded)
+            ...widget.weekData.map(
+              (w) => _WeekGroup(weekLabel: w.key, shifts: w.value),
+            ),
         ],
       ),
     );
   }
 }
 
+// ── Week group ────────────────────────────────────────────────────────────────
+
+class _WeekGroup extends StatefulWidget {
+  final String weekLabel;
+  final List<Shift> shifts;
+  const _WeekGroup({required this.weekLabel, required this.shifts});
+
+  @override
+  State<_WeekGroup> createState() => _WeekGroupState();
+}
+
+class _WeekGroupState extends State<_WeekGroup> {
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalEarnings =
+        widget.shifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
+    final totalDeliveries =
+        widget.shifts.fold(0, (sum, s) => sum + s.deliveryCount);
+    final totalFuel =
+        widget.shifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
+    final hasFuel = totalFuel > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Week header — Level 2 (medium brown)
+        ListTile(
+          dense: true,
+          tileColor: _kWeekHeaderBg,
+          contentPadding: const EdgeInsets.only(left: 16, right: 16),
+          leading: const Icon(
+            Icons.calendar_view_week_outlined,
+            size: 18,
+            color: Colors.white70,
+          ),
+          title: Text(
+            widget.weekLabel,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            hasFuel
+                ? '$totalDeliveries entregas · '
+                  'R\$ ${(totalEarnings / 100).toStringAsFixed(2)} · '
+                  'Comb. R\$ ${(totalFuel / 100).toStringAsFixed(2)}'
+                : '$totalDeliveries entregas · '
+                  'R\$ ${(totalEarnings / 100).toStringAsFixed(2)}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white70,
+            ),
+          ),
+          trailing: Icon(
+            _expanded ? Icons.expand_less : Icons.expand_more,
+            size: 18,
+            color: Colors.white70,
+          ),
+          onTap: () => setState(() => _expanded = !_expanded),
+        ),
+        if (_expanded) ...widget.shifts.map((s) => _ShiftTile(shift: s)),
+      ],
+    );
+  }
+}
+
+// ── Shift tile ────────────────────────────────────────────────────────────────
+
 class _ShiftTile extends ConsumerWidget {
   final Shift shift;
   const _ShiftTile({required this.shift});
 
+  // Returns "Hoje", "Ontem", or the full weekday name — all with DD/MM/YYYY.
+  static String _smartLabel(DateTime dateTime) {
+    final now = DateTime.now().toLocal();
+    final local = dateTime.toLocal();
+    final todayDate = DateTime(now.year, now.month, now.day);
+    final shiftDate = DateTime(local.year, local.month, local.day);
+    final fmtDate = DateFormat('dd/MM/yyyy', 'pt_BR').format(local);
+
+    if (shiftDate == todayDate) return 'Hoje • $fmtDate';
+    if (shiftDate == todayDate.subtract(const Duration(days: 1))) {
+      return 'Ontem • $fmtDate';
+    }
+    final weekday = DateFormat('EEEE', 'pt_BR').format(local);
+    return '${weekday[0].toUpperCase()}${weekday.substring(1)} • $fmtDate';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dateFmt = DateFormat('dd/MM/yyyy', 'pt_BR');
-    final date = dateFmt.format(shift.startedAt.toLocal());
     final colorScheme = Theme.of(context).colorScheme;
+    final label = _smartLabel(shift.startedAt);
+    final dailyGoalCents =
+        ref.watch(settingsStreamProvider).valueOrNull?.dailyGoalCents ?? 12000;
+    final goalPct = dailyGoalCents > 0
+        ? shift.totalEarnings.cents / dailyGoalCents
+        : 0.0;
+    final goalEmoji =
+        goalPct >= 1.0 ? '🟢' : goalPct >= 0.7 ? '🟡' : '🔴';
 
-    // Historical (manual) entry
+    // ── Historical (manual) ───────────────────────────────────────────────────
     if (shift.isHistorical) {
       final subtitle = StringBuffer(
         '${shift.deliveryCount} entregas · ${shift.totalEarnings.format()}',
       );
-      if (shift.hoursWorked != null) {
-        subtitle.write(' · ${shift.hoursWorked!.toStringAsFixed(0)}h');
+      if ((shift.fuelExpenseCents ?? 0) > 0) {
+        subtitle.write(
+          ' · Comb. R\$ ${(shift.fuelExpenseCents! / 100).toStringAsFixed(2)}',
+        );
       }
       if (shift.notes != null) subtitle.write('\n${shift.notes}');
 
@@ -345,7 +610,7 @@ class _ShiftTile extends ConsumerWidget {
         leading: const Icon(Icons.history_edu, size: 20),
         title: Row(
           children: [
-            Text(date),
+            Flexible(child: Text(label)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -361,6 +626,18 @@ class _ShiftTile extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Meta $goalEmoji',
+                style: const TextStyle(fontSize: 10),
+              ),
+            ),
           ],
         ),
         subtitle: Text(
@@ -370,6 +647,7 @@ class _ShiftTile extends ConsumerWidget {
         trailing: PopupMenuButton<_HistoryAction>(
           onSelected: (action) => _handleAction(context, ref, action),
           itemBuilder: (_) => const [
+            PopupMenuItem(value: _HistoryAction.share, child: Text('Compartilhar')),
             PopupMenuItem(value: _HistoryAction.edit, child: Text('Editar')),
             PopupMenuItem(value: _HistoryAction.delete, child: Text('Excluir')),
           ],
@@ -378,7 +656,7 @@ class _ShiftTile extends ConsumerWidget {
       );
     }
 
-    // Open (in-progress) shift
+    // ── Open (in-progress) ────────────────────────────────────────────────────
     if (shift.status == ShiftStatus.open) {
       return ListTile(
         leading: Stack(
@@ -401,7 +679,7 @@ class _ShiftTile extends ConsumerWidget {
         ),
         title: Row(
           children: [
-            Text(date),
+            Flexible(child: Text(label)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -428,15 +706,61 @@ class _ShiftTile extends ConsumerWidget {
       );
     }
 
-    // Closed shift
+    // ── Closed (route-generated) ──────────────────────────────────────────────
+    final closedFuelPart = (shift.fuelExpenseCents ?? 0) > 0
+        ? ' · Comb. R\$ ${(shift.fuelExpenseCents! / 100).toStringAsFixed(2)}'
+        : '';
     return ListTile(
       leading: const Icon(Icons.calendar_today, size: 20),
-      title: Text(date),
+      title: Row(
+        children: [
+          Flexible(child: Text(label)),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'OCR',
+              style: TextStyle(
+                fontSize: 10,
+                color: colorScheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'Meta $goalEmoji',
+              style: const TextStyle(fontSize: 10),
+            ),
+          ),
+        ],
+      ),
       subtitle: Text(
-        '${shift.deliveryCount} entregas · ${shift.totalEarnings.format()}',
+        '${shift.deliveryCount} entregas · ${shift.totalEarnings.format()}$closedFuelPart',
         style: Theme.of(context).textTheme.bodySmall,
       ),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: PopupMenuButton<_HistoryAction>(
+        onSelected: (action) => _handleAction(context, ref, action),
+        itemBuilder: (_) => const [
+          PopupMenuItem(
+            value: _HistoryAction.viewReport,
+            child: Text('Ver Relatório'),
+          ),
+          PopupMenuItem(
+            value: _HistoryAction.delete,
+            child: Text('Excluir'),
+          ),
+        ],
+      ),
       onTap: () => context.push('/history/shift/${shift.id}/report'),
     );
   }
@@ -451,6 +775,23 @@ class _ShiftTile extends ConsumerWidget {
       return;
     }
 
+    if (action == _HistoryAction.viewReport) {
+      context.push('/history/shift/${shift.id}/report');
+      return;
+    }
+
+    if (action == _HistoryAction.share) {
+      final goalCents =
+          ref.read(settingsStreamProvider).valueOrNull?.dailyGoalCents ?? 12000;
+      final text = ReportGenerator.generateManual(
+        shift,
+        dailyGoalCents: goalCents,
+      );
+      await Share.share(text, subject: 'Resumo do dia — DeliveryFlow');
+      return;
+    }
+
+    // ── Delete flow ───────────────────────────────────────────────────────────
     AppLogger.info(
       LogEvents.historyDeleteItem,
       module: 'HistoryScreen',
@@ -461,7 +802,7 @@ class _ShiftTile extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir registro?'),
-        content: const Text('Este registro histórico será excluído.'),
+        content: const Text('Este registro será excluído permanentemente.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -482,7 +823,6 @@ class _ShiftTile extends ConsumerWidget {
       metadata: {'shift_id': shift.id},
     );
 
-    // Capture data before deletion so UNDO can re-insert.
     final savedShift = shift;
     await ref.read(historicalEntryNotifierProvider.notifier).delete(shift.id);
 
@@ -513,4 +853,4 @@ class _ShiftTile extends ConsumerWidget {
   }
 }
 
-enum _HistoryAction { edit, delete }
+enum _HistoryAction { edit, delete, viewReport, share }

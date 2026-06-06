@@ -56,6 +56,7 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
     required int earningsCents,
     double? hoursWorked,
     String? notes,
+    int? fuelExpenseCents,
   }) => (update(db.shiftsTable)..where((t) => t.id.equals(id))).write(
     ShiftsTableCompanion(
       startedAt: Value(dateStr),
@@ -64,6 +65,7 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
       deliveryCount: Value(deliveryCount),
       notes: Value(notes),
       hoursWorked: Value(hoursWorked),
+      fuelExpenseCents: Value(fuelExpenseCents),
     ),
   );
 

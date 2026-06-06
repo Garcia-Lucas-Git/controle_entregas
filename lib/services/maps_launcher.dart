@@ -1,4 +1,5 @@
 import 'package:controle_entregas/services/app_logger.dart';
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 abstract final class MapsLauncher {
@@ -148,4 +149,87 @@ class MapsNavigationRequest {
   final String fallback;
 
   const MapsNavigationRequest({required this.primary, required this.fallback});
+}
+
+// Shows dialog asking if user wants to append a return destination.
+// Returns addresses unchanged if user selects "Não adicionar" or dismisses.
+// Only shows dialog when at least one return address is configured.
+Future<List<String>> pickFinalDestination(
+  BuildContext context, {
+  required List<String> addresses,
+  required String pizzeriaAddress,
+  required String homeAddress,
+}) async {
+  final hasPizzeria = pizzeriaAddress.isNotEmpty;
+  final hasHome = homeAddress.isNotEmpty;
+
+  if (!hasPizzeria && !hasHome) return addresses;
+
+  AppLogger.log(
+    LogEvents.mapsFinalDestinationDialogOpened,
+    module: 'MapsLauncher',
+    metadata: {
+      'has_pizzeria': hasPizzeria,
+      'has_home': hasHome,
+      'delivery_count': addresses.length,
+    },
+  );
+
+  final choice = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Destino final da rota'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, 'none'),
+          child: const Text('Não adicionar'),
+        ),
+        // When both exist: pizzeria as secondary, home as primary.
+        // When only one: it becomes the primary (FilledButton).
+        if (hasPizzeria && hasHome)
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'work'),
+            child: const Text('Voltar para pizzaria'),
+          ),
+        if (hasPizzeria && !hasHome)
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'work'),
+            child: const Text('Voltar para pizzaria'),
+          ),
+        if (hasHome)
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'home'),
+            child: const Text('Ir para casa'),
+          ),
+      ],
+    ),
+  );
+
+  String? finalAddress;
+  if (choice == 'work') finalAddress = pizzeriaAddress;
+  if (choice == 'home') finalAddress = homeAddress;
+
+  AppLogger.log(
+    LogEvents.mapsFinalDestinationSelected,
+    module: 'MapsLauncher',
+    metadata: {
+      'type': choice ?? 'none',
+      'billable_deliveries': addresses.length,
+    },
+  );
+
+  if (finalAddress != null) {
+    AppLogger.log(
+      LogEvents.mapsFinalDestinationAppended,
+      module: 'MapsLauncher',
+      metadata: {
+        'type': choice,
+        'address': finalAddress,
+        'maps_stop_count': addresses.length + 1,
+        'billable_deliveries': addresses.length,
+      },
+    );
+    return [...addresses, finalAddress];
+  }
+  return addresses;
 }

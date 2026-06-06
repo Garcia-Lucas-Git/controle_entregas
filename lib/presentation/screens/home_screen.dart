@@ -234,21 +234,19 @@ class _ActiveShiftView extends ConsumerWidget {
       screen: 'HomeScreen',
     );
 
+    // true = add manual, false = close shift, null = dismissed
     final addManual = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Antes de encerrar o turno'),
-        content: const Text(
-          'Deseja adicionar alguma entrega manualmente antes de encerrar o turno?',
-        ),
+        title: const Text('Encerrar turno?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Não'),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Adicionar Entrega Manual'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sim'),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Encerrar Turno'),
           ),
         ],
       ),
@@ -266,42 +264,22 @@ class _ActiveShiftView extends ConsumerWidget {
       return;
     }
 
+    if (addManual == null) return; // dismissed
+
     if (!context.mounted) return;
 
     // ── Fuel input dialog ─────────────────────────────────────────────────
     final fuelCents = await _askFuelExpense(context, ref);
     if (!context.mounted) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Fechar turno?'),
-        content: const Text(
-          'O turno será encerrado e os ganhos serão calculados.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Fechar'),
-          ),
-        ],
-      ),
+    AppLogger.info(
+      LogEvents.shiftEndCompleted,
+      module: 'HomeScreen',
+      screen: 'HomeScreen',
     );
-
-    if (confirmed == true) {
-      AppLogger.info(
-        LogEvents.shiftEndCompleted,
-        module: 'HomeScreen',
-        screen: 'HomeScreen',
-      );
-      await ref
-          .read(shiftNotifierProvider.notifier)
-          .closeShift(fuelExpenseCents: fuelCents);
-    }
+    await ref
+        .read(shiftNotifierProvider.notifier)
+        .closeShift(fuelExpenseCents: fuelCents);
   }
 
   Future<int?> _askFuelExpense(BuildContext context, WidgetRef ref) async {
@@ -372,7 +350,7 @@ class _ActiveShiftStats extends ConsumerWidget {
             final cents =
                 earningsSnapshot.data?.fold<int>(
                   0,
-                  (sum, e) => sum + e.rateApplied.cents,
+                  (sum, e) => sum + e.routeTotal.cents,
                 ) ??
                 0;
             final earnings = 'R\$ ${(cents / 100).toStringAsFixed(2)}';

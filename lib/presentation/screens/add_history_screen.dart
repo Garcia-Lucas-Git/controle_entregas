@@ -19,7 +19,7 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
   late final TextEditingController _r8Ctrl;
   late final TextEditingController _r10Ctrl;
   late final TextEditingController _earningsCtrl;
-  late final TextEditingController _hoursCtrl;
+  late final TextEditingController _fuelCtrl;
   late final TextEditingController _notesCtrl;
   bool _saving = false;
   bool _syncing = false;
@@ -48,8 +48,10 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
     _earningsCtrl = TextEditingController(
       text: e != null ? (e.totalEarnings.cents / 100).toStringAsFixed(2) : '',
     );
-    _hoursCtrl = TextEditingController(
-      text: e?.hoursWorked != null ? e!.hoursWorked!.toStringAsFixed(0) : '',
+    _fuelCtrl = TextEditingController(
+      text: e?.fuelExpenseCents != null
+          ? (e!.fuelExpenseCents! / 100).toStringAsFixed(2)
+          : '0.00',
     );
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
 
@@ -67,7 +69,7 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
     _r8Ctrl.dispose();
     _r10Ctrl.dispose();
     _earningsCtrl.dispose();
-    _hoursCtrl.dispose();
+    _fuelCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
@@ -139,8 +141,9 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
     }
 
     final earningsCents = (earnings * 100).round();
-    final hoursText = _hoursCtrl.text.trim().replaceAll(',', '.');
-    final hoursWorked = hoursText.isEmpty ? null : double.tryParse(hoursText);
+    final fuelText = _fuelCtrl.text.trim().replaceAll(',', '.');
+    final fuelReals = double.tryParse(fuelText) ?? 0.0;
+    final fuelCents = fuelReals > 0 ? (fuelReals * 100).round() : null;
     final notes = _notesCtrl.text.trim().isEmpty
         ? null
         : _notesCtrl.text.trim();
@@ -154,16 +157,16 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
           date: _selectedDate,
           deliveryCount: deliveries,
           earningsCents: earningsCents,
-          hoursWorked: hoursWorked,
           notes: notes,
+          fuelExpenseCents: fuelCents,
         );
       } else {
         await notifier.save(
           date: _selectedDate,
           deliveryCount: deliveries,
           earningsCents: earningsCents,
-          hoursWorked: hoursWorked,
           notes: notes,
+          fuelExpenseCents: fuelCents,
         );
       }
       if (mounted) context.pop();
@@ -278,14 +281,16 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
             const SizedBox(height: 16),
 
             TextField(
-              controller: _hoursCtrl,
+              controller: _fuelCtrl,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               decoration: const InputDecoration(
-                labelText: 'Horas Trabalhadas',
+                labelText: 'Combustível (R\$)',
                 border: OutlineInputBorder(),
-                hintText: 'Ex: 8 (opcional)',
+                prefixText: 'R\$ ',
+                hintText: '0,00',
+                helperText: 'Informativo — não afeta meta nem entregas',
               ),
             ),
             const SizedBox(height: 16),

@@ -1,4 +1,5 @@
 import 'package:controle_entregas/application/deliveries/delivery_notifier.dart';
+import 'package:controle_entregas/application/settings/settings_notifier.dart';
 import 'package:controle_entregas/services/app_logger.dart';
 import 'package:controle_entregas/services/maps_launcher.dart';
 import 'package:controle_entregas/services/ocr_service.dart';
@@ -113,7 +114,18 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
       );
       if (proceed != true) return;
     }
-    await MapsLauncher.navigateTo(addresses);
+
+    if (!mounted) return;
+    final settings = ref.read(settingsStreamProvider).valueOrNull;
+    final finalAddresses = await pickFinalDestination(
+      context,
+      addresses: addresses,
+      pizzeriaAddress: settings?.pizzeriaAddress ?? '',
+      homeAddress: settings?.homeAddress ?? '',
+    );
+    if (!mounted) return;
+
+    await MapsLauncher.navigateTo(finalAddresses);
   }
 
   Future<void> _copyLocator(String locator) async {

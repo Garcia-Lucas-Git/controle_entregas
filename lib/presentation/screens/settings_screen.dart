@@ -39,6 +39,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   late final TextEditingController _ifoodUrlCtrl;
   late final TextEditingController _ifoodSelectorCtrl;
   late final TextEditingController _dailyGoalCtrl;
+  late final TextEditingController _homeCtrl;
   late final TextEditingController _baseRateCtrl;
   late final TextEditingController _longRateCtrl;
   late bool _ocrContrast;
@@ -50,6 +51,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
     _pizzeriaCtrl = TextEditingController(
       text: widget.settings.pizzeriaAddress,
     );
+    _homeCtrl = TextEditingController(text: widget.settings.homeAddress);
     _ifoodUrlCtrl = TextEditingController(text: widget.settings.ifoodUrl);
     _ifoodSelectorCtrl = TextEditingController(
       text: widget.settings.ifoodFieldSelector,
@@ -72,6 +74,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
   void dispose() {
     _driverNameCtrl.dispose();
     _pizzeriaCtrl.dispose();
+    _homeCtrl.dispose();
     _ifoodUrlCtrl.dispose();
     _ifoodSelectorCtrl.dispose();
     _dailyGoalCtrl.dispose();
@@ -85,6 +88,7 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
 
     await notifier.updateDriverName(_driverNameCtrl.text.trim());
     await notifier.updatePizzeriaAddress(_pizzeriaCtrl.text.trim());
+    await notifier.updateHomeAddress(_homeCtrl.text.trim());
     await notifier.updateIfoodUrl(_ifoodUrlCtrl.text.trim());
     await notifier.updateIfoodFieldSelector(_ifoodSelectorCtrl.text.trim());
     await notifier.updateOcrContrast(_ocrContrast);
@@ -130,6 +134,13 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
           controller: _pizzeriaCtrl,
           hint: 'Rua Exemplo, 123 — Uberlândia',
           helperText: 'Usado como ponto de partida para cálculo de distância.',
+        ),
+        const SizedBox(height: 12),
+        _Field(
+          label: 'Endereço de casa',
+          controller: _homeCtrl,
+          hint: 'Rua Exemplo, 456 — Uberlândia',
+          helperText: 'Opcional. Destino final de navegação ao ir para casa.',
         ),
         const SizedBox(height: 24),
 

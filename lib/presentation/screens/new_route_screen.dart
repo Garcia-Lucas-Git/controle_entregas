@@ -299,16 +299,19 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
       ),
       body: Column(
         children: [
-          Expanded(
-            child: _results.isEmpty
-                ? _EmptyCapture(processing: _processing)
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _results.length,
-                    itemBuilder: (ctx, i) =>
-                        _OcrPreviewCard(result: _results[i], index: i),
-                  ),
-          ),
+          if (_results.isEmpty)
+            Expanded(child: _EmptyCapture(processing: _processing))
+          else
+            Flexible(
+              fit: FlexFit.loose,
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.all(16),
+                itemCount: _results.length,
+                itemBuilder: (ctx, i) =>
+                    _OcrPreviewCard(result: _results[i], index: i),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(

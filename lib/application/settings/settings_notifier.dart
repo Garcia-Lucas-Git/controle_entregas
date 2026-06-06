@@ -69,6 +69,14 @@ class SettingsNotifier extends _$SettingsNotifier {
     ref.invalidateSelf();
   }
 
+  Future<void> updateHomeAddress(String address) async {
+    final current = await future;
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveSettings(current.copyWith(homeAddress: address));
+    ref.invalidateSelf();
+  }
+
   Future<void> updateEarningsConfig({
     required int baseRateCents,
     required int longSingleDeliveryRateCents,

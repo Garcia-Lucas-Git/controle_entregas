@@ -15,6 +15,9 @@ class AppSettings {
   // Daily revenue goal in cents. Default R$120.
   final int dailyGoalCents;
 
+  // Home address for navigation return destination (optional).
+  final String homeAddress;
+
   const AppSettings({
     required this.driverName,
     required this.pizzeriaAddress,
@@ -25,6 +28,7 @@ class AppSettings {
     this.activeRouteId,
     this.activeDeliveryIndex,
     this.dailyGoalCents = 12000,
+    this.homeAddress = '',
   });
 
   static AppSettings get defaults => const AppSettings(
@@ -35,6 +39,7 @@ class AppSettings {
     ocrContrastEnabled: false,
     earningsConfig: EarningsConfig.defaults(),
     dailyGoalCents: 12000,
+    homeAddress: '',
   );
 
   bool get isSetupComplete =>
@@ -50,6 +55,7 @@ class AppSettings {
     int? activeRouteId,
     int? activeDeliveryIndex,
     int? dailyGoalCents,
+    String? homeAddress,
   }) => AppSettings(
     driverName: driverName ?? this.driverName,
     pizzeriaAddress: pizzeriaAddress ?? this.pizzeriaAddress,
@@ -60,5 +66,6 @@ class AppSettings {
     activeRouteId: activeRouteId ?? this.activeRouteId,
     activeDeliveryIndex: activeDeliveryIndex ?? this.activeDeliveryIndex,
     dailyGoalCents: dailyGoalCents ?? this.dailyGoalCents,
+    homeAddress: homeAddress ?? this.homeAddress,
   );
 }

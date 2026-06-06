@@ -90,6 +90,9 @@ abstract final class LogEvents {
   static const periodReport = 'REPORT';
 
   // ── Google Maps ───────────────────────────────────────────────────────────
+  static const mapsFinalDestinationDialogOpened = 'MAPS_FINAL_DESTINATION_DIALOG_OPENED';
+  static const mapsFinalDestinationSelected = 'MAPS_FINAL_DESTINATION_SELECTED';
+  static const mapsFinalDestinationAppended = 'MAPS_FINAL_DESTINATION_APPENDED';
   static const mapsOpenStart = 'MAPS_OPEN_START';
   static const mapsOpenSuccess = 'MAPS_OPEN_SUCCESS';
   static const mapsOpenFail = 'MAPS_OPEN_FAIL';
@@ -124,12 +127,25 @@ abstract final class LogEvents {
   static const ifoodConfirmFail = 'IFOOD_CONFIRM_FAIL';
   static const ifoodManualFallback = 'IFOOD_MANUAL_FALLBACK';
 
+  // ── Financial calculation ─────────────────────────────────────────────────
+  static const financialCalcStart = 'FINANCIAL_CALC_START';
+  static const financialDeliveryValue = 'FINANCIAL_DELIVERY_VALUE';
+  static const financialRouteTotal = 'FINANCIAL_ROUTE_TOTAL';
+  static const financialCalcComplete = 'FINANCIAL_CALC_COMPLETE';
+
+  // ── Customer name extraction ──────────────────────────────────────────────
+  static const customerCandidateFound = 'CUSTOMER_CANDIDATE_FOUND';
+  static const customerValidated = 'CUSTOMER_VALIDATED';
+  static const customerNotFound = 'CUSTOMER_NOT_FOUND';
+
   // ── Parser ───────────────────────────────────────────────────────────────
   static const parserSuccessComplete = 'PARSER_SUCCESS_COMPLETE';
   static const parserSuccessPartial = 'PARSER_SUCCESS_PARTIAL';
   static const parserFail = 'PARSER_FAIL';
   static const parserLocatorInvalid = 'PARSER_LOCATOR_INVALID';
   static const parserAddressNotFound = 'PARSER_ADDRESS_NOT_FOUND';
+  static const parserAddressMatch = 'PARSER_ADDRESS_MATCH';
+  static const parserAddressFailReason = 'PARSER_ADDRESS_FAIL_REASON';
   static const parserOrderNotFound = 'PARSER_ORDER_NOT_FOUND';
   static const ocrRawTextCaptured = 'OCR_RAW_TEXT_CAPTURED';
   static const parserLabelFound = 'LABEL_FOUND';

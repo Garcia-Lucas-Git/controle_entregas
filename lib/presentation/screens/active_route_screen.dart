@@ -1,5 +1,6 @@
 import 'package:controle_entregas/application/deliveries/delivery_notifier.dart';
 import 'package:controle_entregas/application/routes/route_notifier.dart';
+import 'package:controle_entregas/application/settings/settings_notifier.dart';
 import 'package:controle_entregas/application/wakelock/wakelock_controller.dart';
 import 'package:controle_entregas/domain/entities/delivery.dart';
 import 'package:controle_entregas/domain/entities/route_entity.dart';
@@ -54,7 +55,18 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
         .where((a) => a.isNotEmpty)
         .toList();
     if (addresses.isEmpty) return;
-    await MapsLauncher.navigateTo(addresses);
+    if (!mounted) return;
+
+    final settings = ref.read(settingsStreamProvider).valueOrNull;
+    final finalAddresses = await pickFinalDestination(
+      context,
+      addresses: addresses,
+      pizzeriaAddress: settings?.pizzeriaAddress ?? '',
+      homeAddress: settings?.homeAddress ?? '',
+    );
+    if (!mounted) return;
+
+    await MapsLauncher.navigateTo(finalAddresses);
   }
 
   Future<void> _deleteRoute(RouteEntity route) async {

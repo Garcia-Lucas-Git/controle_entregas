@@ -25,4 +25,7 @@ class EarningsEntry {
     required this.configSnapshot,
     required this.createdAt,
   });
+
+  // Route earnings = per-delivery rate × number of deliveries in this route.
+  Money get routeTotal => Money(rateApplied.cents * routeDeliveryCount);
 }

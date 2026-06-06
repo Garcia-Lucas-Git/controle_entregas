@@ -62,6 +62,7 @@ class ShiftRepository {
     required int earningsCents,
     double? hoursWorked,
     String? notes,
+    int? fuelExpenseCents,
   }) {
     final dateStr = DateTime(
       date.year,
@@ -80,6 +81,7 @@ class ShiftRepository {
         notes: Value(notes),
         source: const Value('historical'),
         hoursWorked: Value(hoursWorked),
+        fuelExpenseCents: Value(fuelExpenseCents),
         createdAt: Value(now),
       ),
     );
@@ -92,6 +94,7 @@ class ShiftRepository {
     required int earningsCents,
     double? hoursWorked,
     String? notes,
+    int? fuelExpenseCents,
   }) {
     final dateStr = DateTime(
       date.year,
@@ -105,6 +108,7 @@ class ShiftRepository {
       earningsCents: earningsCents,
       hoursWorked: hoursWorked,
       notes: notes,
+      fuelExpenseCents: fuelExpenseCents,
     );
   }
 

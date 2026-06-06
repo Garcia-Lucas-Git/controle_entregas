@@ -54,6 +54,25 @@ class PaymentForecastScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            if (summary.fuelThisWeek.cents > 0) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _MetricCard(
+                    label: 'Combustível Semana',
+                    value: summary.fuelThisWeek.format(),
+                    icon: Icons.local_gas_station_outlined,
+                  ),
+                  const SizedBox(width: 12),
+                  _MetricCard(
+                    label: 'Líquido Semana',
+                    value: summary.netThisWeek.format(),
+                    icon: Icons.account_balance_wallet_outlined,
+                    highlight: true,
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 24),
             _SectionHeader('Próximo Pagamento'),
             const SizedBox(height: 8),
@@ -223,6 +242,16 @@ class _PeriodCard extends StatelessWidget {
                     '${period.totalEarnings.format()}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
+                  if (period.fuelTotal.cents > 0) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Comb. ${period.fuelTotal.format()} · '
+                      'Líq. ${period.netTotal.format()}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Row(
                     children: [

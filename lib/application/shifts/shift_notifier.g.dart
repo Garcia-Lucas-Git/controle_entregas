@@ -40,7 +40,7 @@ final allShiftsProvider = AutoDisposeStreamProvider<List<Shift>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AllShiftsRef = AutoDisposeStreamProviderRef<List<Shift>>;
-String _$shiftNotifierHash() => r'af87cf5a93bcd9f22ac086c9fdd2445ad3d94031';
+String _$shiftNotifierHash() => r'14da55a14382c0d600b93ee62eb23b2626f6d5a4';
 
 /// See also [ShiftNotifier].
 @ProviderFor(ShiftNotifier)
@@ -57,7 +57,7 @@ final shiftNotifierProvider =
 
 typedef _$ShiftNotifier = AutoDisposeAsyncNotifier<Shift?>;
 String _$historicalEntryNotifierHash() =>
-    r'd4f4a225cb0b4ce62046172c60a27dd538b107dd';
+    r'47952afe1ceaa02f822979ffb93cb2be60f3793e';
 
 /// See also [HistoricalEntryNotifier].
 @ProviderFor(HistoricalEntryNotifier)

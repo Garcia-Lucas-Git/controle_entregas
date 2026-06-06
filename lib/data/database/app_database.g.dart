@@ -4288,6 +4288,18 @@ class $AppConfigTableTable extends AppConfigTable
     requiredDuringInsert: false,
     defaultValue: const Constant(12000),
   );
+  static const VerificationMeta _homeAddressMeta = const VerificationMeta(
+    'homeAddress',
+  );
+  @override
+  late final GeneratedColumn<String> homeAddress = GeneratedColumn<String>(
+    'home_address',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -4321,6 +4333,7 @@ class $AppConfigTableTable extends AppConfigTable
     activeRouteId,
     activeDeliveryIndex,
     dailyGoalCents,
+    homeAddress,
     createdAt,
     updatedAt,
   ];
@@ -4405,6 +4418,15 @@ class $AppConfigTableTable extends AppConfigTable
         ),
       );
     }
+    if (data.containsKey('home_address')) {
+      context.handle(
+        _homeAddressMeta,
+        homeAddress.isAcceptableOrUnknown(
+          data['home_address']!,
+          _homeAddressMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -4466,6 +4488,10 @@ class $AppConfigTableTable extends AppConfigTable
         DriftSqlType.int,
         data['${effectivePrefix}daily_goal_cents'],
       )!,
+      homeAddress: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}home_address'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_at'],
@@ -4494,6 +4520,7 @@ class AppConfigTableData extends DataClass
   final int? activeRouteId;
   final int? activeDeliveryIndex;
   final int dailyGoalCents;
+  final String homeAddress;
   final String createdAt;
   final String updatedAt;
   const AppConfigTableData({
@@ -4506,6 +4533,7 @@ class AppConfigTableData extends DataClass
     this.activeRouteId,
     this.activeDeliveryIndex,
     required this.dailyGoalCents,
+    required this.homeAddress,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -4525,6 +4553,7 @@ class AppConfigTableData extends DataClass
       map['active_delivery_index'] = Variable<int>(activeDeliveryIndex);
     }
     map['daily_goal_cents'] = Variable<int>(dailyGoalCents);
+    map['home_address'] = Variable<String>(homeAddress);
     map['created_at'] = Variable<String>(createdAt);
     map['updated_at'] = Variable<String>(updatedAt);
     return map;
@@ -4545,6 +4574,7 @@ class AppConfigTableData extends DataClass
           ? const Value.absent()
           : Value(activeDeliveryIndex),
       dailyGoalCents: Value(dailyGoalCents),
+      homeAddress: Value(homeAddress),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -4569,6 +4599,7 @@ class AppConfigTableData extends DataClass
         json['activeDeliveryIndex'],
       ),
       dailyGoalCents: serializer.fromJson<int>(json['dailyGoalCents']),
+      homeAddress: serializer.fromJson<String>(json['homeAddress']),
       createdAt: serializer.fromJson<String>(json['createdAt']),
       updatedAt: serializer.fromJson<String>(json['updatedAt']),
     );
@@ -4586,6 +4617,7 @@ class AppConfigTableData extends DataClass
       'activeRouteId': serializer.toJson<int?>(activeRouteId),
       'activeDeliveryIndex': serializer.toJson<int?>(activeDeliveryIndex),
       'dailyGoalCents': serializer.toJson<int>(dailyGoalCents),
+      'homeAddress': serializer.toJson<String>(homeAddress),
       'createdAt': serializer.toJson<String>(createdAt),
       'updatedAt': serializer.toJson<String>(updatedAt),
     };
@@ -4601,6 +4633,7 @@ class AppConfigTableData extends DataClass
     Value<int?> activeRouteId = const Value.absent(),
     Value<int?> activeDeliveryIndex = const Value.absent(),
     int? dailyGoalCents,
+    String? homeAddress,
     String? createdAt,
     String? updatedAt,
   }) => AppConfigTableData(
@@ -4617,6 +4650,7 @@ class AppConfigTableData extends DataClass
         ? activeDeliveryIndex.value
         : this.activeDeliveryIndex,
     dailyGoalCents: dailyGoalCents ?? this.dailyGoalCents,
+    homeAddress: homeAddress ?? this.homeAddress,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -4645,6 +4679,9 @@ class AppConfigTableData extends DataClass
       dailyGoalCents: data.dailyGoalCents.present
           ? data.dailyGoalCents.value
           : this.dailyGoalCents,
+      homeAddress: data.homeAddress.present
+          ? data.homeAddress.value
+          : this.homeAddress,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -4662,6 +4699,7 @@ class AppConfigTableData extends DataClass
           ..write('activeRouteId: $activeRouteId, ')
           ..write('activeDeliveryIndex: $activeDeliveryIndex, ')
           ..write('dailyGoalCents: $dailyGoalCents, ')
+          ..write('homeAddress: $homeAddress, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -4679,6 +4717,7 @@ class AppConfigTableData extends DataClass
     activeRouteId,
     activeDeliveryIndex,
     dailyGoalCents,
+    homeAddress,
     createdAt,
     updatedAt,
   );
@@ -4695,6 +4734,7 @@ class AppConfigTableData extends DataClass
           other.activeRouteId == this.activeRouteId &&
           other.activeDeliveryIndex == this.activeDeliveryIndex &&
           other.dailyGoalCents == this.dailyGoalCents &&
+          other.homeAddress == this.homeAddress &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -4709,6 +4749,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
   final Value<int?> activeRouteId;
   final Value<int?> activeDeliveryIndex;
   final Value<int> dailyGoalCents;
+  final Value<String> homeAddress;
   final Value<String> createdAt;
   final Value<String> updatedAt;
   const AppConfigTableCompanion({
@@ -4721,6 +4762,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     this.activeRouteId = const Value.absent(),
     this.activeDeliveryIndex = const Value.absent(),
     this.dailyGoalCents = const Value.absent(),
+    this.homeAddress = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -4734,6 +4776,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     this.activeRouteId = const Value.absent(),
     this.activeDeliveryIndex = const Value.absent(),
     this.dailyGoalCents = const Value.absent(),
+    this.homeAddress = const Value.absent(),
     required String createdAt,
     required String updatedAt,
   }) : createdAt = Value(createdAt),
@@ -4748,6 +4791,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     Expression<int>? activeRouteId,
     Expression<int>? activeDeliveryIndex,
     Expression<int>? dailyGoalCents,
+    Expression<String>? homeAddress,
     Expression<String>? createdAt,
     Expression<String>? updatedAt,
   }) {
@@ -4764,6 +4808,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
       if (activeDeliveryIndex != null)
         'active_delivery_index': activeDeliveryIndex,
       if (dailyGoalCents != null) 'daily_goal_cents': dailyGoalCents,
+      if (homeAddress != null) 'home_address': homeAddress,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -4779,6 +4824,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     Value<int?>? activeRouteId,
     Value<int?>? activeDeliveryIndex,
     Value<int>? dailyGoalCents,
+    Value<String>? homeAddress,
     Value<String>? createdAt,
     Value<String>? updatedAt,
   }) {
@@ -4792,6 +4838,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
       activeRouteId: activeRouteId ?? this.activeRouteId,
       activeDeliveryIndex: activeDeliveryIndex ?? this.activeDeliveryIndex,
       dailyGoalCents: dailyGoalCents ?? this.dailyGoalCents,
+      homeAddress: homeAddress ?? this.homeAddress,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -4827,6 +4874,9 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
     if (dailyGoalCents.present) {
       map['daily_goal_cents'] = Variable<int>(dailyGoalCents.value);
     }
+    if (homeAddress.present) {
+      map['home_address'] = Variable<String>(homeAddress.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<String>(createdAt.value);
     }
@@ -4848,6 +4898,7 @@ class AppConfigTableCompanion extends UpdateCompanion<AppConfigTableData> {
           ..write('activeRouteId: $activeRouteId, ')
           ..write('activeDeliveryIndex: $activeDeliveryIndex, ')
           ..write('dailyGoalCents: $dailyGoalCents, ')
+          ..write('homeAddress: $homeAddress, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -8213,6 +8264,7 @@ typedef $$AppConfigTableTableCreateCompanionBuilder =
       Value<int?> activeRouteId,
       Value<int?> activeDeliveryIndex,
       Value<int> dailyGoalCents,
+      Value<String> homeAddress,
       required String createdAt,
       required String updatedAt,
     });
@@ -8227,6 +8279,7 @@ typedef $$AppConfigTableTableUpdateCompanionBuilder =
       Value<int?> activeRouteId,
       Value<int?> activeDeliveryIndex,
       Value<int> dailyGoalCents,
+      Value<String> homeAddress,
       Value<String> createdAt,
       Value<String> updatedAt,
     });
@@ -8282,6 +8335,11 @@ class $$AppConfigTableTableFilterComposer
 
   ColumnFilters<int> get dailyGoalCents => $composableBuilder(
     column: $table.dailyGoalCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get homeAddress => $composableBuilder(
+    column: $table.homeAddress,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8350,6 +8408,11 @@ class $$AppConfigTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get homeAddress => $composableBuilder(
+    column: $table.homeAddress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -8411,6 +8474,11 @@ class $$AppConfigTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get homeAddress => $composableBuilder(
+    column: $table.homeAddress,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -8464,6 +8532,7 @@ class $$AppConfigTableTableTableManager
                 Value<int?> activeRouteId = const Value.absent(),
                 Value<int?> activeDeliveryIndex = const Value.absent(),
                 Value<int> dailyGoalCents = const Value.absent(),
+                Value<String> homeAddress = const Value.absent(),
                 Value<String> createdAt = const Value.absent(),
                 Value<String> updatedAt = const Value.absent(),
               }) => AppConfigTableCompanion(
@@ -8476,6 +8545,7 @@ class $$AppConfigTableTableTableManager
                 activeRouteId: activeRouteId,
                 activeDeliveryIndex: activeDeliveryIndex,
                 dailyGoalCents: dailyGoalCents,
+                homeAddress: homeAddress,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -8490,6 +8560,7 @@ class $$AppConfigTableTableTableManager
                 Value<int?> activeRouteId = const Value.absent(),
                 Value<int?> activeDeliveryIndex = const Value.absent(),
                 Value<int> dailyGoalCents = const Value.absent(),
+                Value<String> homeAddress = const Value.absent(),
                 required String createdAt,
                 required String updatedAt,
               }) => AppConfigTableCompanion.insert(
@@ -8502,6 +8573,7 @@ class $$AppConfigTableTableTableManager
                 activeRouteId: activeRouteId,
                 activeDeliveryIndex: activeDeliveryIndex,
                 dailyGoalCents: dailyGoalCents,
+                homeAddress: homeAddress,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

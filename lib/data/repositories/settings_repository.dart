@@ -30,6 +30,7 @@ class SettingsRepository {
         activeRouteId: Value(settings.activeRouteId),
         activeDeliveryIndex: Value(settings.activeDeliveryIndex),
         dailyGoalCents: Value(settings.dailyGoalCents),
+        homeAddress: Value(settings.homeAddress),
         updatedAt: Value(now),
       ),
     );
@@ -50,5 +51,6 @@ class SettingsRepository {
     activeRouteId: r.activeRouteId,
     activeDeliveryIndex: r.activeDeliveryIndex,
     dailyGoalCents: r.dailyGoalCents,
+    homeAddress: r.homeAddress,
   );
 }

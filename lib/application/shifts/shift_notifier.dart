@@ -35,10 +35,45 @@ class ShiftNotifier extends _$ShiftNotifier {
         .read(earningsRepositoryProvider)
         .getEntriesForShift(shift.id);
 
-    final totalCents = entries.fold(0, (sum, e) => sum + e.rateApplied.cents);
-    final deliveryCount = entries.fold(
-      0,
-      (sum, e) => sum + e.routeDeliveryCount,
+    AppLogger.info(
+      LogEvents.financialCalcStart,
+      module: 'ShiftNotifier',
+      metadata: {'shift_id': shift.id, 'route_count': entries.length},
+    );
+
+    int totalCents = 0;
+    int deliveryCount = 0;
+    for (final e in entries) {
+      final routeTotal = e.routeTotal.cents;
+      totalCents += routeTotal;
+      deliveryCount += e.routeDeliveryCount;
+      AppLogger.info(
+        LogEvents.financialDeliveryValue,
+        module: 'ShiftNotifier',
+        metadata: {
+          'route_id': e.routeId,
+          'delivery_count': e.routeDeliveryCount,
+          'rate_cents': e.rateApplied.cents,
+        },
+      );
+      AppLogger.info(
+        LogEvents.financialRouteTotal,
+        module: 'ShiftNotifier',
+        metadata: {
+          'route_id': e.routeId,
+          'route_total_cents': routeTotal,
+        },
+      );
+    }
+
+    AppLogger.info(
+      LogEvents.financialCalcComplete,
+      module: 'ShiftNotifier',
+      metadata: {
+        'shift_id': shift.id,
+        'total_cents': totalCents,
+        'total_deliveries': deliveryCount,
+      },
     );
 
     if (fuelExpenseCents != null && fuelExpenseCents > 0) {
@@ -78,6 +113,7 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
     required int earningsCents,
     double? hoursWorked,
     String? notes,
+    int? fuelExpenseCents,
   }) async {
     final settings = await ref.read(settingsRepositoryProvider).getSettings();
     await ref
@@ -89,6 +125,7 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
           earningsCents: earningsCents,
           hoursWorked: hoursWorked,
           notes: notes,
+          fuelExpenseCents: fuelExpenseCents,
         );
     AppLogger.info(
       LogEvents.historyEntryCreated,
@@ -104,6 +141,7 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
     required int earningsCents,
     double? hoursWorked,
     String? notes,
+    int? fuelExpenseCents,
   }) async {
     await ref
         .read(shiftRepositoryProvider)
@@ -114,6 +152,7 @@ class HistoricalEntryNotifier extends _$HistoricalEntryNotifier {
           earningsCents: earningsCents,
           hoursWorked: hoursWorked,
           notes: notes,
+          fuelExpenseCents: fuelExpenseCents,
         );
     AppLogger.info(
       LogEvents.historyEntryUpdated,
