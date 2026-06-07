@@ -170,8 +170,50 @@ class _DeliveryCardContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
+                  if (delivery.pizzaNumber != null &&
+                      delivery.pizzaNumber!.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Text('🍕', style: TextStyle(fontSize: 22)),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PIZZA',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  letterSpacing: 1.2,
+                                  color: colorScheme.onPrimaryContainer
+                                      .withValues(alpha: 0.7),
+                                ),
+                              ),
+                              Text(
+                                delivery.pizzaNumber!,
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onPrimaryContainer,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   Text(
-                    delivery.addressText,
+                    delivery.fullAddress,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),

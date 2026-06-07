@@ -23,6 +23,25 @@ class EarningsDao extends DatabaseAccessor<AppDatabase>
         db.earningsEntriesTable,
       )..where((t) => t.shiftId.equals(shiftId))).watch();
 
+  Future<EarningsEntriesTableData?> getEntryForRoute(int routeId) =>
+      (select(db.earningsEntriesTable)
+            ..where((t) => t.routeId.equals(routeId))
+            ..limit(1))
+          .getSingleOrNull();
+
+  Future<int> updateEntryDeliveryCount(int routeId, int newCount) =>
+      (update(db.earningsEntriesTable)..where((t) => t.routeId.equals(routeId)))
+          .write(
+            EarningsEntriesTableCompanion(
+              routeDeliveryCount: Value(newCount),
+            ),
+          );
+
+  Future<int> deleteEntryForRoute(int routeId) =>
+      (delete(db.earningsEntriesTable)
+            ..where((t) => t.routeId.equals(routeId)))
+          .go();
+
   Future<EarningsConfigTableData?> getCurrentConfig() =>
       (select(db.earningsConfigTable)
             ..where((t) => t.isCurrent.equals(true))

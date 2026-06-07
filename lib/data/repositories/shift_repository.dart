@@ -39,6 +39,16 @@ class ShiftRepository {
     );
   }
 
+  Future<void> updateTotals({
+    required int id,
+    required int totalEarningsCents,
+    required int deliveryCount,
+  }) => _dao.updateTotals(
+    id: id,
+    totalEarningsCents: totalEarningsCents,
+    deliveryCount: deliveryCount,
+  );
+
   Future<void> closeShift({
     required int id,
     required int totalEarningsCents,

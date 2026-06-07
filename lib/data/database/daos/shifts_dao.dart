@@ -33,6 +33,17 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
   Future<ShiftsTableData?> getShiftById(int id) =>
       (select(db.shiftsTable)..where((t) => t.id.equals(id))).getSingleOrNull();
 
+  Future<int> updateTotals({
+    required int id,
+    required int totalEarningsCents,
+    required int deliveryCount,
+  }) => (update(db.shiftsTable)..where((t) => t.id.equals(id))).write(
+    ShiftsTableCompanion(
+      totalEarningsCents: Value(totalEarningsCents),
+      deliveryCount: Value(deliveryCount),
+    ),
+  );
+
   Future<int> closeShift({
     required int id,
     required String endedAt,

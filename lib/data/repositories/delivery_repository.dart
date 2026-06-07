@@ -39,11 +39,40 @@ class DeliveryRepository {
   Future<int> countCompletedInRoute(int routeId) =>
       _dao.countCompletedInRoute(routeId);
 
+  Future<void> updateDeliveryFields({
+    required int id,
+    String? customerName,
+    String? addressText,
+    String? houseNumber,
+    String? orderNumber,
+    String? deliveryIdentifier,
+    String? pizzaNumber,
+    bool? needsIfoodConfirmation,
+    bool? hasDrinks,
+    bool? needsCard,
+    bool? needsChange,
+  }) async {
+    await _dao.updateDeliveryFields(
+      id: id,
+      customerName: customerName != null ? Value(customerName) : const Value.absent(),
+      addressText: addressText != null ? Value(addressText) : const Value.absent(),
+      houseNumber: houseNumber != null ? Value(houseNumber) : const Value.absent(),
+      orderNumber: orderNumber != null ? Value(orderNumber) : const Value.absent(),
+      deliveryIdentifier: deliveryIdentifier != null ? Value(deliveryIdentifier) : const Value.absent(),
+      pizzaNumber: pizzaNumber != null ? Value(pizzaNumber) : const Value.absent(),
+      needsIfoodConfirmation: needsIfoodConfirmation != null ? Value(needsIfoodConfirmation) : const Value.absent(),
+      hasDrinks: hasDrinks != null ? Value(hasDrinks) : const Value.absent(),
+      needsCard: needsCard != null ? Value(needsCard) : const Value.absent(),
+      needsChange: needsChange != null ? Value(needsChange) : const Value.absent(),
+    );
+  }
+
   Future<int> createDelivery({
     required int routeId,
     required int shiftId,
     required int sequenceNumber,
     required String addressText,
+    String? houseNumber,
     String? customerName,
     String? orderNumber,
     int? orderValueCents,
@@ -55,6 +84,7 @@ class DeliveryRepository {
     bool needsCard = false,
     bool needsChange = false,
     int? changeAmountCents,
+    String? pizzaNumber,
   }) async {
     final now = DateTime.now().toUtc().toIso8601String();
     final sid = SessionManager.delivery();
@@ -66,6 +96,7 @@ class DeliveryRepository {
           sequenceNumber: Value(sequenceNumber),
           status: const Value('pending'),
           addressText: Value(addressText),
+          houseNumber: Value(houseNumber),
           customerName: Value(customerName),
           orderNumber: Value(orderNumber),
           orderValueCents: Value(orderValueCents),
@@ -77,6 +108,7 @@ class DeliveryRepository {
           needsCard: Value(needsCard),
           needsChange: Value(needsChange),
           changeAmountCents: Value(changeAmountCents),
+          pizzaNumber: Value(pizzaNumber),
           createdAt: Value(now),
         ),
       );
@@ -175,6 +207,7 @@ class DeliveryRepository {
     status: DeliveryStatus.fromJson(r.status),
     customerName: r.customerName,
     addressText: r.addressText,
+    houseNumber: r.houseNumber,
     distanceKm: r.distanceKm,
     orderNumber: r.orderNumber,
     orderValueCents: r.orderValueCents,
@@ -192,5 +225,6 @@ class DeliveryRepository {
     needsCard: r.needsCard,
     needsChange: r.needsChange,
     changeAmountCents: r.changeAmountCents,
+    pizzaNumber: r.pizzaNumber,
   );
 }

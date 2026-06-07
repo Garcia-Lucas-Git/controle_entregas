@@ -93,6 +93,19 @@ class EarningsRepository {
     );
   }
 
+  /// Decrements routeDeliveryCount by 1 for the given route's earnings entry.
+  /// Deletes the entry when count reaches 0.
+  Future<void> decrementRouteDelivery(int routeId) async {
+    final row = await _dao.getEntryForRoute(routeId);
+    if (row == null) return;
+    final newCount = row.routeDeliveryCount - 1;
+    if (newCount <= 0) {
+      await _dao.deleteEntryForRoute(routeId);
+    } else {
+      await _dao.updateEntryDeliveryCount(routeId, newCount);
+    }
+  }
+
   Future<List<EarningsEntry>> getEntriesForShift(int shiftId) async {
     final rows = await _dao.getEntriesForShift(shiftId);
     return rows.map(_entryFromRow).toList();

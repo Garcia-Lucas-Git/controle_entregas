@@ -8,6 +8,7 @@ class Delivery {
   final DeliveryStatus status;
   final String? customerName;
   final String addressText;
+  final String? houseNumber;
   final double? distanceKm;
   final String? orderNumber;
   final int? orderValueCents;
@@ -28,6 +29,9 @@ class Delivery {
   final bool needsChange;
   final int? changeAmountCents;
 
+  // Operational fields
+  final String? pizzaNumber;
+
   const Delivery({
     required this.id,
     required this.routeId,
@@ -36,6 +40,7 @@ class Delivery {
     required this.status,
     this.customerName,
     required this.addressText,
+    this.houseNumber,
     this.distanceKm,
     this.orderNumber,
     this.orderValueCents,
@@ -51,8 +56,14 @@ class Delivery {
     this.needsCard = false,
     this.needsChange = false,
     this.changeAmountCents,
+    this.pizzaNumber,
   });
 
   bool get isCompleted => status == DeliveryStatus.completed;
   bool get isPending => status == DeliveryStatus.pending;
+
+  String get fullAddress =>
+      houseNumber != null && houseNumber!.isNotEmpty
+          ? '$addressText, $houseNumber'
+          : addressText;
 }

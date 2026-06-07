@@ -137,6 +137,7 @@ abstract final class LogEvents {
   static const customerCandidateFound = 'CUSTOMER_CANDIDATE_FOUND';
   static const customerValidated = 'CUSTOMER_VALIDATED';
   static const customerNotFound = 'CUSTOMER_NOT_FOUND';
+  static const customerRejectedBlocklist = 'CUSTOMER_REJECTED_BLOCKLIST';
 
   // ── Parser ───────────────────────────────────────────────────────────────
   static const parserSuccessComplete = 'PARSER_SUCCESS_COMPLETE';
@@ -240,4 +241,26 @@ abstract final class LogEvents {
   // ── Exceptions ────────────────────────────────────────────────────────────
   static const exception = 'EXCEPTION';
   static const criticalException = 'CRITICAL_EXCEPTION';
+
+  // ── Phase 6.2 ────────────────────────────────────────────────────────────
+  static const pizzaNumberAdded = 'PIZZA_NUMBER_ADDED';
+  static const pizzaNumberUpdated = 'PIZZA_NUMBER_UPDATED';
+  static const deliveryUpdated = 'DELIVERY_UPDATED';
+  static const routeReordered = 'ROUTE_REORDERED';
+  static const returnDestinationSelected = 'RETURN_DESTINATION_SELECTED';
+  static const dashboardRecalculated = 'DASHBOARD_RECALCULATED';
+  static const shiftReviewOpened = 'SHIFT_REVIEW_OPENED';
+  static const shiftReviewCompleted = 'SHIFT_REVIEW_COMPLETED';
+  static const paymentTextIgnoredFromOcr = 'PAYMENT_TEXT_IGNORED_FROM_OCR';
+
+  // ── OCR history edit ──────────────────────────────────────────────────────
+  static const ocrHistoryEditOpened = 'OCR_HISTORY_EDIT_OPENED';
+  static const ocrDeliveryEdited = 'OCR_DELIVERY_EDITED';
+  static const ocrDeliveryDeleteRequested = 'OCR_DELIVERY_DELETE_REQUESTED';
+  static const ocrDeliveryDeleted = 'OCR_DELIVERY_DELETED';
+  static const ocrRouteDeleteRequested = 'OCR_ROUTE_DELETE_REQUESTED';
+  static const ocrRouteDeleted = 'OCR_ROUTE_DELETED';
+  static const historyTotalsRecalculated = 'HISTORY_TOTALS_RECALCULATED';
+  static const weeklyTotalsRecalculated = 'WEEKLY_TOTALS_RECALCULATED';
+  static const monthlyTotalsRecalculated = 'MONTHLY_TOTALS_RECALCULATED';
 }

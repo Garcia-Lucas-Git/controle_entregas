@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-enum _RouteType { single, multiple }
-
 class ManualDeliveryScreen extends ConsumerStatefulWidget {
   final int shiftId;
   final int? routeId;
@@ -19,30 +17,42 @@ class ManualDeliveryScreen extends ConsumerStatefulWidget {
 }
 
 class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
-  // Locator code is the primary field — first and required
   final _locatorCtrl = TextEditingController();
+  final _pizzaCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
+  final _houseCtrl = TextEditingController();
   final _customerCtrl = TextEditingController();
-  _RouteType _routeType = _RouteType.single;
   bool _saving = false;
   String? _locatorError;
+  String? _pizzaError;
 
   @override
   void dispose() {
     _locatorCtrl.dispose();
+    _pizzaCtrl.dispose();
     _addressCtrl.dispose();
+    _houseCtrl.dispose();
     _customerCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final locator = _locatorCtrl.text.trim();
+    final pizza = _pizzaCtrl.text.trim();
+    bool hasError = false;
     if (locator.isEmpty) {
       setState(() => _locatorError = 'Obrigatório');
-      return;
+      hasError = true;
     }
+    if (pizza.isEmpty) {
+      setState(() => _pizzaError = 'Obrigatório');
+      hasError = true;
+    }
+    if (hasError) return;
+
     setState(() {
       _locatorError = null;
+      _pizzaError = null;
       _saving = true;
     });
 
@@ -54,7 +64,14 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
               .createRoute(widget.shiftId);
 
       final address = _addressCtrl.text.trim();
+      final house = _houseCtrl.text.trim();
       final customer = _customerCtrl.text.trim();
+
+      final fullAddress = address.isEmpty
+          ? '—'
+          : house.isNotEmpty
+              ? '$address, $house'
+              : address;
 
       await ref
           .read(deliveryNotifierProvider.notifier)
@@ -63,15 +80,27 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
             shiftId: widget.shiftId,
             sequenceNumber: 1,
             addressText: address.isEmpty ? '—' : address,
+            houseNumber: house.isEmpty ? null : house,
             customerName: customer.isEmpty ? null : customer,
             orderNumber: locator,
             deliveryIdentifier: locator,
+            pizzaNumber: pizza,
           );
 
       AppLogger.info(
         LogEvents.deliveryCreateSuccess,
         module: 'ManualDeliveryScreen',
-        metadata: {'route_id': routeId, 'locator': locator},
+        metadata: {
+          'route_id': routeId,
+          'locator': locator,
+          'pizza': pizza,
+          'address': fullAddress,
+        },
+      );
+      AppLogger.log(
+        LogEvents.pizzaNumberAdded,
+        module: 'ManualDeliveryScreen',
+        metadata: {'pizza': pizza, 'route_id': routeId},
       );
 
       if (!mounted) return;
@@ -102,14 +131,36 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Locator code — primary, top, large
+            // Pizza number — primary operational field
+            TextField(
+              controller: _pizzaCtrl,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+              decoration: InputDecoration(
+                labelText: '🍕 Número da Pizza *',
+                border: const OutlineInputBorder(),
+                errorText: _pizzaError,
+                prefixIcon: const Icon(Icons.local_pizza_outlined),
+                hintText: 'Ex: 42',
+              ),
+              onChanged: (_) {
+                if (_pizzaError != null) setState(() => _pizzaError = null);
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // Locator code — iFood identifier
             TextField(
               controller: _locatorCtrl,
-              autofocus: true,
               keyboardType: TextInputType.text,
               textCapitalization: TextCapitalization.characters,
               style: const TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
               ),
@@ -121,23 +172,41 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
                 hintText: 'Ex: 123456',
               ),
               onChanged: (_) {
-                if (_locatorError != null) {
-                  setState(() => _locatorError = null);
-                }
+                if (_locatorError != null) setState(() => _locatorError = null);
               },
             ),
             const SizedBox(height: 20),
 
-            // Address — optional
-            TextField(
-              controller: _addressCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Endereço',
-                border: OutlineInputBorder(),
-                hintText: 'Opcional',
-                prefixIcon: Icon(Icons.location_on_outlined),
-              ),
-              textCapitalization: TextCapitalization.words,
+            // Address split into rua + number
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    controller: _addressCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Endereço',
+                      border: OutlineInputBorder(),
+                      hintText: 'Rua / Av.',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _houseCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nº',
+                      border: OutlineInputBorder(),
+                      hintText: '123',
+                    ),
+                    keyboardType: TextInputType.text,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -151,25 +220,6 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
                 prefixIcon: Icon(Icons.person_outline),
               ),
               textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 20),
-
-            // Route type — secondary, at bottom
-            Text('Tipo de Rota', style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 8),
-            SegmentedButton<_RouteType>(
-              segments: const [
-                ButtonSegment(
-                  value: _RouteType.single,
-                  label: Text('Entrega única'),
-                ),
-                ButtonSegment(
-                  value: _RouteType.multiple,
-                  label: Text('Múltiplas entregas'),
-                ),
-              ],
-              selected: {_routeType},
-              onSelectionChanged: (s) => setState(() => _routeType = s.first),
             ),
             const SizedBox(height: 32),
 

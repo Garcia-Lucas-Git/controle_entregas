@@ -8,6 +8,7 @@ class OcrResult {
   final String rawText;
   final String? customerName;
   final String? addressText;
+  final String? houseNumber;
   final String? neighborhood;
   final String? city;
   final String? orderNumber;
@@ -20,11 +21,14 @@ class OcrResult {
   final int? changeAmountCents;
   final double confidence;
   final String parserStatus;
+  // Never populated by OCR; filled during review by user
+  final String? pizzaNumber;
 
   const OcrResult({
     required this.rawText,
     this.customerName,
     this.addressText,
+    this.houseNumber,
     this.neighborhood,
     this.city,
     this.orderNumber,
@@ -37,6 +41,7 @@ class OcrResult {
     this.changeAmountCents,
     this.confidence = 1.0,
     this.parserStatus = 'sucesso_completo',
+    this.pizzaNumber,
   });
 
   bool get hasRequiredFields =>
@@ -459,12 +464,47 @@ class OcrService {
       OcrKeywords.addressAnchors,
       maxLines: 2,
     );
-    // Customer: collect up to 2 lines (first+last name may be on separate lines).
-    final customerName = _extractAfterAnchor(
-      lines,
-      OcrKeywords.customerNameAnchors,
-      maxLines: 2,
-    );
+    if (address != null) {
+      AppLogger.log(
+        LogEvents.parserAddressMatch,
+        module: 'OcrService',
+        metadata: {'value': address},
+      );
+    } else {
+      // Log the lines that were near expected address position for diagnostics.
+      final suspectLines = lines
+          .where((l) => l.toUpperCase().contains('ENDERE'))
+          .take(3)
+          .toList();
+      AppLogger.warn(
+        LogEvents.parserAddressFailReason,
+        module: 'OcrService',
+        metadata: {
+          'reason': 'no_address_anchor_matched',
+          'suspect_lines': suspectLines,
+          'total_lines': lines.length,
+        },
+      );
+    }
+    // Customer: try anchor-based first (receipts with explicit CLIENTE/NOME label),
+    // then positional (iFood format: bare name line between Localizador and Endereco).
+    final customerName =
+        _extractAfterAnchor(lines, OcrKeywords.customerNameAnchors, maxLines: 2) ??
+        _extractCustomerNamePositional(lines);
+    if (customerName != null) {
+      AppLogger.log(
+        LogEvents.customerValidated,
+        module: 'OcrService',
+        metadata: {'name': customerName},
+      );
+    } else {
+      AppLogger.warn(
+        LogEvents.customerNotFound,
+        module: 'OcrService',
+        metadata: {'total_lines': lines.length},
+      );
+    }
+
     final neighborhood = _extractAfterAnchor(
       lines,
       OcrKeywords.neighborhoodAnchors,
@@ -487,6 +527,19 @@ class OcrService {
         ? 'falha_total'
         : 'sucesso_parcial';
 
+    // Log payment text that was detected but intentionally ignored (manual review only).
+    final hasPaymentText =
+        _containsAny(fullText, OcrKeywords.cardMachine) ||
+        _containsAny(fullText, OcrKeywords.change) ||
+        _containsAny(fullText, OcrKeywords.prepaidPaymentPhrases);
+    if (hasPaymentText) {
+      AppLogger.log(
+        LogEvents.paymentTextIgnoredFromOcr,
+        module: 'OcrService',
+        metadata: {'raw_excerpt': fullText.length > 200 ? fullText.substring(0, 200) : fullText},
+      );
+    }
+
     return _OcrParseDetails(
       result: OcrResult(
         rawText: rawText,
@@ -501,9 +554,9 @@ class OcrService {
           OcrKeywords.ifoodConfirmation,
         ),
         hasDrinks: _containsAny(fullText, OcrKeywords.drinks),
-        needsCard: _containsAny(fullText, OcrKeywords.cardMachine),
-        needsChange: _containsAny(fullText, OcrKeywords.change),
-        changeAmountCents: _extractChangeAmount(fullText),
+        needsCard: false,   // Payment flags never set by OCR — manual review only
+        needsChange: false, // Payment flags never set by OCR — manual review only
+        changeAmountCents: null,
         confidence: parserStatus == 'sucesso_completo'
             ? 1.0
             : parserStatus == 'sucesso_parcial'
@@ -662,6 +715,62 @@ class OcrService {
     return null;
   }
 
+  // Extracts customer name by position: the first "name-like" line between
+  // the Localizador line and the Endereco line (iFood receipt layout).
+  static String? _extractCustomerNamePositional(List<String> lines) {
+    int locatorIdx = -1;
+    for (int i = 0; i < lines.length; i++) {
+      final upper = lines[i].toUpperCase();
+      if (OcrKeywords.deliveryIdAnchors.any((a) => upper.contains(a))) {
+        locatorIdx = i;
+        break;
+      }
+    }
+    if (locatorIdx < 0) return null;
+
+    int addressIdx = lines.length;
+    for (int i = locatorIdx + 1; i < lines.length; i++) {
+      final upper = lines[i].toUpperCase();
+      if (OcrKeywords.addressAnchors.any((a) => upper.contains(a))) {
+        addressIdx = i;
+        break;
+      }
+    }
+
+    // Name-like: only letters (including accented) and spaces, at least 2 words.
+    final namePattern = RegExp(r'^[A-Za-zÀ-ÿ\s]+$');
+    for (int i = locatorIdx + 1; i < addressIdx; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
+      if (!namePattern.hasMatch(line)) continue;
+      final words = line.split(' ').where((w) => w.isNotEmpty).toList();
+      if (words.length < 2) continue;
+      if (_isAnchorLine(line)) continue;
+      // Task 4: reject blocklisted values
+      final upper = line.toUpperCase();
+      if (OcrKeywords.customerNameBlocklist.any((b) => upper.contains(b))) {
+        AppLogger.warn(
+          LogEvents.customerRejectedBlocklist,
+          module: 'OcrService',
+          metadata: {'rejected': line},
+        );
+        continue;
+      }
+      AppLogger.log(
+        LogEvents.customerCandidateFound,
+        module: 'OcrService',
+        metadata: {
+          'candidate': line,
+          'position': i,
+          'locator_idx': locatorIdx,
+          'address_idx': addressIdx,
+        },
+      );
+      return line;
+    }
+    return null;
+  }
+
   static String? _extractOrderNumber(String fullText, List<String> lines) {
     final fromAnchor = _extractAfterAnchor(
       lines,
@@ -672,17 +781,6 @@ class OcrService {
       if (digits != null) return digits;
     }
     return null;
-  }
-
-  static int? _extractChangeAmount(String fullText) {
-    final match = RegExp(
-      r'TROCO[^\d]*R?\$?\s*(\d+)[,.](\d{2})',
-      caseSensitive: false,
-    ).firstMatch(fullText);
-    if (match == null) return null;
-    final reais = int.tryParse(match.group(1) ?? '0') ?? 0;
-    final cents = int.tryParse(match.group(2) ?? '0') ?? 0;
-    return reais * 100 + cents;
   }
 
   static bool _containsAny(String text, List<String> keywords) =>

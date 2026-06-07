@@ -92,4 +92,31 @@ class DeliveriesDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteDeliveryById(int id) =>
       (delete(db.deliveriesTable)..where((t) => t.id.equals(id))).go();
+
+  Future<int> updateDeliveryFields({
+    required int id,
+    Value<String?> customerName = const Value.absent(),
+    Value<String> addressText = const Value.absent(),
+    Value<String?> houseNumber = const Value.absent(),
+    Value<String?> orderNumber = const Value.absent(),
+    Value<String?> deliveryIdentifier = const Value.absent(),
+    Value<String?> pizzaNumber = const Value.absent(),
+    Value<bool> needsIfoodConfirmation = const Value.absent(),
+    Value<bool> hasDrinks = const Value.absent(),
+    Value<bool> needsCard = const Value.absent(),
+    Value<bool> needsChange = const Value.absent(),
+  }) => (update(db.deliveriesTable)..where((t) => t.id.equals(id))).write(
+    DeliveriesTableCompanion(
+      customerName: customerName,
+      addressText: addressText,
+      houseNumber: houseNumber,
+      orderNumber: orderNumber,
+      deliveryIdentifier: deliveryIdentifier,
+      pizzaNumber: pizzaNumber,
+      needsIfoodConfirmation: needsIfoodConfirmation,
+      hasDrinks: hasDrinks,
+      needsCard: needsCard,
+      needsChange: needsChange,
+    ),
+  );
 }

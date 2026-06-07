@@ -1519,6 +1519,28 @@ class $DeliveriesTableTable extends DeliveriesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _pizzaNumberMeta = const VerificationMeta(
+    'pizzaNumber',
+  );
+  @override
+  late final GeneratedColumn<String> pizzaNumber = GeneratedColumn<String>(
+    'pizza_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _houseNumberMeta = const VerificationMeta(
+    'houseNumber',
+  );
+  @override
+  late final GeneratedColumn<String> houseNumber = GeneratedColumn<String>(
+    'house_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1543,6 +1565,8 @@ class $DeliveriesTableTable extends DeliveriesTable
     needsCard,
     needsChange,
     changeAmountCents,
+    pizzaNumber,
+    houseNumber,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1735,6 +1759,24 @@ class $DeliveriesTableTable extends DeliveriesTable
         ),
       );
     }
+    if (data.containsKey('pizza_number')) {
+      context.handle(
+        _pizzaNumberMeta,
+        pizzaNumber.isAcceptableOrUnknown(
+          data['pizza_number']!,
+          _pizzaNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('house_number')) {
+      context.handle(
+        _houseNumberMeta,
+        houseNumber.isAcceptableOrUnknown(
+          data['house_number']!,
+          _houseNumberMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1832,6 +1874,14 @@ class $DeliveriesTableTable extends DeliveriesTable
         DriftSqlType.int,
         data['${effectivePrefix}change_amount_cents'],
       ),
+      pizzaNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pizza_number'],
+      ),
+      houseNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}house_number'],
+      ),
     );
   }
 
@@ -1865,6 +1915,8 @@ class DeliveriesTableData extends DataClass
   final bool needsCard;
   final bool needsChange;
   final int? changeAmountCents;
+  final String? pizzaNumber;
+  final String? houseNumber;
   const DeliveriesTableData({
     required this.id,
     required this.routeId,
@@ -1888,6 +1940,8 @@ class DeliveriesTableData extends DataClass
     required this.needsCard,
     required this.needsChange,
     this.changeAmountCents,
+    this.pizzaNumber,
+    this.houseNumber,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1938,6 +1992,12 @@ class DeliveriesTableData extends DataClass
     if (!nullToAbsent || changeAmountCents != null) {
       map['change_amount_cents'] = Variable<int>(changeAmountCents);
     }
+    if (!nullToAbsent || pizzaNumber != null) {
+      map['pizza_number'] = Variable<String>(pizzaNumber);
+    }
+    if (!nullToAbsent || houseNumber != null) {
+      map['house_number'] = Variable<String>(houseNumber);
+    }
     return map;
   }
 
@@ -1987,6 +2047,12 @@ class DeliveriesTableData extends DataClass
       changeAmountCents: changeAmountCents == null && nullToAbsent
           ? const Value.absent()
           : Value(changeAmountCents),
+      pizzaNumber: pizzaNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pizzaNumber),
+      houseNumber: houseNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(houseNumber),
     );
   }
 
@@ -2026,6 +2092,8 @@ class DeliveriesTableData extends DataClass
       needsCard: serializer.fromJson<bool>(json['needsCard']),
       needsChange: serializer.fromJson<bool>(json['needsChange']),
       changeAmountCents: serializer.fromJson<int?>(json['changeAmountCents']),
+      pizzaNumber: serializer.fromJson<String?>(json['pizzaNumber']),
+      houseNumber: serializer.fromJson<String?>(json['houseNumber']),
     );
   }
   @override
@@ -2058,6 +2126,8 @@ class DeliveriesTableData extends DataClass
       'needsCard': serializer.toJson<bool>(needsCard),
       'needsChange': serializer.toJson<bool>(needsChange),
       'changeAmountCents': serializer.toJson<int?>(changeAmountCents),
+      'pizzaNumber': serializer.toJson<String?>(pizzaNumber),
+      'houseNumber': serializer.toJson<String?>(houseNumber),
     };
   }
 
@@ -2084,6 +2154,8 @@ class DeliveriesTableData extends DataClass
     bool? needsCard,
     bool? needsChange,
     Value<int?> changeAmountCents = const Value.absent(),
+    Value<String?> pizzaNumber = const Value.absent(),
+    Value<String?> houseNumber = const Value.absent(),
   }) => DeliveriesTableData(
     id: id ?? this.id,
     routeId: routeId ?? this.routeId,
@@ -2120,6 +2192,8 @@ class DeliveriesTableData extends DataClass
     changeAmountCents: changeAmountCents.present
         ? changeAmountCents.value
         : this.changeAmountCents,
+    pizzaNumber: pizzaNumber.present ? pizzaNumber.value : this.pizzaNumber,
+    houseNumber: houseNumber.present ? houseNumber.value : this.houseNumber,
   );
   DeliveriesTableData copyWithCompanion(DeliveriesTableCompanion data) {
     return DeliveriesTableData(
@@ -2175,6 +2249,12 @@ class DeliveriesTableData extends DataClass
       changeAmountCents: data.changeAmountCents.present
           ? data.changeAmountCents.value
           : this.changeAmountCents,
+      pizzaNumber: data.pizzaNumber.present
+          ? data.pizzaNumber.value
+          : this.pizzaNumber,
+      houseNumber: data.houseNumber.present
+          ? data.houseNumber.value
+          : this.houseNumber,
     );
   }
 
@@ -2202,7 +2282,9 @@ class DeliveriesTableData extends DataClass
           ..write('hasDrinks: $hasDrinks, ')
           ..write('needsCard: $needsCard, ')
           ..write('needsChange: $needsChange, ')
-          ..write('changeAmountCents: $changeAmountCents')
+          ..write('changeAmountCents: $changeAmountCents, ')
+          ..write('pizzaNumber: $pizzaNumber, ')
+          ..write('houseNumber: $houseNumber')
           ..write(')'))
         .toString();
   }
@@ -2231,6 +2313,8 @@ class DeliveriesTableData extends DataClass
     needsCard,
     needsChange,
     changeAmountCents,
+    pizzaNumber,
+    houseNumber,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2257,7 +2341,9 @@ class DeliveriesTableData extends DataClass
           other.hasDrinks == this.hasDrinks &&
           other.needsCard == this.needsCard &&
           other.needsChange == this.needsChange &&
-          other.changeAmountCents == this.changeAmountCents);
+          other.changeAmountCents == this.changeAmountCents &&
+          other.pizzaNumber == this.pizzaNumber &&
+          other.houseNumber == this.houseNumber);
 }
 
 class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
@@ -2283,6 +2369,8 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
   final Value<bool> needsCard;
   final Value<bool> needsChange;
   final Value<int?> changeAmountCents;
+  final Value<String?> pizzaNumber;
+  final Value<String?> houseNumber;
   const DeliveriesTableCompanion({
     this.id = const Value.absent(),
     this.routeId = const Value.absent(),
@@ -2306,6 +2394,8 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     this.needsCard = const Value.absent(),
     this.needsChange = const Value.absent(),
     this.changeAmountCents = const Value.absent(),
+    this.pizzaNumber = const Value.absent(),
+    this.houseNumber = const Value.absent(),
   });
   DeliveriesTableCompanion.insert({
     this.id = const Value.absent(),
@@ -2330,6 +2420,8 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     this.needsCard = const Value.absent(),
     this.needsChange = const Value.absent(),
     this.changeAmountCents = const Value.absent(),
+    this.pizzaNumber = const Value.absent(),
+    this.houseNumber = const Value.absent(),
   }) : routeId = Value(routeId),
        shiftId = Value(shiftId),
        addressText = Value(addressText),
@@ -2357,6 +2449,8 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     Expression<bool>? needsCard,
     Expression<bool>? needsChange,
     Expression<int>? changeAmountCents,
+    Expression<String>? pizzaNumber,
+    Expression<String>? houseNumber,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2384,6 +2478,8 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
       if (needsCard != null) 'needs_card': needsCard,
       if (needsChange != null) 'needs_change': needsChange,
       if (changeAmountCents != null) 'change_amount_cents': changeAmountCents,
+      if (pizzaNumber != null) 'pizza_number': pizzaNumber,
+      if (houseNumber != null) 'house_number': houseNumber,
     });
   }
 
@@ -2410,6 +2506,8 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     Value<bool>? needsCard,
     Value<bool>? needsChange,
     Value<int?>? changeAmountCents,
+    Value<String?>? pizzaNumber,
+    Value<String?>? houseNumber,
   }) {
     return DeliveriesTableCompanion(
       id: id ?? this.id,
@@ -2437,6 +2535,8 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
       needsCard: needsCard ?? this.needsCard,
       needsChange: needsChange ?? this.needsChange,
       changeAmountCents: changeAmountCents ?? this.changeAmountCents,
+      pizzaNumber: pizzaNumber ?? this.pizzaNumber,
+      houseNumber: houseNumber ?? this.houseNumber,
     );
   }
 
@@ -2515,6 +2615,12 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     if (changeAmountCents.present) {
       map['change_amount_cents'] = Variable<int>(changeAmountCents.value);
     }
+    if (pizzaNumber.present) {
+      map['pizza_number'] = Variable<String>(pizzaNumber.value);
+    }
+    if (houseNumber.present) {
+      map['house_number'] = Variable<String>(houseNumber.value);
+    }
     return map;
   }
 
@@ -2542,7 +2648,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
           ..write('hasDrinks: $hasDrinks, ')
           ..write('needsCard: $needsCard, ')
           ..write('needsChange: $needsChange, ')
-          ..write('changeAmountCents: $changeAmountCents')
+          ..write('changeAmountCents: $changeAmountCents, ')
+          ..write('pizzaNumber: $pizzaNumber, ')
+          ..write('houseNumber: $houseNumber')
           ..write(')'))
         .toString();
   }
@@ -6248,6 +6356,8 @@ typedef $$DeliveriesTableTableCreateCompanionBuilder =
       Value<bool> needsCard,
       Value<bool> needsChange,
       Value<int?> changeAmountCents,
+      Value<String?> pizzaNumber,
+      Value<String?> houseNumber,
     });
 typedef $$DeliveriesTableTableUpdateCompanionBuilder =
     DeliveriesTableCompanion Function({
@@ -6273,6 +6383,8 @@ typedef $$DeliveriesTableTableUpdateCompanionBuilder =
       Value<bool> needsCard,
       Value<bool> needsChange,
       Value<int?> changeAmountCents,
+      Value<String?> pizzaNumber,
+      Value<String?> houseNumber,
     });
 
 final class $$DeliveriesTableTableReferences
@@ -6457,6 +6569,16 @@ class $$DeliveriesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get pizzaNumber => $composableBuilder(
+    column: $table.pizzaNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get houseNumber => $composableBuilder(
+    column: $table.houseNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$RoutesTableTableFilterComposer get routeId {
     final $$RoutesTableTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -6638,6 +6760,16 @@ class $$DeliveriesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get pizzaNumber => $composableBuilder(
+    column: $table.pizzaNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get houseNumber => $composableBuilder(
+    column: $table.houseNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutesTableTableOrderingComposer get routeId {
     final $$RoutesTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6784,6 +6916,16 @@ class $$DeliveriesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get pizzaNumber => $composableBuilder(
+    column: $table.pizzaNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get houseNumber => $composableBuilder(
+    column: $table.houseNumber,
+    builder: (column) => column,
+  );
+
   $$RoutesTableTableAnnotationComposer get routeId {
     final $$RoutesTableTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -6912,6 +7054,8 @@ class $$DeliveriesTableTableTableManager
                 Value<bool> needsCard = const Value.absent(),
                 Value<bool> needsChange = const Value.absent(),
                 Value<int?> changeAmountCents = const Value.absent(),
+                Value<String?> pizzaNumber = const Value.absent(),
+                Value<String?> houseNumber = const Value.absent(),
               }) => DeliveriesTableCompanion(
                 id: id,
                 routeId: routeId,
@@ -6935,6 +7079,8 @@ class $$DeliveriesTableTableTableManager
                 needsCard: needsCard,
                 needsChange: needsChange,
                 changeAmountCents: changeAmountCents,
+                pizzaNumber: pizzaNumber,
+                houseNumber: houseNumber,
               ),
           createCompanionCallback:
               ({
@@ -6960,6 +7106,8 @@ class $$DeliveriesTableTableTableManager
                 Value<bool> needsCard = const Value.absent(),
                 Value<bool> needsChange = const Value.absent(),
                 Value<int?> changeAmountCents = const Value.absent(),
+                Value<String?> pizzaNumber = const Value.absent(),
+                Value<String?> houseNumber = const Value.absent(),
               }) => DeliveriesTableCompanion.insert(
                 id: id,
                 routeId: routeId,
@@ -6983,6 +7131,8 @@ class $$DeliveriesTableTableTableManager
                 needsCard: needsCard,
                 needsChange: needsChange,
                 changeAmountCents: changeAmountCents,
+                pizzaNumber: pizzaNumber,
+                houseNumber: houseNumber,
               ),
           withReferenceMapper: (p0) => p0
               .map(

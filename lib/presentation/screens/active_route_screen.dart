@@ -44,14 +44,14 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Returned from Maps — refresh delivery list
+      if (!mounted) return;
       ref.invalidate(deliveriesForRouteProvider(widget.routeId));
     }
   }
 
   Future<void> _openMaps(List<Delivery> pending) async {
     final addresses = pending
-        .map((d) => d.addressText)
+        .map((d) => d.fullAddress)
         .where((a) => a.isNotEmpty)
         .toList();
     if (addresses.isEmpty) return;
@@ -128,6 +128,9 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
     final deliveriesAsync = ref.watch(
       deliveriesForRouteProvider(widget.routeId),
     );
+
+    // Keep settings loaded so _openMaps can read them synchronously.
+    ref.watch(settingsStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -308,6 +311,9 @@ class _DeliveryTile extends ConsumerWidget {
         ? delivery.deliveryIdentifier
         : null;
     final parts = <String>[];
+    if (delivery.pizzaNumber != null && delivery.pizzaNumber!.isNotEmpty) {
+      parts.add('🍕 ${delivery.pizzaNumber}');
+    }
     if (delivery.customerName != null) parts.add(delivery.customerName!);
     if (locator != null) parts.add('# $locator');
     if (parts.isEmpty) return null;
@@ -334,26 +340,24 @@ class _DeliveryTile extends ConsumerWidget {
                 ),
               ),
         title: Text(
-          delivery.addressText,
+          delivery.fullAddress,
           style: TextStyle(
             fontSize: 15,
             color: muted ? colorScheme.outline : null,
           ),
         ),
         subtitle: _buildSubtitle(delivery, colorScheme, muted),
-        trailing: muted ? null : const Icon(Icons.expand_more),
-        onTap: muted
-            ? null
-            : () => showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                useSafeArea: true,
-                builder: (_) => DeliveryQuickPanel(
-                  delivery: delivery,
-                  shiftId: shiftId,
-                  routeId: routeId,
-                ),
-              ),
+        trailing: const Icon(Icons.expand_more),
+        onTap: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (_) => DeliveryQuickPanel(
+            delivery: delivery,
+            shiftId: shiftId,
+            routeId: routeId,
+          ),
+        ),
       ),
     );
   }

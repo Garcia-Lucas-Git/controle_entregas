@@ -1,6 +1,7 @@
 import 'package:controle_entregas/core/providers/database_provider.dart';
 import 'package:controle_entregas/domain/entities/shift.dart';
 import 'package:controle_entregas/presentation/screens/active_route_screen.dart';
+import 'package:controle_entregas/presentation/screens/shift_details_screen.dart';
 import 'package:controle_entregas/presentation/screens/automation_runner_screen.dart';
 import 'package:controle_entregas/presentation/screens/add_history_screen.dart';
 import 'package:controle_entregas/presentation/screens/dev_tools_screen.dart';
@@ -35,6 +36,7 @@ abstract final class AppRoutes {
   static const iFoodConfirmation =
       '/shift/:shiftId/route/:routeId/delivery/:deliveryId/ifood';
   static const shiftHistory = '/history';
+  static const shiftDetails = '/shift/:shiftId/details';
   static const shiftReport = '/history/shift/:shiftId/report';
 }
 
@@ -125,6 +127,12 @@ GoRouter appRouter(AppRouterRef ref) {
             routeId: extra['routeId'] as int?,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.shiftDetails,
+        builder: (context, state) => ShiftDetailsScreen(
+          shiftId: int.parse(state.pathParameters['shiftId']!),
+        ),
       ),
       GoRoute(
         path: AppRoutes.shiftReport,

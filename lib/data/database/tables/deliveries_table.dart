@@ -37,4 +37,8 @@ class DeliveriesTable extends Table {
   BoolColumn get needsCard => boolean().withDefault(const Constant(false))();
   BoolColumn get needsChange => boolean().withDefault(const Constant(false))();
   IntColumn get changeAmountCents => integer().nullable()();
+
+  // Operational fields (v6)
+  TextColumn get pizzaNumber => text().nullable()();
+  TextColumn get houseNumber => text().nullable()();
 }

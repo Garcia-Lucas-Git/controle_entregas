@@ -586,13 +586,16 @@ class _ShiftTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final label = _smartLabel(shift.startedAt);
-    final dailyGoalCents =
-        ref.watch(settingsStreamProvider).valueOrNull?.dailyGoalCents ?? 12000;
-    final goalPct = dailyGoalCents > 0
-        ? shift.totalEarnings.cents / dailyGoalCents
-        : 0.0;
-    final goalEmoji =
-        goalPct >= 1.0 ? '🟢' : goalPct >= 0.7 ? '🟡' : '🔴';
+    final count = shift.deliveryCount;
+    final goalEmoji = count >= 19
+        ? '🔵'
+        : count >= 16
+            ? '🟢'
+            : count >= 14
+                ? '🟠'
+                : count >= 10
+                    ? '🟡'
+                    : '🔴';
 
     // ── Historical (manual) ───────────────────────────────────────────────────
     if (shift.isHistorical) {
@@ -752,6 +755,14 @@ class _ShiftTile extends ConsumerWidget {
         onSelected: (action) => _handleAction(context, ref, action),
         itemBuilder: (_) => const [
           PopupMenuItem(
+            value: _HistoryAction.viewDetails,
+            child: Text('Ver detalhes'),
+          ),
+          PopupMenuItem(
+            value: _HistoryAction.editDeliveries,
+            child: Text('Editar entregas'),
+          ),
+          PopupMenuItem(
             value: _HistoryAction.viewReport,
             child: Text('Ver Relatório'),
           ),
@@ -761,7 +772,7 @@ class _ShiftTile extends ConsumerWidget {
           ),
         ],
       ),
-      onTap: () => context.push('/history/shift/${shift.id}/report'),
+      onTap: () => context.push('/shift/${shift.id}/details'),
     );
   }
 
@@ -772,6 +783,17 @@ class _ShiftTile extends ConsumerWidget {
   ) async {
     if (action == _HistoryAction.edit) {
       context.push('/history/add', extra: shift);
+      return;
+    }
+
+    if (action == _HistoryAction.viewDetails ||
+        action == _HistoryAction.editDeliveries) {
+      AppLogger.log(
+        LogEvents.ocrHistoryEditOpened,
+        module: 'HistoryScreen',
+        metadata: {'shift_id': shift.id, 'source': shift.source},
+      );
+      context.push('/shift/${shift.id}/details');
       return;
     }
 
@@ -853,4 +875,4 @@ class _ShiftTile extends ConsumerWidget {
   }
 }
 
-enum _HistoryAction { edit, delete, viewReport, share }
+enum _HistoryAction { edit, delete, viewReport, share, viewDetails, editDeliveries }

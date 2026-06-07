@@ -156,22 +156,31 @@ class _ActiveShiftView extends ConsumerWidget {
 
     return Column(
       children: [
-        // ── Active shift banner ───────────────────────────────────────────
-        Container(
-          width: double.infinity,
-          color: colorScheme.primaryContainer,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Row(
-            children: [
-              Icon(Icons.circle, size: 10, color: colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(
-                'Turno ativo — ${_formatTime(shift.startedAt)}',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
+        // ── Active shift banner (tap → shift details) ─────────────────
+        InkWell(
+          onTap: () => context.push('/shift/${shift.id}/details'),
+          child: Container(
+            width: double.infinity,
+            color: colorScheme.primaryContainer,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.circle, size: 10, color: colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Turno ativo — ${_formatTime(shift.startedAt)}',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                  ),
                 ),
-              ),
-            ],
+                const Spacer(),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.6),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -268,6 +277,22 @@ class _ActiveShiftView extends ConsumerWidget {
 
     if (!context.mounted) return;
 
+    // ── Shift review ──────────────────────────────────────────────────────
+    AppLogger.log(
+      LogEvents.shiftReviewOpened,
+      module: 'HomeScreen',
+      metadata: {'shift_id': shift.id},
+    );
+    final reviewConfirmed = await _showShiftReview(context, ref);
+    if (reviewConfirmed != true) return;
+    if (!context.mounted) return;
+
+    AppLogger.log(
+      LogEvents.shiftReviewCompleted,
+      module: 'HomeScreen',
+      metadata: {'shift_id': shift.id},
+    );
+
     // ── Fuel input dialog ─────────────────────────────────────────────────
     final fuelCents = await _askFuelExpense(context, ref);
     if (!context.mounted) return;
@@ -316,6 +341,65 @@ class _ActiveShiftView extends ConsumerWidget {
     final value = double.tryParse(result.trim().replaceAll(',', '.'));
     if (value == null || value <= 0) return null;
     return (value * 100).round();
+  }
+
+  Future<bool?> _showShiftReview(BuildContext context, WidgetRef ref) async {
+    final routes = await ref
+        .read(routeRepositoryProvider)
+        .getRoutesForShift(shift.id);
+
+    final openRoutes = routes.where((r) => r.isOpen).toList();
+    final closedRoutes = routes.where((r) => !r.isOpen).toList();
+    final totalDeliveries = routes.fold(
+      0,
+      (sum, r) => sum + (r.deliveryCountAtClose ?? 0),
+    );
+
+    if (!context.mounted) return null;
+
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Revisão do Turno'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _ReviewRow(
+              label: 'Rotas fechadas',
+              value: '${closedRoutes.length}',
+            ),
+            if (openRoutes.isNotEmpty)
+              _ReviewRow(
+                label: 'Rotas ainda abertas',
+                value: '${openRoutes.length}',
+                isWarning: true,
+              ),
+            _ReviewRow(
+              label: 'Entregas registradas',
+              value: '$totalDeliveries',
+            ),
+            if (openRoutes.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Existem rotas abertas. Tem certeza que deseja encerrar o turno?',
+                style: TextStyle(fontSize: 13),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirmar Fechamento'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatTime(DateTime dt) {
@@ -374,7 +458,7 @@ class _ActiveShiftStats extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _DailyGoalCard(earningsCents: cents),
+                _DailyGoalCard(earningsCents: cents, deliveryCount: deliveries),
               ],
             );
           },
@@ -421,12 +505,28 @@ class _StatCard extends StatelessWidget {
   }
 }
 
+// ── Daily goal helpers ────────────────────────────────────────────────────────
+
+/// Returns emoji + color for delivery count (Task 15 — 5-level badge).
+/// Thresholds: 0-9 🔴, 10-13 🟡, 14-15 🟠, 16-18 🟢, 19+ 🔵
+String deliveryBadgeEmoji(int count) {
+  if (count >= 19) return '🔵';
+  if (count >= 16) return '🟢';
+  if (count >= 14) return '🟠';
+  if (count >= 10) return '🟡';
+  return '🔴';
+}
+
 // ── Daily goal card ───────────────────────────────────────────────────────────
 
 class _DailyGoalCard extends ConsumerWidget {
   final int earningsCents;
+  final int deliveryCount;
 
-  const _DailyGoalCard({required this.earningsCents});
+  const _DailyGoalCard({
+    required this.earningsCents,
+    required this.deliveryCount,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -440,6 +540,7 @@ class _DailyGoalCard extends ConsumerWidget {
     final remainingDeliveries = (remainingCents / 800).ceil();
 
     final pct = (progress * 100).round();
+    final badge = deliveryBadgeEmoji(deliveryCount);
 
     AppLogger.log(
       LogEvents.dailyGoalProgress,
@@ -449,6 +550,7 @@ class _DailyGoalCard extends ConsumerWidget {
         'goal_cents': goalCents,
         'pct': pct,
         'goal_reached': goalReached,
+        'delivery_count': deliveryCount,
       },
     );
     if (goalReached) {
@@ -485,7 +587,7 @@ class _DailyGoalCard extends ConsumerWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '$pct%',
+                  '$badge $deliveryCount entregas · $pct%',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: goalReached
@@ -527,6 +629,45 @@ class _DailyGoalCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ReviewRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isWarning;
+
+  const _ReviewRow({
+    required this.label,
+    required this.value,
+    this.isWarning = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: isWarning ? colorScheme.error : colorScheme.onSurface,
+              fontWeight: isWarning ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isWarning ? colorScheme.error : colorScheme.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }

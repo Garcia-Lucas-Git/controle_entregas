@@ -23,13 +23,21 @@ abstract final class OcrKeywords {
     'FANTA',
   ];
 
-  // Card machine
+  // Card machine — only explicit physical machine references.
+  // CARTAO / DEBITO / CREDITO removed: on iFood receipts these appear as
+  // pre-paid payment method labels and must NOT trigger needsCard.
   static const List<String> cardMachine = [
     'MAQUINA',
-    'CARTAO',
-    'DEBITO',
-    'CREDITO',
     'MAQUININHA',
+  ];
+
+  // iFood internal payment phrases that must NEVER trigger needsCard/needsChange.
+  // These indicate the customer already paid on the platform.
+  static const List<String> prepaidPaymentPhrases = [
+    'PAGAMENTO JA REALIZADO',
+    'PAGAMENTO REALIZADO',
+    'PAGO ONLINE',
+    'PAGO NO APP',
   ];
 
   // Change
@@ -42,9 +50,37 @@ abstract final class OcrKeywords {
     'CONSUMIDOR',
   ];
 
+  // Names that look valid (letters + spaces, ≥2 words) but are NOT customer
+  // names — reject these during positional extraction.
+  static const List<String> customerNameBlocklist = [
+    '0800',
+    'PEDIDO',
+    'PRIMEIRO PEDIDO',
+    'ITENS DO PEDIDO',
+    'SUBTOTAL',
+    'TOTAL',
+    'TAXA DE ENTREGA',
+    'TAXA',
+    'LOCALIZADOR',
+    'TELEFONE',
+    'BAIRRO',
+    'COMP',
+    'COMPLEMENTO',
+    'PAGAMENTO',
+    'FORMA DE PAGAMENTO',
+    'VALOR',
+    'CUPOM',
+    'DESCONTO',
+    'ENTREGA',
+    'RETIRADA',
+    'RESUMO DO PEDIDO',
+    'ITENS',
+    'OBSERVACAO',
+  ];
+
   static const List<String> addressAnchors = [
     'ENDERECO',
-    'ENDEREC0',  // OCR confusion: digit 0 instead of letter O
+    'ENDEREC0', // OCR confusion: digit 0 instead of letter O
     'ERNDERECO', // OCR noise: extra N inserted
     'ENDEREÇO', // accented Ç variant (ENDEREÇO)
     'END.',

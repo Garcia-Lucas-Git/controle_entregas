@@ -39,6 +39,29 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
   }
 
   Future<void> _approve() async {
+    // Validate all required fields for each draft.
+    final errors = <String>[];
+    for (int i = 0; i < _drafts.length; i++) {
+      final d = _drafts[i];
+      final label = 'Entrega ${i + 1}';
+      if (d.addressText.trim().isEmpty) errors.add('$label: endereço');
+      if (d.houseNumber.trim().isEmpty) errors.add('$label: nº da casa');
+      final locator = d.partnerCollectionCode.isNotEmpty
+          ? d.partnerCollectionCode
+          : d.deliveryIdentifier;
+      if (locator.isEmpty) errors.add('$label: localizador');
+      if (d.pizzaNumber.trim().isEmpty) errors.add('$label: nº da pizza');
+    }
+    if (errors.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Campos obrigatórios faltando:\n${errors.join('\n')}'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       for (int i = 0; i < _drafts.length; i++) {
@@ -242,6 +265,8 @@ class _DeliveryDraft {
   final String id;
   String customerName;
   String addressText;
+  String houseNumber;
+  String pizzaNumber;
   String orderNumber;
   String deliveryIdentifier;
   String partnerCollectionCode;
@@ -256,6 +281,8 @@ class _DeliveryDraft {
     required this.id,
     required this.customerName,
     required this.addressText,
+    required this.houseNumber,
+    required this.pizzaNumber,
     required this.orderNumber,
     required this.deliveryIdentifier,
     required this.partnerCollectionCode,
@@ -272,6 +299,8 @@ class _DeliveryDraft {
         id: 'draft_$index',
         customerName: r.customerName ?? '',
         addressText: r.addressText ?? '',
+        houseNumber: r.houseNumber ?? '',
+        pizzaNumber: r.pizzaNumber ?? '',
         orderNumber: r.orderNumber ?? '',
         deliveryIdentifier: r.deliveryIdentifier ?? '',
         partnerCollectionCode: r.partnerCollectionCode ?? '',
@@ -286,6 +315,8 @@ class _DeliveryDraft {
   _DeliveryDraft copyWith({
     String? customerName,
     String? addressText,
+    String? houseNumber,
+    String? pizzaNumber,
     String? orderNumber,
     String? deliveryIdentifier,
     String? partnerCollectionCode,
@@ -297,6 +328,8 @@ class _DeliveryDraft {
     id: id,
     customerName: customerName ?? this.customerName,
     addressText: addressText ?? this.addressText,
+    houseNumber: houseNumber ?? this.houseNumber,
+    pizzaNumber: pizzaNumber ?? this.pizzaNumber,
     orderNumber: orderNumber ?? this.orderNumber,
     deliveryIdentifier: deliveryIdentifier ?? this.deliveryIdentifier,
     partnerCollectionCode: partnerCollectionCode ?? this.partnerCollectionCode,
@@ -313,6 +346,8 @@ class _DeliveryDraft {
     rawText: rawText,
     customerName: customerName.isEmpty ? null : customerName,
     addressText: addressText.isEmpty ? null : addressText,
+    houseNumber: houseNumber.isEmpty ? null : houseNumber,
+    pizzaNumber: pizzaNumber.isEmpty ? null : pizzaNumber,
     orderNumber: orderNumber.isEmpty ? null : orderNumber,
     deliveryIdentifier: deliveryIdentifier.isEmpty ? null : deliveryIdentifier,
     partnerCollectionCode: partnerCollectionCode.isEmpty
@@ -349,9 +384,11 @@ class _DraftCard extends StatefulWidget {
 }
 
 class _DraftCardState extends State<_DraftCard> {
-  bool _expanded = false;
+  bool _expanded = true; // start expanded so pizza number is always visible
   late final TextEditingController _nameCtrl;
   late final TextEditingController _addrCtrl;
+  late final TextEditingController _houseCtrl;
+  late final TextEditingController _pizzaCtrl;
   late final TextEditingController _orderCtrl;
   late final TextEditingController _idCtrl;
   late final TextEditingController _codeCtrl;
@@ -362,6 +399,8 @@ class _DraftCardState extends State<_DraftCard> {
     final d = widget.draft;
     _nameCtrl = TextEditingController(text: d.customerName);
     _addrCtrl = TextEditingController(text: d.addressText);
+    _houseCtrl = TextEditingController(text: d.houseNumber);
+    _pizzaCtrl = TextEditingController(text: d.pizzaNumber);
     _orderCtrl = TextEditingController(text: d.orderNumber);
     _idCtrl = TextEditingController(text: d.deliveryIdentifier);
     _codeCtrl = TextEditingController(text: d.partnerCollectionCode);
@@ -371,6 +410,8 @@ class _DraftCardState extends State<_DraftCard> {
   void dispose() {
     _nameCtrl.dispose();
     _addrCtrl.dispose();
+    _houseCtrl.dispose();
+    _pizzaCtrl.dispose();
     _orderCtrl.dispose();
     _idCtrl.dispose();
     _codeCtrl.dispose();
@@ -382,6 +423,8 @@ class _DraftCardState extends State<_DraftCard> {
       widget.draft.copyWith(
         customerName: _nameCtrl.text,
         addressText: _addrCtrl.text,
+        houseNumber: _houseCtrl.text,
+        pizzaNumber: _pizzaCtrl.text,
         orderNumber: _orderCtrl.text,
         deliveryIdentifier: _idCtrl.text,
         partnerCollectionCode: _codeCtrl.text,
@@ -392,11 +435,14 @@ class _DraftCardState extends State<_DraftCard> {
   @override
   Widget build(BuildContext context) {
     final d = widget.draft;
-    final hasWarning = d.addressText.trim().isEmpty;
-    final confidence = _ConfidenceLevel.fromValue(d.confidence);
     final locator = d.deliveryIdentifier.isNotEmpty
         ? d.deliveryIdentifier
         : d.partnerCollectionCode;
+    final hasWarning = d.addressText.trim().isEmpty ||
+        d.houseNumber.trim().isEmpty ||
+        locator.isEmpty ||
+        d.pizzaNumber.trim().isEmpty;
+    final confidence = _ConfidenceLevel.fromValue(d.confidence);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -436,16 +482,58 @@ class _DraftCardState extends State<_DraftCard> {
                 _ConfidenceBadge(level: confidence),
               ],
             ),
-            subtitle: Text(
-              d.addressText.isEmpty ? '⚠ Endereço obrigatório' : d.addressText,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: d.addressText.isEmpty
-                  ? TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  d.addressText.isEmpty
+                      ? '⚠ Endereço obrigatório'
+                      : d.houseNumber.isNotEmpty
+                          ? '${d.addressText}, ${d.houseNumber}'
+                          : d.addressText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: (d.addressText.isEmpty || d.houseNumber.isEmpty)
+                      ? TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 12,
+                        )
+                      : const TextStyle(fontSize: 12),
+                ),
+                if (d.houseNumber.isEmpty)
+                  Text(
+                    '⚠ Nº da casa obrigatório',
+                    style: TextStyle(
                       fontSize: 12,
-                    )
-                  : const TextStyle(fontSize: 12),
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                if (locator.isEmpty)
+                  Text(
+                    '⚠ Localizador obrigatório',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                if (d.pizzaNumber.isNotEmpty)
+                  Text(
+                    '🍕 Pizza: ${d.pizzaNumber}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  )
+                else
+                  Text(
+                    '⚠ Número da pizza obrigatório',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+              ],
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -456,7 +544,7 @@ class _DraftCardState extends State<_DraftCard> {
                     _expanded ? Icons.expand_less : Icons.edit_outlined,
                     size: 20,
                   ),
-                  tooltip: _expanded ? 'Fechar edição' : 'Editar',
+                  tooltip: _expanded ? 'Fechar' : 'Editar',
                   onPressed: () => setState(() => _expanded = !_expanded),
                 ),
                 if (widget.onRemove != null)
@@ -539,10 +627,41 @@ class _DraftCardState extends State<_DraftCard> {
               child: Column(
                 children: [
                   _EditField(
-                    label: 'Endereço *',
-                    controller: _addrCtrl,
+                    label: '🍕 Número da Pizza *',
+                    controller: _pizzaCtrl,
                     onChanged: (_) => _notify(),
                     isRequired: true,
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: _EditField(
+                          label: 'Endereço *',
+                          controller: _addrCtrl,
+                          onChanged: (_) => _notify(),
+                          isRequired: true,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _EditField(
+                          label: 'Número',
+                          controller: _houseCtrl,
+                          onChanged: (_) => _notify(),
+                          keyboardType: TextInputType.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _EditField(
+                    label: 'Localizador iFood',
+                    controller: _idCtrl,
+                    onChanged: (_) => _notify(),
                   ),
                   const SizedBox(height: 8),
                   _EditField(
@@ -554,12 +673,6 @@ class _DraftCardState extends State<_DraftCard> {
                   _EditField(
                     label: 'Número do pedido',
                     controller: _orderCtrl,
-                    onChanged: (_) => _notify(),
-                  ),
-                  const SizedBox(height: 8),
-                  _EditField(
-                    label: 'Identificador de entrega',
-                    controller: _idCtrl,
                     onChanged: (_) => _notify(),
                   ),
                   const SizedBox(height: 8),
@@ -659,12 +772,14 @@ class _EditField extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final bool isRequired;
+  final TextInputType? keyboardType;
 
   const _EditField({
     required this.label,
     required this.controller,
     required this.onChanged,
     this.isRequired = false,
+    this.keyboardType,
   });
 
   @override
@@ -672,6 +787,7 @@ class _EditField extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
         isDense: true,
