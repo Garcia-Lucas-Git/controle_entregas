@@ -29,7 +29,7 @@ class RouteRepository {
   Future<int> createRoute(int shiftId) async {
     final now = DateTime.now().toUtc().toIso8601String();
     final number = await _dao.getNextRouteNumber(shiftId);
-    return _dao.insertRoute(
+    final id = await _dao.insertRoute(
       RoutesTableCompanion(
         shiftId: Value(shiftId),
         routeNumber: Value(number),
@@ -38,17 +38,28 @@ class RouteRepository {
         createdAt: Value(now),
       ),
     );
+    AppLogger.log(
+      LogEvents.routeCreated,
+      module: 'RouteRepository',
+      metadata: {'route_id': id, 'shift_id': shiftId, 'route_number': number},
+    );
+    return id;
   }
 
   Future<void> closeRoute({
     required int id,
     required int deliveryCountAtClose,
-  }) {
+  }) async {
     final now = DateTime.now().toUtc().toIso8601String();
-    return _dao.closeRoute(
+    await _dao.closeRoute(
       id: id,
       closedAt: now,
       deliveryCountAtClose: deliveryCountAtClose,
+    );
+    AppLogger.log(
+      LogEvents.routeClosed,
+      module: 'RouteRepository',
+      metadata: {'route_id': id, 'delivery_count': deliveryCountAtClose},
     );
   }
 

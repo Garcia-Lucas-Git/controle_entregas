@@ -59,10 +59,7 @@ class ShiftNotifier extends _$ShiftNotifier {
       AppLogger.info(
         LogEvents.financialRouteTotal,
         module: 'ShiftNotifier',
-        metadata: {
-          'route_id': e.routeId,
-          'route_total_cents': routeTotal,
-        },
+        metadata: {'route_id': e.routeId, 'route_total_cents': routeTotal},
       );
     }
 

@@ -27,17 +27,20 @@ class ActiveRouteScreen extends ConsumerStatefulWidget {
 
 class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
     with WidgetsBindingObserver {
+  late final WakeLockController _wakeLock;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    ref.read(wakeLockControllerProvider.notifier).acquire();
+    _wakeLock = ref.read(wakeLockControllerProvider.notifier);
+    _wakeLock.acquire();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    ref.read(wakeLockControllerProvider.notifier).release();
+    _wakeLock.release();
     super.dispose();
   }
 
@@ -67,6 +70,56 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
     if (!mounted) return;
 
     await MapsLauncher.navigateTo(finalAddresses);
+  }
+
+  Future<void> _addDelivery() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Adicionar por OCR'),
+              onTap: () => Navigator.pop(ctx, 'ocr'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_location_alt_outlined),
+              title: const Text('Adicionar manualmente'),
+              onTap: () => Navigator.pop(ctx, 'manual'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'manual') {
+      context.push(
+        '/shift/${widget.shiftId}/manual',
+        extra: {'routeId': widget.routeId},
+      );
+      return;
+    }
+    context.push(
+      '/shift/${widget.shiftId}/route/new',
+      extra: {'routeId': widget.routeId},
+    );
+  }
+
+  Future<void> _moveDelivery(
+    List<Delivery> deliveries,
+    int index,
+    int delta,
+  ) async {
+    final next = index + delta;
+    if (next < 0 || next >= deliveries.length) return;
+    final ordered = [...deliveries];
+    final item = ordered.removeAt(index);
+    ordered.insert(next, item);
+    await ref
+        .read(deliveryNotifierProvider.notifier)
+        .reorderRouteDeliveries(routeId: widget.routeId, deliveries: ordered);
   }
 
   Future<void> _deleteRoute(RouteEntity route) async {
@@ -151,6 +204,11 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
             loading: () => const SizedBox.shrink(),
             error: (e, s) => const SizedBox.shrink(),
           ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Adicionar entrega',
+            onPressed: _addDelivery,
+          ),
           deliveriesAsync.when(
             data: (deliveries) {
               final pending = deliveries
@@ -199,11 +257,16 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      ...pending.map(
-                        (d) => _DeliveryTile(
-                          delivery: d,
+                      ...pending.asMap().entries.map(
+                        (entry) => _DeliveryTile(
+                          delivery: entry.value,
                           shiftId: widget.shiftId,
                           routeId: widget.routeId,
+                          canMoveUp: entry.key > 0,
+                          canMoveDown: entry.key < pending.length - 1,
+                          onMoveUp: () => _moveDelivery(pending, entry.key, -1),
+                          onMoveDown: () =>
+                              _moveDelivery(pending, entry.key, 1),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -226,6 +289,18 @@ class _ActiveRouteScreenState extends ConsumerState<ActiveRouteScreen>
                       ),
                     ],
                   ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                child: OutlinedButton.icon(
+                  onPressed: _addDelivery,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Adicionar Entrega'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
                 ),
               ),
 
@@ -294,12 +369,20 @@ class _DeliveryTile extends ConsumerWidget {
   final int shiftId;
   final int routeId;
   final bool muted;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
 
   const _DeliveryTile({
     required this.delivery,
     required this.shiftId,
     required this.routeId,
     this.muted = false,
+    this.canMoveUp = false,
+    this.canMoveDown = false,
+    this.onMoveUp,
+    this.onMoveDown,
   });
 
   Widget? _buildSubtitle(
@@ -314,6 +397,11 @@ class _DeliveryTile extends ConsumerWidget {
     if (delivery.pizzaNumber != null && delivery.pizzaNumber!.isNotEmpty) {
       parts.add('🍕 ${delivery.pizzaNumber}');
     }
+    if (delivery.complement != null && delivery.complement!.isNotEmpty) {
+      parts.add('📝 ${delivery.complement}');
+    }
+    final drink = delivery.drinkLabel;
+    if (drink != null) parts.add('🥤 $drink');
     if (delivery.customerName != null) parts.add(delivery.customerName!);
     if (locator != null) parts.add('# $locator');
     if (parts.isEmpty) return null;
@@ -347,7 +435,26 @@ class _DeliveryTile extends ConsumerWidget {
           ),
         ),
         subtitle: _buildSubtitle(delivery, colorScheme, muted),
-        trailing: const Icon(Icons.expand_more),
+        trailing: muted
+            ? const Icon(Icons.expand_more)
+            : SizedBox(
+                width: 88,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_upward, size: 18),
+                      tooltip: 'Mover para cima',
+                      onPressed: canMoveUp ? onMoveUp : null,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_downward, size: 18),
+                      tooltip: 'Mover para baixo',
+                      onPressed: canMoveDown ? onMoveDown : null,
+                    ),
+                  ],
+                ),
+              ),
         onTap: () => showModalBottomSheet<void>(
           context: context,
           isScrollControlled: true,

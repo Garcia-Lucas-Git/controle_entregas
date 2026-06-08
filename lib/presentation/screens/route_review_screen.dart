@@ -36,6 +36,15 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
         .entries
         .map((e) => _DeliveryDraft.fromOcr(e.value, index: e.key))
         .toList();
+    AppLogger.log(
+      LogEvents.routeReviewOpened,
+      module: 'RouteReviewScreen',
+      metadata: {
+        'route_id': widget.routeId,
+        'shift_id': widget.shiftId,
+        'delivery_count': widget.ocrResults.length,
+      },
+    );
   }
 
   Future<void> _approve() async {
@@ -64,6 +73,9 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
     }
     setState(() => _saving = true);
     try {
+      final firstSequence = await ref
+          .read(deliveryNotifierProvider.notifier)
+          .nextSequenceForRoute(widget.routeId);
       for (int i = 0; i < _drafts.length; i++) {
         final d = _drafts[i];
         final locator = d.partnerCollectionCode.isNotEmpty
@@ -86,10 +98,32 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
             .createFromOcr(
               routeId: widget.routeId,
               shiftId: widget.shiftId,
-              sequenceNumber: i + 1,
+              sequenceNumber: firstSequence + i,
               ocr: d.toOcrResult(),
             );
+        AppLogger.log(
+          LogEvents.ocrResultAddedToRoute,
+          module: 'RouteReviewScreen',
+          metadata: {
+            'route_id': widget.routeId,
+            'shift_id': widget.shiftId,
+            'sequence': i + 1,
+            'address': d.addressText,
+            'house_number': d.houseNumber,
+            'pizza_number': d.pizzaNumber,
+            'locator': locator,
+          },
+        );
       }
+      AppLogger.log(
+        LogEvents.routeReviewApproved,
+        module: 'RouteReviewScreen',
+        metadata: {
+          'route_id': widget.routeId,
+          'shift_id': widget.shiftId,
+          'delivery_count': _drafts.length,
+        },
+      );
       if (!mounted) return;
       context.go('/shift/${widget.shiftId}/route/${widget.routeId}/active');
     } finally {
@@ -233,6 +267,19 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
   }
 }
 
+const _drinkOptions = [
+  'Coca 1L',
+  'Coca 1,5L',
+  'Coca 2L',
+  'Coca Zero 1L',
+  'Coca Zero 2L',
+  'Fanta Laranja 1L',
+  'Fanta Laranja 2L',
+  'Sprite 1L',
+  'Guaraná 1L',
+  'Outros',
+];
+
 // ── Confidence level ────────────────────────────────────────────────────────
 
 enum _ConfidenceLevel {
@@ -266,12 +313,15 @@ class _DeliveryDraft {
   String customerName;
   String addressText;
   String houseNumber;
+  String complement;
+  String neighborhood;
   String pizzaNumber;
   String orderNumber;
   String deliveryIdentifier;
   String partnerCollectionCode;
   bool needsIfoodConfirmation;
   bool hasDrinks;
+  String drinkType;
   bool needsCard;
   bool needsChange;
   String rawText;
@@ -282,12 +332,15 @@ class _DeliveryDraft {
     required this.customerName,
     required this.addressText,
     required this.houseNumber,
+    required this.complement,
+    required this.neighborhood,
     required this.pizzaNumber,
     required this.orderNumber,
     required this.deliveryIdentifier,
     required this.partnerCollectionCode,
     required this.needsIfoodConfirmation,
     required this.hasDrinks,
+    required this.drinkType,
     required this.needsCard,
     required this.needsChange,
     required this.rawText,
@@ -300,12 +353,15 @@ class _DeliveryDraft {
         customerName: r.customerName ?? '',
         addressText: r.addressText ?? '',
         houseNumber: r.houseNumber ?? '',
+        complement: r.complement ?? '',
+        neighborhood: r.neighborhood ?? '',
         pizzaNumber: r.pizzaNumber ?? '',
         orderNumber: r.orderNumber ?? '',
         deliveryIdentifier: r.deliveryIdentifier ?? '',
         partnerCollectionCode: r.partnerCollectionCode ?? '',
         needsIfoodConfirmation: r.needsIfoodConfirmation,
         hasDrinks: r.hasDrinks,
+        drinkType: r.drinkType ?? '',
         needsCard: r.needsCard,
         needsChange: r.needsChange,
         rawText: r.rawText,
@@ -316,12 +372,15 @@ class _DeliveryDraft {
     String? customerName,
     String? addressText,
     String? houseNumber,
+    String? complement,
+    String? neighborhood,
     String? pizzaNumber,
     String? orderNumber,
     String? deliveryIdentifier,
     String? partnerCollectionCode,
     bool? needsIfoodConfirmation,
     bool? hasDrinks,
+    String? drinkType,
     bool? needsCard,
     bool? needsChange,
   }) => _DeliveryDraft(
@@ -329,6 +388,8 @@ class _DeliveryDraft {
     customerName: customerName ?? this.customerName,
     addressText: addressText ?? this.addressText,
     houseNumber: houseNumber ?? this.houseNumber,
+    complement: complement ?? this.complement,
+    neighborhood: neighborhood ?? this.neighborhood,
     pizzaNumber: pizzaNumber ?? this.pizzaNumber,
     orderNumber: orderNumber ?? this.orderNumber,
     deliveryIdentifier: deliveryIdentifier ?? this.deliveryIdentifier,
@@ -336,6 +397,7 @@ class _DeliveryDraft {
     needsIfoodConfirmation:
         needsIfoodConfirmation ?? this.needsIfoodConfirmation,
     hasDrinks: hasDrinks ?? this.hasDrinks,
+    drinkType: drinkType ?? this.drinkType,
     needsCard: needsCard ?? this.needsCard,
     needsChange: needsChange ?? this.needsChange,
     rawText: rawText,
@@ -347,6 +409,8 @@ class _DeliveryDraft {
     customerName: customerName.isEmpty ? null : customerName,
     addressText: addressText.isEmpty ? null : addressText,
     houseNumber: houseNumber.isEmpty ? null : houseNumber,
+    complement: complement.isEmpty ? null : complement,
+    neighborhood: neighborhood.isEmpty ? null : neighborhood,
     pizzaNumber: pizzaNumber.isEmpty ? null : pizzaNumber,
     orderNumber: orderNumber.isEmpty ? null : orderNumber,
     deliveryIdentifier: deliveryIdentifier.isEmpty ? null : deliveryIdentifier,
@@ -355,6 +419,7 @@ class _DeliveryDraft {
         : partnerCollectionCode,
     needsIfoodConfirmation: needsIfoodConfirmation,
     hasDrinks: hasDrinks,
+    drinkType: drinkType,
     needsCard: needsCard,
     needsChange: needsChange,
     confidence: confidence,
@@ -388,6 +453,8 @@ class _DraftCardState extends State<_DraftCard> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _addrCtrl;
   late final TextEditingController _houseCtrl;
+  late final TextEditingController _complementCtrl;
+  late final TextEditingController _neighborhoodCtrl;
   late final TextEditingController _pizzaCtrl;
   late final TextEditingController _orderCtrl;
   late final TextEditingController _idCtrl;
@@ -400,6 +467,8 @@ class _DraftCardState extends State<_DraftCard> {
     _nameCtrl = TextEditingController(text: d.customerName);
     _addrCtrl = TextEditingController(text: d.addressText);
     _houseCtrl = TextEditingController(text: d.houseNumber);
+    _complementCtrl = TextEditingController(text: d.complement);
+    _neighborhoodCtrl = TextEditingController(text: d.neighborhood);
     _pizzaCtrl = TextEditingController(text: d.pizzaNumber);
     _orderCtrl = TextEditingController(text: d.orderNumber);
     _idCtrl = TextEditingController(text: d.deliveryIdentifier);
@@ -411,6 +480,8 @@ class _DraftCardState extends State<_DraftCard> {
     _nameCtrl.dispose();
     _addrCtrl.dispose();
     _houseCtrl.dispose();
+    _complementCtrl.dispose();
+    _neighborhoodCtrl.dispose();
     _pizzaCtrl.dispose();
     _orderCtrl.dispose();
     _idCtrl.dispose();
@@ -424,6 +495,8 @@ class _DraftCardState extends State<_DraftCard> {
         customerName: _nameCtrl.text,
         addressText: _addrCtrl.text,
         houseNumber: _houseCtrl.text,
+        complement: _complementCtrl.text,
+        neighborhood: _neighborhoodCtrl.text,
         pizzaNumber: _pizzaCtrl.text,
         orderNumber: _orderCtrl.text,
         deliveryIdentifier: _idCtrl.text,
@@ -438,7 +511,8 @@ class _DraftCardState extends State<_DraftCard> {
     final locator = d.deliveryIdentifier.isNotEmpty
         ? d.deliveryIdentifier
         : d.partnerCollectionCode;
-    final hasWarning = d.addressText.trim().isEmpty ||
+    final hasWarning =
+        d.addressText.trim().isEmpty ||
         d.houseNumber.trim().isEmpty ||
         locator.isEmpty ||
         d.pizzaNumber.trim().isEmpty;
@@ -489,8 +563,8 @@ class _DraftCardState extends State<_DraftCard> {
                   d.addressText.isEmpty
                       ? '⚠ Endereço obrigatório'
                       : d.houseNumber.isNotEmpty
-                          ? '${d.addressText}, ${d.houseNumber}'
-                          : d.addressText,
+                      ? '${d.addressText}, ${d.houseNumber}'
+                      : d.addressText,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: (d.addressText.isEmpty || d.houseNumber.isEmpty)
@@ -570,7 +644,7 @@ class _DraftCardState extends State<_DraftCard> {
                     children: [
                       if (d.hasDrinks)
                         _OperationalChip(
-                          '⚠ Refrigerante',
+                          '⚠ ${d.drinkType.isNotEmpty ? d.drinkType : 'Refrigerante'}',
                           Colors.orange.shade700,
                         ),
                       if (d.needsChange)
@@ -659,6 +733,18 @@ class _DraftCardState extends State<_DraftCard> {
                   ),
                   const SizedBox(height: 8),
                   _EditField(
+                    label: 'Complemento',
+                    controller: _complementCtrl,
+                    onChanged: (_) => _notify(),
+                  ),
+                  const SizedBox(height: 8),
+                  _EditField(
+                    label: 'Bairro',
+                    controller: _neighborhoodCtrl,
+                    onChanged: (_) => _notify(),
+                  ),
+                  const SizedBox(height: 8),
+                  _EditField(
                     label: 'Localizador iFood',
                     controller: _idCtrl,
                     onChanged: (_) => _notify(),
@@ -691,9 +777,29 @@ class _DraftCardState extends State<_DraftCard> {
                   _FlagRow(
                     label: '⚠ Refrigerante',
                     value: d.hasDrinks,
-                    onChanged: (v) =>
-                        widget.onChanged(d.copyWith(hasDrinks: v)),
+                    onChanged: (v) => widget.onChanged(
+                      d.copyWith(hasDrinks: v, drinkType: v ? d.drinkType : ''),
+                    ),
                   ),
+                  if (d.hasDrinks)
+                    DropdownButtonFormField<String>(
+                      initialValue: d.drinkType.isEmpty ? null : d.drinkType,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de refrigerante',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: _drinkOptions
+                          .map(
+                            (value) => DropdownMenuItem(
+                              value: value,
+                              child: Text(value),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) =>
+                          widget.onChanged(d.copyWith(drinkType: value ?? '')),
+                    ),
                   _FlagRow(
                     label: '💳 Cartão',
                     value: d.needsCard,

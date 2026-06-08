@@ -9,6 +9,7 @@ class OcrResult {
   final String? customerName;
   final String? addressText;
   final String? houseNumber;
+  final String? complement;
   final String? neighborhood;
   final String? city;
   final String? orderNumber;
@@ -16,6 +17,7 @@ class OcrResult {
   final String? partnerCollectionCode;
   final bool needsIfoodConfirmation;
   final bool hasDrinks;
+  final String? drinkType;
   final bool needsCard;
   final bool needsChange;
   final int? changeAmountCents;
@@ -29,6 +31,7 @@ class OcrResult {
     this.customerName,
     this.addressText,
     this.houseNumber,
+    this.complement,
     this.neighborhood,
     this.city,
     this.orderNumber,
@@ -36,6 +39,7 @@ class OcrResult {
     this.partnerCollectionCode,
     this.needsIfoodConfirmation = false,
     this.hasDrinks = false,
+    this.drinkType,
     this.needsCard = false,
     this.needsChange = false,
     this.changeAmountCents,
@@ -489,7 +493,11 @@ class OcrService {
     // Customer: try anchor-based first (receipts with explicit CLIENTE/NOME label),
     // then positional (iFood format: bare name line between Localizador and Endereco).
     final customerName =
-        _extractAfterAnchor(lines, OcrKeywords.customerNameAnchors, maxLines: 2) ??
+        _extractAfterAnchor(
+          lines,
+          OcrKeywords.customerNameAnchors,
+          maxLines: 2,
+        ) ??
         _extractCustomerNamePositional(lines);
     if (customerName != null) {
       AppLogger.log(
@@ -505,6 +513,10 @@ class OcrService {
       );
     }
 
+    final complement = _extractAfterAnchor(lines, const [
+      'COMPLEMENTO',
+      'COMP',
+    ], maxLines: 1);
     final neighborhood = _extractAfterAnchor(
       lines,
       OcrKeywords.neighborhoodAnchors,
@@ -536,15 +548,26 @@ class OcrService {
       AppLogger.log(
         LogEvents.paymentTextIgnoredFromOcr,
         module: 'OcrService',
-        metadata: {'raw_excerpt': fullText.length > 200 ? fullText.substring(0, 200) : fullText},
+        metadata: {
+          'raw_excerpt': fullText.length > 200
+              ? fullText.substring(0, 200)
+              : fullText,
+        },
       );
     }
+
+    // Split trailing house number from address (e.g. "R. SU 1, 100" → base + "100").
+    final (cleanAddress, extractedHouseNumber) = address != null
+        ? _splitHouseNumber(address)
+        : (null, null);
 
     return _OcrParseDetails(
       result: OcrResult(
         rawText: rawText,
         customerName: customerName,
-        addressText: address,
+        addressText: cleanAddress,
+        houseNumber: extractedHouseNumber,
+        complement: complement,
         neighborhood: neighborhood,
         orderNumber: orderNumber,
         deliveryIdentifier: deliveryId,
@@ -554,8 +577,10 @@ class OcrService {
           OcrKeywords.ifoodConfirmation,
         ),
         hasDrinks: _containsAny(fullText, OcrKeywords.drinks),
-        needsCard: false,   // Payment flags never set by OCR — manual review only
-        needsChange: false, // Payment flags never set by OCR — manual review only
+        drinkType: _extractDrinkType(fullText),
+        needsCard: false, // Payment flags never set by OCR — manual review only
+        needsChange:
+            false, // Payment flags never set by OCR — manual review only
         changeAmountCents: null,
         confidence: parserStatus == 'sucesso_completo'
             ? 1.0
@@ -687,9 +712,11 @@ class OcrService {
 
           // Collect subsequent lines until next anchor or boundary.
           final parts = <String>[];
-          for (int j = i + 1;
-              j < lines.length && parts.length < maxLines;
-              j++) {
+          for (
+            int j = i + 1;
+            j < lines.length && parts.length < maxLines;
+            j++
+          ) {
             final next = lines[j].trim();
             if (next.isEmpty) continue;
             if (_isAnchorLine(next)) break;
@@ -798,6 +825,46 @@ class OcrService {
       ...OcrKeywords.sectionBoundaryAnchors,
     ];
     return allAnchors.any((a) => upper.contains(a));
+  }
+
+  /// Splits a trailing house number from an address string.
+  /// Matches ", 100" / ", n 41" / ", n. 41" patterns.
+  /// Returns (baseAddress, houseNumber) — unchanged input when no match.
+  static String? _extractDrinkType(String text) {
+    final upper = text.toUpperCase();
+    const options = [
+      ('COCA ZERO 2L', 'Coca Zero 2L'),
+      ('COCA ZERO 1L', 'Coca Zero 1L'),
+      ('COCA 2L', 'Coca 2L'),
+      ('COCA 1,5L', 'Coca 1,5L'),
+      ('COCA 1.5L', 'Coca 1,5L'),
+      ('COCA 1L', 'Coca 1L'),
+      ('FANTA LARANJA 2L', 'Fanta Laranja 2L'),
+      ('FANTA LARANJA 1L', 'Fanta Laranja 1L'),
+      ('SPRITE 1L', 'Sprite 1L'),
+      ('GUARANA 1L', 'Guaraná 1L'),
+      ('GUARANÁ 1L', 'Guaraná 1L'),
+      ('COCA ZERO', 'Coca Zero'),
+      ('COCA', 'Coca'),
+      ('FANTA', 'Fanta'),
+      ('SPRITE', 'Sprite'),
+      ('GUARANA', 'Guaraná'),
+      ('GUARANÁ', 'Guaraná'),
+    ];
+    for (final option in options) {
+      if (upper.contains(option.$1)) return option.$2;
+    }
+    return null;
+  }
+
+  static (String, String?) _splitHouseNumber(String address) {
+    final regex = RegExp(r',\s*(?:[nN]\.?\s*)?(\d+)\s*$');
+    final match = regex.firstMatch(address);
+    if (match == null) return (address, null);
+    final number = match.group(1)!;
+    final base = address.substring(0, match.start).trim();
+    if (base.isEmpty) return (address, null);
+    return (base, number);
   }
 }
 

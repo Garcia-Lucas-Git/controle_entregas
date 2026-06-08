@@ -41,4 +41,7 @@ class DeliveriesTable extends Table {
   // Operational fields (v6)
   TextColumn get pizzaNumber => text().nullable()();
   TextColumn get houseNumber => text().nullable()();
+  TextColumn get complement => text().nullable()();
+  TextColumn get neighborhood => text().nullable()();
+  TextColumn get drinkType => text().nullable()();
 }

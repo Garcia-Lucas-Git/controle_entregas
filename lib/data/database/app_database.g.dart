@@ -1541,6 +1541,39 @@ class $DeliveriesTableTable extends DeliveriesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _complementMeta = const VerificationMeta(
+    'complement',
+  );
+  @override
+  late final GeneratedColumn<String> complement = GeneratedColumn<String>(
+    'complement',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _neighborhoodMeta = const VerificationMeta(
+    'neighborhood',
+  );
+  @override
+  late final GeneratedColumn<String> neighborhood = GeneratedColumn<String>(
+    'neighborhood',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _drinkTypeMeta = const VerificationMeta(
+    'drinkType',
+  );
+  @override
+  late final GeneratedColumn<String> drinkType = GeneratedColumn<String>(
+    'drink_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1567,6 +1600,9 @@ class $DeliveriesTableTable extends DeliveriesTable
     changeAmountCents,
     pizzaNumber,
     houseNumber,
+    complement,
+    neighborhood,
+    drinkType,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1777,6 +1813,27 @@ class $DeliveriesTableTable extends DeliveriesTable
         ),
       );
     }
+    if (data.containsKey('complement')) {
+      context.handle(
+        _complementMeta,
+        complement.isAcceptableOrUnknown(data['complement']!, _complementMeta),
+      );
+    }
+    if (data.containsKey('neighborhood')) {
+      context.handle(
+        _neighborhoodMeta,
+        neighborhood.isAcceptableOrUnknown(
+          data['neighborhood']!,
+          _neighborhoodMeta,
+        ),
+      );
+    }
+    if (data.containsKey('drink_type')) {
+      context.handle(
+        _drinkTypeMeta,
+        drinkType.isAcceptableOrUnknown(data['drink_type']!, _drinkTypeMeta),
+      );
+    }
     return context;
   }
 
@@ -1882,6 +1939,18 @@ class $DeliveriesTableTable extends DeliveriesTable
         DriftSqlType.string,
         data['${effectivePrefix}house_number'],
       ),
+      complement: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}complement'],
+      ),
+      neighborhood: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}neighborhood'],
+      ),
+      drinkType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}drink_type'],
+      ),
     );
   }
 
@@ -1917,6 +1986,9 @@ class DeliveriesTableData extends DataClass
   final int? changeAmountCents;
   final String? pizzaNumber;
   final String? houseNumber;
+  final String? complement;
+  final String? neighborhood;
+  final String? drinkType;
   const DeliveriesTableData({
     required this.id,
     required this.routeId,
@@ -1942,6 +2014,9 @@ class DeliveriesTableData extends DataClass
     this.changeAmountCents,
     this.pizzaNumber,
     this.houseNumber,
+    this.complement,
+    this.neighborhood,
+    this.drinkType,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1998,6 +2073,15 @@ class DeliveriesTableData extends DataClass
     if (!nullToAbsent || houseNumber != null) {
       map['house_number'] = Variable<String>(houseNumber);
     }
+    if (!nullToAbsent || complement != null) {
+      map['complement'] = Variable<String>(complement);
+    }
+    if (!nullToAbsent || neighborhood != null) {
+      map['neighborhood'] = Variable<String>(neighborhood);
+    }
+    if (!nullToAbsent || drinkType != null) {
+      map['drink_type'] = Variable<String>(drinkType);
+    }
     return map;
   }
 
@@ -2053,6 +2137,15 @@ class DeliveriesTableData extends DataClass
       houseNumber: houseNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(houseNumber),
+      complement: complement == null && nullToAbsent
+          ? const Value.absent()
+          : Value(complement),
+      neighborhood: neighborhood == null && nullToAbsent
+          ? const Value.absent()
+          : Value(neighborhood),
+      drinkType: drinkType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(drinkType),
     );
   }
 
@@ -2094,6 +2187,9 @@ class DeliveriesTableData extends DataClass
       changeAmountCents: serializer.fromJson<int?>(json['changeAmountCents']),
       pizzaNumber: serializer.fromJson<String?>(json['pizzaNumber']),
       houseNumber: serializer.fromJson<String?>(json['houseNumber']),
+      complement: serializer.fromJson<String?>(json['complement']),
+      neighborhood: serializer.fromJson<String?>(json['neighborhood']),
+      drinkType: serializer.fromJson<String?>(json['drinkType']),
     );
   }
   @override
@@ -2128,6 +2224,9 @@ class DeliveriesTableData extends DataClass
       'changeAmountCents': serializer.toJson<int?>(changeAmountCents),
       'pizzaNumber': serializer.toJson<String?>(pizzaNumber),
       'houseNumber': serializer.toJson<String?>(houseNumber),
+      'complement': serializer.toJson<String?>(complement),
+      'neighborhood': serializer.toJson<String?>(neighborhood),
+      'drinkType': serializer.toJson<String?>(drinkType),
     };
   }
 
@@ -2156,6 +2255,9 @@ class DeliveriesTableData extends DataClass
     Value<int?> changeAmountCents = const Value.absent(),
     Value<String?> pizzaNumber = const Value.absent(),
     Value<String?> houseNumber = const Value.absent(),
+    Value<String?> complement = const Value.absent(),
+    Value<String?> neighborhood = const Value.absent(),
+    Value<String?> drinkType = const Value.absent(),
   }) => DeliveriesTableData(
     id: id ?? this.id,
     routeId: routeId ?? this.routeId,
@@ -2194,6 +2296,9 @@ class DeliveriesTableData extends DataClass
         : this.changeAmountCents,
     pizzaNumber: pizzaNumber.present ? pizzaNumber.value : this.pizzaNumber,
     houseNumber: houseNumber.present ? houseNumber.value : this.houseNumber,
+    complement: complement.present ? complement.value : this.complement,
+    neighborhood: neighborhood.present ? neighborhood.value : this.neighborhood,
+    drinkType: drinkType.present ? drinkType.value : this.drinkType,
   );
   DeliveriesTableData copyWithCompanion(DeliveriesTableCompanion data) {
     return DeliveriesTableData(
@@ -2255,6 +2360,13 @@ class DeliveriesTableData extends DataClass
       houseNumber: data.houseNumber.present
           ? data.houseNumber.value
           : this.houseNumber,
+      complement: data.complement.present
+          ? data.complement.value
+          : this.complement,
+      neighborhood: data.neighborhood.present
+          ? data.neighborhood.value
+          : this.neighborhood,
+      drinkType: data.drinkType.present ? data.drinkType.value : this.drinkType,
     );
   }
 
@@ -2284,7 +2396,10 @@ class DeliveriesTableData extends DataClass
           ..write('needsChange: $needsChange, ')
           ..write('changeAmountCents: $changeAmountCents, ')
           ..write('pizzaNumber: $pizzaNumber, ')
-          ..write('houseNumber: $houseNumber')
+          ..write('houseNumber: $houseNumber, ')
+          ..write('complement: $complement, ')
+          ..write('neighborhood: $neighborhood, ')
+          ..write('drinkType: $drinkType')
           ..write(')'))
         .toString();
   }
@@ -2315,6 +2430,9 @@ class DeliveriesTableData extends DataClass
     changeAmountCents,
     pizzaNumber,
     houseNumber,
+    complement,
+    neighborhood,
+    drinkType,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -2343,7 +2461,10 @@ class DeliveriesTableData extends DataClass
           other.needsChange == this.needsChange &&
           other.changeAmountCents == this.changeAmountCents &&
           other.pizzaNumber == this.pizzaNumber &&
-          other.houseNumber == this.houseNumber);
+          other.houseNumber == this.houseNumber &&
+          other.complement == this.complement &&
+          other.neighborhood == this.neighborhood &&
+          other.drinkType == this.drinkType);
 }
 
 class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
@@ -2371,6 +2492,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
   final Value<int?> changeAmountCents;
   final Value<String?> pizzaNumber;
   final Value<String?> houseNumber;
+  final Value<String?> complement;
+  final Value<String?> neighborhood;
+  final Value<String?> drinkType;
   const DeliveriesTableCompanion({
     this.id = const Value.absent(),
     this.routeId = const Value.absent(),
@@ -2396,6 +2520,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     this.changeAmountCents = const Value.absent(),
     this.pizzaNumber = const Value.absent(),
     this.houseNumber = const Value.absent(),
+    this.complement = const Value.absent(),
+    this.neighborhood = const Value.absent(),
+    this.drinkType = const Value.absent(),
   });
   DeliveriesTableCompanion.insert({
     this.id = const Value.absent(),
@@ -2422,6 +2549,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     this.changeAmountCents = const Value.absent(),
     this.pizzaNumber = const Value.absent(),
     this.houseNumber = const Value.absent(),
+    this.complement = const Value.absent(),
+    this.neighborhood = const Value.absent(),
+    this.drinkType = const Value.absent(),
   }) : routeId = Value(routeId),
        shiftId = Value(shiftId),
        addressText = Value(addressText),
@@ -2451,6 +2581,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     Expression<int>? changeAmountCents,
     Expression<String>? pizzaNumber,
     Expression<String>? houseNumber,
+    Expression<String>? complement,
+    Expression<String>? neighborhood,
+    Expression<String>? drinkType,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2480,6 +2613,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
       if (changeAmountCents != null) 'change_amount_cents': changeAmountCents,
       if (pizzaNumber != null) 'pizza_number': pizzaNumber,
       if (houseNumber != null) 'house_number': houseNumber,
+      if (complement != null) 'complement': complement,
+      if (neighborhood != null) 'neighborhood': neighborhood,
+      if (drinkType != null) 'drink_type': drinkType,
     });
   }
 
@@ -2508,6 +2644,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     Value<int?>? changeAmountCents,
     Value<String?>? pizzaNumber,
     Value<String?>? houseNumber,
+    Value<String?>? complement,
+    Value<String?>? neighborhood,
+    Value<String?>? drinkType,
   }) {
     return DeliveriesTableCompanion(
       id: id ?? this.id,
@@ -2537,6 +2676,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
       changeAmountCents: changeAmountCents ?? this.changeAmountCents,
       pizzaNumber: pizzaNumber ?? this.pizzaNumber,
       houseNumber: houseNumber ?? this.houseNumber,
+      complement: complement ?? this.complement,
+      neighborhood: neighborhood ?? this.neighborhood,
+      drinkType: drinkType ?? this.drinkType,
     );
   }
 
@@ -2621,6 +2763,15 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     if (houseNumber.present) {
       map['house_number'] = Variable<String>(houseNumber.value);
     }
+    if (complement.present) {
+      map['complement'] = Variable<String>(complement.value);
+    }
+    if (neighborhood.present) {
+      map['neighborhood'] = Variable<String>(neighborhood.value);
+    }
+    if (drinkType.present) {
+      map['drink_type'] = Variable<String>(drinkType.value);
+    }
     return map;
   }
 
@@ -2650,7 +2801,10 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
           ..write('needsChange: $needsChange, ')
           ..write('changeAmountCents: $changeAmountCents, ')
           ..write('pizzaNumber: $pizzaNumber, ')
-          ..write('houseNumber: $houseNumber')
+          ..write('houseNumber: $houseNumber, ')
+          ..write('complement: $complement, ')
+          ..write('neighborhood: $neighborhood, ')
+          ..write('drinkType: $drinkType')
           ..write(')'))
         .toString();
   }
@@ -6358,6 +6512,9 @@ typedef $$DeliveriesTableTableCreateCompanionBuilder =
       Value<int?> changeAmountCents,
       Value<String?> pizzaNumber,
       Value<String?> houseNumber,
+      Value<String?> complement,
+      Value<String?> neighborhood,
+      Value<String?> drinkType,
     });
 typedef $$DeliveriesTableTableUpdateCompanionBuilder =
     DeliveriesTableCompanion Function({
@@ -6385,6 +6542,9 @@ typedef $$DeliveriesTableTableUpdateCompanionBuilder =
       Value<int?> changeAmountCents,
       Value<String?> pizzaNumber,
       Value<String?> houseNumber,
+      Value<String?> complement,
+      Value<String?> neighborhood,
+      Value<String?> drinkType,
     });
 
 final class $$DeliveriesTableTableReferences
@@ -6579,6 +6739,21 @@ class $$DeliveriesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get complement => $composableBuilder(
+    column: $table.complement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get neighborhood => $composableBuilder(
+    column: $table.neighborhood,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get drinkType => $composableBuilder(
+    column: $table.drinkType,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$RoutesTableTableFilterComposer get routeId {
     final $$RoutesTableTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -6770,6 +6945,21 @@ class $$DeliveriesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get complement => $composableBuilder(
+    column: $table.complement,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get neighborhood => $composableBuilder(
+    column: $table.neighborhood,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get drinkType => $composableBuilder(
+    column: $table.drinkType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$RoutesTableTableOrderingComposer get routeId {
     final $$RoutesTableTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6926,6 +7116,19 @@ class $$DeliveriesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get complement => $composableBuilder(
+    column: $table.complement,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get neighborhood => $composableBuilder(
+    column: $table.neighborhood,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get drinkType =>
+      $composableBuilder(column: $table.drinkType, builder: (column) => column);
+
   $$RoutesTableTableAnnotationComposer get routeId {
     final $$RoutesTableTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -7056,6 +7259,9 @@ class $$DeliveriesTableTableTableManager
                 Value<int?> changeAmountCents = const Value.absent(),
                 Value<String?> pizzaNumber = const Value.absent(),
                 Value<String?> houseNumber = const Value.absent(),
+                Value<String?> complement = const Value.absent(),
+                Value<String?> neighborhood = const Value.absent(),
+                Value<String?> drinkType = const Value.absent(),
               }) => DeliveriesTableCompanion(
                 id: id,
                 routeId: routeId,
@@ -7081,6 +7287,9 @@ class $$DeliveriesTableTableTableManager
                 changeAmountCents: changeAmountCents,
                 pizzaNumber: pizzaNumber,
                 houseNumber: houseNumber,
+                complement: complement,
+                neighborhood: neighborhood,
+                drinkType: drinkType,
               ),
           createCompanionCallback:
               ({
@@ -7108,6 +7317,9 @@ class $$DeliveriesTableTableTableManager
                 Value<int?> changeAmountCents = const Value.absent(),
                 Value<String?> pizzaNumber = const Value.absent(),
                 Value<String?> houseNumber = const Value.absent(),
+                Value<String?> complement = const Value.absent(),
+                Value<String?> neighborhood = const Value.absent(),
+                Value<String?> drinkType = const Value.absent(),
               }) => DeliveriesTableCompanion.insert(
                 id: id,
                 routeId: routeId,
@@ -7133,6 +7345,9 @@ class $$DeliveriesTableTableTableManager
                 changeAmountCents: changeAmountCents,
                 pizzaNumber: pizzaNumber,
                 houseNumber: houseNumber,
+                complement: complement,
+                neighborhood: neighborhood,
+                drinkType: drinkType,
               ),
           withReferenceMapper: (p0) => p0
               .map(

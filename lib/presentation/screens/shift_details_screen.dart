@@ -26,9 +26,7 @@ class ShiftDetailsScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.add_road),
             tooltip: 'Nova Rota',
-            onPressed: () => context.push(
-              '/shift/$shiftId/route/new',
-            ),
+            onPressed: () => context.push('/shift/$shiftId/route/new'),
           ),
         ],
       ),
@@ -49,9 +47,9 @@ class ShiftDetailsScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     'Nenhuma rota neste turno.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.outline,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: colorScheme.outline),
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
@@ -87,8 +85,7 @@ class _RouteSummaryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final deliveriesAsync =
-        ref.watch(deliveriesForRouteProvider(route.id));
+    final deliveriesAsync = ref.watch(deliveriesForRouteProvider(route.id));
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
@@ -98,9 +95,8 @@ class _RouteSummaryTile extends ConsumerWidget {
         children: [
           // Route header row
           InkWell(
-            onTap: () => context.push(
-              '/shift/$shiftId/route/${route.id}/active',
-            ),
+            onTap: () =>
+                context.push('/shift/$shiftId/route/${route.id}/active'),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Row(
@@ -131,8 +127,10 @@ class _RouteSummaryTile extends ConsumerWidget {
                     ),
                   ),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: route.isOpen
                           ? colorScheme.primaryContainer
@@ -140,9 +138,7 @@ class _RouteSummaryTile extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      route.status == RouteStatus.open
-                          ? 'Aberta'
-                          : 'Fechada',
+                      route.status == RouteStatus.open ? 'Aberta' : 'Fechada',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -172,10 +168,7 @@ class _RouteSummaryTile extends ConsumerWidget {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(
                     'Sem entregas',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.outline,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
                   ),
                 );
               }
@@ -206,8 +199,8 @@ class _RouteSummaryTile extends ConsumerWidget {
                                     ? 0
                                     : completed / deliveries.length,
                                 minHeight: 4,
-                                backgroundColor: colorScheme
-                                    .surfaceContainerHighest,
+                                backgroundColor:
+                                    colorScheme.surfaceContainerHighest,
                               ),
                             ),
                           ),
@@ -278,8 +271,7 @@ class _DeliveryRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       color: done ? colorScheme.outline : null,
-                      decoration:
-                          done ? TextDecoration.lineThrough : null,
+                      decoration: done ? TextDecoration.lineThrough : null,
                     ),
                   ),
                   if (delivery.pizzaNumber != null &&

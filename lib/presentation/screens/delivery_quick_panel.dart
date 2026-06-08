@@ -8,6 +8,19 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+const _drinkOptions = [
+  'Coca 1L',
+  'Coca 1,5L',
+  'Coca 2L',
+  'Coca Zero 1L',
+  'Coca Zero 2L',
+  'Fanta Laranja 1L',
+  'Fanta Laranja 2L',
+  'Sprite 1L',
+  'Guaraná 1L',
+  'Outros',
+];
+
 /// Bottom sheet panel shown when a driver taps a delivery.
 class DeliveryQuickPanel extends ConsumerStatefulWidget {
   final Delivery delivery;
@@ -28,10 +41,15 @@ class DeliveryQuickPanel extends ConsumerStatefulWidget {
 class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
   bool _completing = false;
   bool _editing = false;
+  late final WakeLockController _wakeLock;
   late TextEditingController _pizzaEditCtrl;
   late TextEditingController _addrEditCtrl;
   late TextEditingController _houseEditCtrl;
+  late TextEditingController _complementEditCtrl;
+  late TextEditingController _neighborhoodEditCtrl;
   late TextEditingController _locatorEditCtrl;
+  late bool _hasDrinksEdit;
+  String? _drinkTypeEdit;
 
   String? get _locator => widget.delivery.deliveryIdentifier?.isNotEmpty == true
       ? widget.delivery.deliveryIdentifier
@@ -40,7 +58,8 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
   @override
   void initState() {
     super.initState();
-    ref.read(wakeLockControllerProvider.notifier).acquire();
+    _wakeLock = ref.read(wakeLockControllerProvider.notifier);
+    _wakeLock.acquire();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref
@@ -51,17 +70,21 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
     _pizzaEditCtrl = TextEditingController(text: d.pizzaNumber ?? '');
     _addrEditCtrl = TextEditingController(text: d.addressText);
     _houseEditCtrl = TextEditingController(text: d.houseNumber ?? '');
-    _locatorEditCtrl = TextEditingController(
-      text: d.deliveryIdentifier ?? '',
-    );
+    _complementEditCtrl = TextEditingController(text: d.complement ?? '');
+    _neighborhoodEditCtrl = TextEditingController(text: d.neighborhood ?? '');
+    _hasDrinksEdit = d.hasDrinks;
+    _drinkTypeEdit = d.drinkType;
+    _locatorEditCtrl = TextEditingController(text: d.deliveryIdentifier ?? '');
   }
 
   @override
   void dispose() {
-    ref.read(wakeLockControllerProvider.notifier).release();
+    _wakeLock.release();
     _pizzaEditCtrl.dispose();
     _addrEditCtrl.dispose();
     _houseEditCtrl.dispose();
+    _complementEditCtrl.dispose();
+    _neighborhoodEditCtrl.dispose();
     _locatorEditCtrl.dispose();
     super.dispose();
   }
@@ -165,17 +188,25 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
     final pizza = _pizzaEditCtrl.text.trim();
     final addr = _addrEditCtrl.text.trim();
     final house = _houseEditCtrl.text.trim();
+    final complement = _complementEditCtrl.text.trim();
+    final neighborhood = _neighborhoodEditCtrl.text.trim();
     final locator = _locatorEditCtrl.text.trim();
 
     final hasPizzaChange = pizza != (widget.delivery.pizzaNumber ?? '');
-    await ref.read(deliveryNotifierProvider.notifier).updateFields(
-      id: widget.delivery.id,
-      routeId: widget.routeId,
-      addressText: addr.isEmpty ? null : addr,
-      houseNumber: house.isEmpty ? null : house,
-      pizzaNumber: pizza.isEmpty ? null : pizza,
-      deliveryIdentifier: locator.isEmpty ? null : locator,
-    );
+    await ref
+        .read(deliveryNotifierProvider.notifier)
+        .updateFields(
+          id: widget.delivery.id,
+          routeId: widget.routeId,
+          addressText: addr.isEmpty ? null : addr,
+          houseNumber: house,
+          complement: complement,
+          neighborhood: neighborhood,
+          pizzaNumber: pizza,
+          deliveryIdentifier: locator,
+          hasDrinks: _hasDrinksEdit,
+          drinkType: _hasDrinksEdit ? (_drinkTypeEdit ?? '') : '',
+        );
     if (hasPizzaChange && pizza.isNotEmpty) {
       AppLogger.log(
         LogEvents.pizzaNumberUpdated,
@@ -279,10 +310,7 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                   ),
                   child: Row(
                     children: [
-                      Text(
-                        '🍕',
-                        style: const TextStyle(fontSize: 24),
-                      ),
+                      Text('🍕', style: const TextStyle(fontSize: 24)),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,8 +320,9 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                             style: TextStyle(
                               fontSize: 10,
                               letterSpacing: 1.2,
-                              color: colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.7),
+                              color: colorScheme.onPrimaryContainer.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                           Text(
@@ -351,8 +380,9 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                               style: TextStyle(
                                 fontSize: 10,
                                 letterSpacing: 1.2,
-                                color: colorScheme.onInverseSurface
-                                    .withValues(alpha: 0.65),
+                                color: colorScheme.onInverseSurface.withValues(
+                                  alpha: 0.65,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -402,7 +432,7 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      d.fullAddress,
+                      '📍 ${d.addressText}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -410,6 +440,27 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                   ),
                 ],
               ),
+              if (d.houseNumber != null && d.houseNumber!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(left: 36),
+                  child: Text('🏠 ${d.houseNumber}'),
+                ),
+              ],
+              if (d.complement != null && d.complement!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(left: 36),
+                  child: Text('📝 ${d.complement}'),
+                ),
+              ],
+              if (d.drinkLabel != null) ...[
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(left: 36),
+                  child: Text('🥤 ${d.drinkLabel}'),
+                ),
+              ],
               if (d.customerName != null) ...[
                 const SizedBox(height: 4),
                 Padding(
@@ -430,10 +481,10 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    if (d.hasDrinks)
+                    if (d.drinkLabel != null)
                       _Flag(
                         Icons.local_drink_outlined,
-                        'Bebidas',
+                        d.drinkLabel!,
                         colorScheme.secondaryContainer,
                         colorScheme.onSecondaryContainer,
                       ),
@@ -560,9 +611,9 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
               // ── Edit mode ─────────────────────────────────────────────
               Text(
                 'Editar Entrega ${d.sequenceNumber}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -602,6 +653,53 @@ class _DeliveryQuickPanelState extends ConsumerState<DeliveryQuickPanel> {
                 ],
               ),
               const SizedBox(height: 10),
+              TextField(
+                controller: _complementEditCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Complemento',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _neighborhoodEditCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Bairro',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 10),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Tem refrigerante'),
+                value: _hasDrinksEdit,
+                onChanged: (value) => setState(() {
+                  _hasDrinksEdit = value;
+                  if (!value) _drinkTypeEdit = null;
+                }),
+              ),
+              if (_hasDrinksEdit) ...[
+                DropdownButtonFormField<String>(
+                  initialValue: _drinkTypeEdit?.isEmpty == true
+                      ? null
+                      : _drinkTypeEdit,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de refrigerante',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: _drinkOptions
+                      .map(
+                        (value) =>
+                            DropdownMenuItem(value: value, child: Text(value)),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() => _drinkTypeEdit = value),
+                ),
+                const SizedBox(height: 10),
+              ],
               TextField(
                 controller: _locatorEditCtrl,
                 decoration: const InputDecoration(

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DeliveryCardScreen extends ConsumerStatefulWidget {
   final int shiftId;
@@ -53,18 +54,14 @@ class _DeliveryCardScreenState extends ConsumerState<DeliveryCardScreen> {
     context.pop();
   }
 
-  void _openIfood(Delivery delivery) {
+  Future<void> _openIfood(Delivery delivery) async {
     final locator = delivery.deliveryIdentifier;
     if (locator != null && locator.isNotEmpty) {
+      await Clipboard.setData(ClipboardData(text: locator));
       AppLogger.log(
-        LogEvents.locatorRequestSent,
+        LogEvents.ifoodLocatorClipboardCopy,
         module: 'DeliveryCardScreen',
-        metadata: {
-          'value': locator,
-          'length': locator.length,
-          'delivery_id': delivery.id,
-          'stage': 'open_ifood',
-        },
+        metadata: {'code': locator, 'delivery_id': delivery.id},
       );
     }
     AppLogger.log(
@@ -72,14 +69,11 @@ class _DeliveryCardScreenState extends ConsumerState<DeliveryCardScreen> {
       module: 'DeliveryCardScreen',
       metadata: {'delivery_id': delivery.id},
     );
-    context.push(
-      '/shift/${widget.shiftId}/route/${widget.routeId}'
-      '/delivery/${widget.deliveryId}/ifood',
-      extra: {
-        'deliveryIdentifier': delivery.deliveryIdentifier,
-        'partnerCollectionCode': null,
-      },
-    );
+    const ifoodUrl = 'https://confirmacao-entrega-propria.ifood.com.br/';
+    final uri = Uri.parse(ifoodUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -213,11 +207,33 @@ class _DeliveryCardContent extends StatelessWidget {
                       ),
                     ),
                   Text(
-                    delivery.fullAddress,
+                    '📍 ${delivery.addressText}',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  if (delivery.houseNumber != null &&
+                      delivery.houseNumber!.isNotEmpty)
+                    Text(
+                      '🏠 ${delivery.houseNumber}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  if (delivery.complement != null &&
+                      delivery.complement!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '📝 ${delivery.complement}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
+                  if (delivery.drinkLabel != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '🥤 ${delivery.drinkLabel}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
                   const SizedBox(height: 12),
 
                   if (delivery.customerName != null) ...[
@@ -398,8 +414,8 @@ class _WarningsBanner extends StatelessWidget {
             ),
           if (delivery.needsIfoodConfirmation && confirmed)
             _BannerItem(icon: '✅', label: 'iFood confirmado'),
-          if (delivery.hasDrinks)
-            _BannerItem(icon: '🥤', label: 'Bebidas incluídas'),
+          if (delivery.drinkLabel != null)
+            _BannerItem(icon: '🥤', label: delivery.drinkLabel!),
           if (delivery.needsCard)
             _BannerItem(icon: '💳', label: 'Maquininha necessária'),
           if (delivery.needsChange)

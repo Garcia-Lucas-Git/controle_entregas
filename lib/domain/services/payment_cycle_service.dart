@@ -73,10 +73,18 @@ abstract final class PaymentCycleService {
   static PaymentCycleSummary buildSummary(List<Shift> shifts, DateTime today) {
     final closed = shifts.where((s) => s.status == ShiftStatus.closed);
     final todayShifts = closed.where((s) => isSameDay(s.startedAt, today));
-    final weekShifts = closed.where((s) => isSameWeek(s.startedAt, today)).toList();
+    final weekShifts = closed
+        .where((s) => isSameWeek(s.startedAt, today))
+        .toList();
 
-    final weekEarnings = weekShifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
-    final weekFuel = weekShifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
+    final weekEarnings = weekShifts.fold(
+      0,
+      (sum, s) => sum + s.totalEarnings.cents,
+    );
+    final weekFuel = weekShifts.fold(
+      0,
+      (sum, s) => sum + (s.fuelExpenseCents ?? 0),
+    );
 
     return PaymentCycleSummary(
       earningsToday: Money(

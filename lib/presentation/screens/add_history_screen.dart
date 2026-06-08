@@ -41,9 +41,7 @@ class _AddHistoryScreenState extends ConsumerState<AddHistoryScreen> {
     _deliveriesCtrl = TextEditingController(
       text: e != null ? '$deliveries' : '',
     );
-    _r8Ctrl = TextEditingController(
-      text: e != null ? '$deliveries' : '',
-    );
+    _r8Ctrl = TextEditingController(text: e != null ? '$deliveries' : '');
     _r10Ctrl = TextEditingController(text: e != null ? '0' : '');
     _earningsCtrl = TextEditingController(
       text: e != null ? (e.totalEarnings.cents / 100).toStringAsFixed(2) : '',

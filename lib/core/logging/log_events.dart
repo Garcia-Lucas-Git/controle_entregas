@@ -90,7 +90,8 @@ abstract final class LogEvents {
   static const periodReport = 'REPORT';
 
   // ── Google Maps ───────────────────────────────────────────────────────────
-  static const mapsFinalDestinationDialogOpened = 'MAPS_FINAL_DESTINATION_DIALOG_OPENED';
+  static const mapsFinalDestinationDialogOpened =
+      'MAPS_FINAL_DESTINATION_DIALOG_OPENED';
   static const mapsFinalDestinationSelected = 'MAPS_FINAL_DESTINATION_SELECTED';
   static const mapsFinalDestinationAppended = 'MAPS_FINAL_DESTINATION_APPENDED';
   static const mapsOpenStart = 'MAPS_OPEN_START';
@@ -252,6 +253,16 @@ abstract final class LogEvents {
   static const shiftReviewOpened = 'SHIFT_REVIEW_OPENED';
   static const shiftReviewCompleted = 'SHIFT_REVIEW_COMPLETED';
   static const paymentTextIgnoredFromOcr = 'PAYMENT_TEXT_IGNORED_FROM_OCR';
+
+  // ── Operational flow ─────────────────────────────────────────────────────
+  static const routeCreated = 'ROUTE_CREATED';
+  static const routeClosed = 'ROUTE_CLOSED';
+  static const routeReviewOpened = 'ROUTE_REVIEW_OPENED';
+  static const routeReviewApproved = 'ROUTE_REVIEW_APPROVED';
+  static const ocrResultAddedToRoute = 'OCR_RESULT_ADDED_TO_ROUTE';
+  static const deliveryCreated = 'DELIVERY_CREATED';
+  static const shiftTotalsRecalculated = 'SHIFT_TOTALS_RECALCULATED';
+  static const reportGenerated = 'REPORT_GENERATED';
 
   // ── OCR history edit ──────────────────────────────────────────────────────
   static const ocrHistoryEditOpened = 'OCR_HISTORY_EDIT_OPENED';

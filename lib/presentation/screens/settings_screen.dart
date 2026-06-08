@@ -149,7 +149,8 @@ class _SettingsFormState extends ConsumerState<_SettingsForm> {
           label: 'Meta Diária (R\$)',
           controller: _dailyGoalCtrl,
           inputType: TextInputType.number,
-          helperText: 'Padrão: R\$ 120. Exibida como barra de progresso no turno.',
+          helperText:
+              'Padrão: R\$ 120. Exibida como barra de progresso no turno.',
           formatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d]'))],
         ),
         const SizedBox(height: 12),

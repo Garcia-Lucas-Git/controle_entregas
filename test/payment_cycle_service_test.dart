@@ -37,11 +37,14 @@ void main() {
       expect(PaymentCycleService.weekEnd(sunday), equals(sunday));
     });
 
-    test('virada de mês: domingo 31/05 pertence à semana que começa em 25/05', () {
-      final sunday = DateTime(2026, 5, 31);
-      final expectedMonday = DateTime(2026, 5, 25);
-      expect(PaymentCycleService.weekStart(sunday), equals(expectedMonday));
-    });
+    test(
+      'virada de mês: domingo 31/05 pertence à semana que começa em 25/05',
+      () {
+        final sunday = DateTime(2026, 5, 31);
+        final expectedMonday = DateTime(2026, 5, 25);
+        expect(PaymentCycleService.weekStart(sunday), equals(expectedMonday));
+      },
+    );
   });
 
   group('PaymentCycleService — isSameWeek', () {
@@ -88,14 +91,17 @@ void main() {
   });
 
   group('PaymentCycleService — nextPaymentDate', () {
-    test('de uma quinta-feira o próximo pagamento é a quarta da semana seguinte', () {
-      final thursday = DateTime(2026, 6, 4); // qui 04/06
-      // Semana: seg 01/06 → dom 07/06 → pagamento: qua 10/06
-      expect(
-        PaymentCycleService.nextPaymentDate(thursday),
-        equals(DateTime(2026, 6, 10)),
-      );
-    });
+    test(
+      'de uma quinta-feira o próximo pagamento é a quarta da semana seguinte',
+      () {
+        final thursday = DateTime(2026, 6, 4); // qui 04/06
+        // Semana: seg 01/06 → dom 07/06 → pagamento: qua 10/06
+        expect(
+          PaymentCycleService.nextPaymentDate(thursday),
+          equals(DateTime(2026, 6, 10)),
+        );
+      },
+    );
 
     test('cálculo da próxima quarta a partir de uma segunda-feira', () {
       final monday = DateTime(2026, 6, 8); // seg 08/06
@@ -113,7 +119,11 @@ void main() {
       final shifts = [
         _shift(DateTime(2026, 6, 4), earningsCents: 800, deliveries: 1),
         _shift(DateTime(2026, 6, 3), earningsCents: 1600, deliveries: 2),
-        _shift(DateTime(2026, 5, 28), earningsCents: 800, deliveries: 1), // outra semana
+        _shift(
+          DateTime(2026, 5, 28),
+          earningsCents: 800,
+          deliveries: 1,
+        ), // outra semana
       ];
       final summary = PaymentCycleService.buildSummary(shifts, today);
       expect(summary.earningsToday.cents, equals(800));
@@ -130,27 +140,30 @@ void main() {
   });
 
   group('PaymentCycleService — buildHistory', () {
-    test('agrupa turnos por semana e ordena do mais recente para o mais antigo', () {
-      final shifts = [
-        // Semana seg 01/06 → dom 07/06
-        _shift(DateTime(2026, 6, 1), earningsCents: 3200, deliveries: 4),
-        // Semana seg 25/05 → dom 31/05
-        _shift(DateTime(2026, 5, 27), earningsCents: 1600, deliveries: 2),
-        _shift(DateTime(2026, 5, 28), earningsCents: 800, deliveries: 1),
-      ];
-      final history = PaymentCycleService.buildHistory(shifts);
-      expect(history.length, equals(2));
-      // Mais recente: semana 01/06→07/06
-      expect(history.first.weekStart, equals(DateTime(2026, 6, 1)));
-      expect(history.first.totalEarnings.cents, equals(3200));
-      expect(history.first.deliveryCount, equals(4));
-      expect(history.first.paymentDate, equals(DateTime(2026, 6, 10)));
-      // Mais antigo: semana 25/05→31/05
-      expect(history.last.weekStart, equals(DateTime(2026, 5, 25)));
-      expect(history.last.totalEarnings.cents, equals(2400)); // 1600 + 800
-      expect(history.last.deliveryCount, equals(3));
-      expect(history.last.paymentDate, equals(DateTime(2026, 6, 3)));
-    });
+    test(
+      'agrupa turnos por semana e ordena do mais recente para o mais antigo',
+      () {
+        final shifts = [
+          // Semana seg 01/06 → dom 07/06
+          _shift(DateTime(2026, 6, 1), earningsCents: 3200, deliveries: 4),
+          // Semana seg 25/05 → dom 31/05
+          _shift(DateTime(2026, 5, 27), earningsCents: 1600, deliveries: 2),
+          _shift(DateTime(2026, 5, 28), earningsCents: 800, deliveries: 1),
+        ];
+        final history = PaymentCycleService.buildHistory(shifts);
+        expect(history.length, equals(2));
+        // Mais recente: semana 01/06→07/06
+        expect(history.first.weekStart, equals(DateTime(2026, 6, 1)));
+        expect(history.first.totalEarnings.cents, equals(3200));
+        expect(history.first.deliveryCount, equals(4));
+        expect(history.first.paymentDate, equals(DateTime(2026, 6, 10)));
+        // Mais antigo: semana 25/05→31/05
+        expect(history.last.weekStart, equals(DateTime(2026, 5, 25)));
+        expect(history.last.totalEarnings.cents, equals(2400)); // 1600 + 800
+        expect(history.last.deliveryCount, equals(3));
+        expect(history.last.paymentDate, equals(DateTime(2026, 6, 3)));
+      },
+    );
 
     test('ignora turnos abertos', () {
       final open = Shift(

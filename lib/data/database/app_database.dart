@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -105,6 +105,20 @@ class AppDatabase extends _$AppDatabase {
             deliveriesTable.houseNumber as GeneratedColumn<Object>,
           );
         }
+        if (from < 7) {
+          await m.addColumn(
+            deliveriesTable,
+            deliveriesTable.complement as GeneratedColumn<Object>,
+          );
+          await m.addColumn(
+            deliveriesTable,
+            deliveriesTable.neighborhood as GeneratedColumn<Object>,
+          );
+          await m.addColumn(
+            deliveriesTable,
+            deliveriesTable.drinkType as GeneratedColumn<Object>,
+          );
+        }
         AppLogger.info(
           LogEvents.dbMigrationSuccess,
           module: 'AppDatabase',
@@ -158,6 +172,9 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'deliveryflow.db'));
-    return NativeDatabase.createInBackground(file);
+    return NativeDatabase.createInBackground(
+      file,
+      setup: (db) => db.execute('PRAGMA foreign_keys = ON'),
+    );
   });
 }

@@ -31,6 +31,9 @@ class Delivery {
 
   // Operational fields
   final String? pizzaNumber;
+  final String? complement;
+  final String? neighborhood;
+  final String? drinkType;
 
   const Delivery({
     required this.id,
@@ -57,13 +60,26 @@ class Delivery {
     this.needsChange = false,
     this.changeAmountCents,
     this.pizzaNumber,
+    this.complement,
+    this.neighborhood,
+    this.drinkType,
   });
 
   bool get isCompleted => status == DeliveryStatus.completed;
   bool get isPending => status == DeliveryStatus.pending;
 
-  String get fullAddress =>
-      houseNumber != null && houseNumber!.isNotEmpty
-          ? '$addressText, $houseNumber'
-          : addressText;
+  String get fullAddress {
+    if (houseNumber == null || houseNumber!.isEmpty) return addressText;
+    final num = houseNumber!.trim();
+    // Prevent duplication when addressText already ends with the house number.
+    if (addressText.endsWith(', $num') || addressText.endsWith(' $num')) {
+      return addressText;
+    }
+    return '$addressText, $num';
+  }
+
+  String? get drinkLabel {
+    if (drinkType != null && drinkType!.trim().isNotEmpty) return drinkType;
+    return hasDrinks ? 'Refrigerante' : null;
+  }
 }

@@ -1,3 +1,4 @@
+import 'package:controle_entregas/application/earnings/earnings_notifier.dart';
 import 'package:controle_entregas/application/shifts/shift_notifier.dart';
 import 'package:controle_entregas/core/providers/database_provider.dart';
 import 'package:controle_entregas/domain/entities/delivery.dart';
@@ -35,6 +36,8 @@ class DeliveryNotifier extends _$DeliveryNotifier {
         sequenceNumber: sequenceNumber,
         addressText: ocr.addressText ?? '',
         houseNumber: ocr.houseNumber,
+        complement: ocr.complement,
+        neighborhood: ocr.neighborhood,
         customerName: ocr.customerName,
         orderNumber: ocr.orderNumber,
         ocrRawText: ocr.rawText,
@@ -42,6 +45,7 @@ class DeliveryNotifier extends _$DeliveryNotifier {
         deliveryIdentifier: ocr.deliveryIdentifier,
         partnerCollectionCode: ocr.partnerCollectionCode,
         hasDrinks: ocr.hasDrinks,
+        drinkType: ocr.drinkType,
         needsCard: ocr.needsCard,
         needsChange: ocr.needsChange,
         changeAmountCents: ocr.changeAmountCents,
@@ -54,11 +58,15 @@ class DeliveryNotifier extends _$DeliveryNotifier {
     required int sequenceNumber,
     required String addressText,
     String? houseNumber,
+    String? complement,
+    String? neighborhood,
     String? customerName,
     String? orderNumber,
     String? deliveryIdentifier,
     String? partnerCollectionCode,
     String? pizzaNumber,
+    bool hasDrinks = false,
+    String? drinkType,
   }) => ref
       .read(deliveryRepositoryProvider)
       .createDelivery(
@@ -67,39 +75,74 @@ class DeliveryNotifier extends _$DeliveryNotifier {
         sequenceNumber: sequenceNumber,
         addressText: addressText,
         houseNumber: houseNumber,
+        complement: complement,
+        neighborhood: neighborhood,
         customerName: customerName,
         orderNumber: orderNumber,
         deliveryIdentifier: deliveryIdentifier,
         partnerCollectionCode: partnerCollectionCode,
         pizzaNumber: pizzaNumber,
+        hasDrinks: hasDrinks,
+        drinkType: drinkType,
       );
+
+  Future<int> nextSequenceForRoute(int routeId) =>
+      ref.read(deliveryRepositoryProvider).nextSequenceForRoute(routeId);
+
+  Future<void> reorderRouteDeliveries({
+    required int routeId,
+    required List<Delivery> deliveries,
+  }) async {
+    await ref.read(deliveryRepositoryProvider).updateRouteOrder(deliveries);
+    ref.invalidate(deliveriesForRouteProvider(routeId));
+  }
 
   Future<void> updateFields({
     required int id,
     String? customerName,
     String? addressText,
     String? houseNumber,
+    String? complement,
+    String? neighborhood,
     String? orderNumber,
     String? deliveryIdentifier,
     String? pizzaNumber,
     bool? needsIfoodConfirmation,
     bool? hasDrinks,
+    String? drinkType,
     bool? needsCard,
     bool? needsChange,
     required int routeId,
   }) async {
-    await ref.read(deliveryRepositoryProvider).updateDeliveryFields(
-      id: id,
-      customerName: customerName,
-      addressText: addressText,
-      houseNumber: houseNumber,
-      orderNumber: orderNumber,
-      deliveryIdentifier: deliveryIdentifier,
-      pizzaNumber: pizzaNumber,
-      needsIfoodConfirmation: needsIfoodConfirmation,
-      hasDrinks: hasDrinks,
-      needsCard: needsCard,
-      needsChange: needsChange,
+    await ref
+        .read(deliveryRepositoryProvider)
+        .updateDeliveryFields(
+          id: id,
+          customerName: customerName,
+          addressText: addressText,
+          houseNumber: houseNumber,
+          complement: complement,
+          neighborhood: neighborhood,
+          orderNumber: orderNumber,
+          deliveryIdentifier: deliveryIdentifier,
+          pizzaNumber: pizzaNumber,
+          needsIfoodConfirmation: needsIfoodConfirmation,
+          hasDrinks: hasDrinks,
+          drinkType: drinkType,
+          needsCard: needsCard,
+          needsChange: needsChange,
+        );
+    AppLogger.log(
+      LogEvents.deliveryUpdated,
+      module: 'DeliveryNotifier',
+      metadata: {
+        'delivery_id': id,
+        'route_id': routeId,
+        'address': addressText,
+        'house_number': houseNumber,
+        'pizza_number': pizzaNumber,
+        'locator': deliveryIdentifier,
+      },
     );
     ref.invalidate(deliveriesForRouteProvider(routeId));
     ref.invalidate(deliveryByIdProvider(id));
@@ -128,18 +171,63 @@ class DeliveryNotifier extends _$DeliveryNotifier {
   }
 
   Future<void> _recalculateShiftTotals(int shiftId, {int? routeId}) async {
-    // Decrement the route's earnings entry if the route had one (closed route).
-    if (routeId != null) {
-      await ref
-          .read(earningsRepositoryProvider)
-          .decrementRouteDelivery(routeId);
+    final totals = await _syncShiftTotalsFromLiveRoutes(shiftId);
+    AppLogger.log(
+      LogEvents.historyTotalsRecalculated,
+      module: 'DeliveryNotifier',
+      metadata: {
+        'shift_id': shiftId,
+        'route_id': routeId,
+        'new_total_cents': totals.totalCents,
+        'new_delivery_count': totals.deliveryCount,
+      },
+    );
+    AppLogger.log(
+      LogEvents.shiftTotalsRecalculated,
+      module: 'DeliveryNotifier',
+      metadata: {
+        'shift_id': shiftId,
+        'delivery_count': totals.deliveryCount,
+        'total_cents': totals.totalCents,
+      },
+    );
+    ref.invalidate(allShiftsProvider);
+    ref.invalidate(shiftReportDataProvider(shiftId));
+  }
+
+  Future<({int totalCents, int deliveryCount})> _syncShiftTotalsFromLiveRoutes(
+    int shiftId,
+  ) async {
+    final routes = await ref
+        .read(routeRepositoryProvider)
+        .getRoutesForShift(shiftId);
+    final closedRoutes = routes.where((r) => r.isClosed).toList();
+    final earningsRepo = ref.read(earningsRepositoryProvider);
+
+    for (final route in closedRoutes) {
+      final deliveries = await ref
+          .read(deliveryRepositoryProvider)
+          .getDeliveriesForRoute(route.id);
+      final completed = deliveries.where((d) => d.isCompleted).toList();
+      await earningsRepo.syncRouteEntry(
+        routeId: route.id,
+        shiftId: shiftId,
+        completedDeliveries: completed,
+      );
     }
-    // Re-sum all remaining earnings entries and update the shift record.
-    final entries = await ref
-        .read(earningsRepositoryProvider)
-        .getEntriesForShift(shiftId);
-    final newTotal = entries.fold(0, (s, e) => s + e.routeTotal.cents);
-    final newCount = entries.fold(0, (s, e) => s + e.routeDeliveryCount);
+
+    final closedRouteIds = closedRoutes.map((r) => r.id).toSet();
+    final entries = await earningsRepo.getEntriesForShift(shiftId);
+    for (final entry in entries.where(
+      (e) => !closedRouteIds.contains(e.routeId),
+    )) {
+      await earningsRepo.deleteEntryForRoute(entry.routeId);
+    }
+    final liveEntries = entries.where(
+      (e) => closedRouteIds.contains(e.routeId),
+    );
+    final newTotal = liveEntries.fold(0, (s, e) => s + e.routeTotal.cents);
+    final newCount = liveEntries.fold(0, (s, e) => s + e.routeDeliveryCount);
     await ref
         .read(shiftRepositoryProvider)
         .updateTotals(
@@ -147,15 +235,6 @@ class DeliveryNotifier extends _$DeliveryNotifier {
           totalEarningsCents: newTotal,
           deliveryCount: newCount,
         );
-    AppLogger.log(
-      LogEvents.historyTotalsRecalculated,
-      module: 'DeliveryNotifier',
-      metadata: {
-        'shift_id': shiftId,
-        'new_total_cents': newTotal,
-        'new_delivery_count': newCount,
-      },
-    );
-    ref.invalidate(allShiftsProvider);
+    return (totalCents: newTotal, deliveryCount: newCount);
   }
 }

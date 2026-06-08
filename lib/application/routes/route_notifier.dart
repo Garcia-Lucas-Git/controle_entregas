@@ -1,3 +1,4 @@
+import 'package:controle_entregas/application/earnings/earnings_notifier.dart';
 import 'package:controle_entregas/application/shifts/shift_notifier.dart';
 import 'package:controle_entregas/core/providers/database_provider.dart';
 import 'package:controle_entregas/domain/entities/route_entity.dart';
@@ -52,12 +53,68 @@ class RouteNotifier extends _$RouteNotifier {
 
   Future<void> delete(int routeId, {required int shiftId}) async {
     await ref.read(routeRepositoryProvider).deleteRoute(routeId);
-    // CASCADE removes earnings entry; recalculate shift totals from what remains.
-    final entries = await ref
-        .read(earningsRepositoryProvider)
-        .getEntriesForShift(shiftId);
-    final newTotal = entries.fold(0, (s, e) => s + e.routeTotal.cents);
-    final newCount = entries.fold(0, (s, e) => s + e.routeDeliveryCount);
+    // Remove earnings entry explicitly; CASCADE may not fire without PRAGMA foreign_keys = ON.
+    await ref.read(earningsRepositoryProvider).deleteEntryForRoute(routeId);
+    final totals = await _syncShiftTotalsFromLiveRoutes(shiftId);
+
+    AppLogger.log(
+      LogEvents.ocrRouteDeleted,
+      module: 'RouteNotifier',
+      metadata: {
+        'route_id': routeId,
+        'shift_id': shiftId,
+        'new_total_cents': totals.totalCents,
+        'new_delivery_count': totals.deliveryCount,
+      },
+    );
+    AppLogger.log(
+      LogEvents.shiftTotalsRecalculated,
+      module: 'RouteNotifier',
+      metadata: {
+        'shift_id': shiftId,
+        'delivery_count': totals.deliveryCount,
+        'total_cents': totals.totalCents,
+      },
+    );
+    ref.invalidate(routesForShiftProvider(shiftId));
+    ref.invalidate(routeByIdProvider(routeId));
+    ref.invalidate(allShiftsProvider);
+    ref.invalidate(shiftReportDataProvider(shiftId));
+  }
+
+  Future<({int totalCents, int deliveryCount})> _syncShiftTotalsFromLiveRoutes(
+    int shiftId,
+  ) async {
+    final routes = await ref
+        .read(routeRepositoryProvider)
+        .getRoutesForShift(shiftId);
+    final closedRoutes = routes.where((r) => r.isClosed).toList();
+    final earningsRepo = ref.read(earningsRepositoryProvider);
+
+    for (final route in closedRoutes) {
+      final deliveries = await ref
+          .read(deliveryRepositoryProvider)
+          .getDeliveriesForRoute(route.id);
+      final completed = deliveries.where((d) => d.isCompleted).toList();
+      await earningsRepo.syncRouteEntry(
+        routeId: route.id,
+        shiftId: shiftId,
+        completedDeliveries: completed,
+      );
+    }
+
+    final closedRouteIds = closedRoutes.map((r) => r.id).toSet();
+    final entries = await earningsRepo.getEntriesForShift(shiftId);
+    for (final entry in entries.where(
+      (e) => !closedRouteIds.contains(e.routeId),
+    )) {
+      await earningsRepo.deleteEntryForRoute(entry.routeId);
+    }
+    final liveEntries = entries.where(
+      (e) => closedRouteIds.contains(e.routeId),
+    );
+    final newTotal = liveEntries.fold(0, (s, e) => s + e.routeTotal.cents);
+    final newCount = liveEntries.fold(0, (s, e) => s + e.routeDeliveryCount);
     await ref
         .read(shiftRepositoryProvider)
         .updateTotals(
@@ -65,18 +122,6 @@ class RouteNotifier extends _$RouteNotifier {
           totalEarningsCents: newTotal,
           deliveryCount: newCount,
         );
-    AppLogger.log(
-      LogEvents.ocrRouteDeleted,
-      module: 'RouteNotifier',
-      metadata: {
-        'route_id': routeId,
-        'shift_id': shiftId,
-        'new_total_cents': newTotal,
-        'new_delivery_count': newCount,
-      },
-    );
-    ref.invalidate(routesForShiftProvider(shiftId));
-    ref.invalidate(routeByIdProvider(routeId));
-    ref.invalidate(allShiftsProvider);
+    return (totalCents: newTotal, deliveryCount: newCount);
   }
 }

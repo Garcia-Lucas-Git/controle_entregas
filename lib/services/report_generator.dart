@@ -3,6 +3,7 @@ import 'package:controle_entregas/domain/entities/route_entity.dart';
 import 'package:controle_entregas/domain/entities/shift.dart';
 import 'package:controle_entregas/domain/enums/earnings_type.dart';
 import 'package:controle_entregas/domain/value_objects/money.dart';
+import 'package:controle_entregas/services/app_logger.dart';
 import 'package:intl/intl.dart';
 
 String _fmt2(int cents) => 'R\$ ${(cents / 100).toStringAsFixed(2)}';
@@ -10,8 +11,13 @@ String _fmt2(int cents) => 'R\$ ${(cents / 100).toStringAsFixed(2)}';
 class ShiftReportData {
   final Shift shift;
   final List<RouteWithEarnings> routes;
+  final Map<int, List<String>> routeNeighborhoods;
 
-  const ShiftReportData({required this.shift, required this.routes});
+  const ShiftReportData({
+    required this.shift,
+    required this.routes,
+    this.routeNeighborhoods = const {},
+  });
 
   int get totalDeliveries =>
       routes.fold(0, (sum, r) => sum + r.entry.routeDeliveryCount);
@@ -46,55 +52,32 @@ abstract final class ReportGenerator {
     sb.writeln('Motorista: ${data.shift.driverName}');
     sb.writeln('Data: $date');
     sb.writeln('');
-    sb.writeln('─────────────────────────────────');
-    sb.writeln('RESUMO');
-    sb.writeln('─────────────────────────────────');
     sb.writeln('Total de entregas: ${data.totalDeliveries}');
-
-    if (data.normalCount > 0) {
-      sb.writeln('Entregas normais (R\$ 8,00): ${data.normalCount} × R\$ 8,00');
-    }
-    if (data.longCount > 0) {
-      sb.writeln(
-        'Entregas longa distância (R\$ 10,00): ${data.longCount} × R\$ 10,00',
-      );
-    }
-
     sb.writeln('');
-    sb.writeln('Ganhos estimados: ${data.totalEarnings.format()}');
-    final fuelCents = data.shift.fuelExpenseCents;
-    if (fuelCents != null && fuelCents > 0) {
-      sb.writeln('Combustível: ${_fmt2(fuelCents)}');
-      sb.writeln('Líquido: ${_fmt2(data.totalEarnings.cents - fuelCents)}');
-    }
-    sb.writeln('');
-    sb.writeln('─────────────────────────────────');
-    sb.writeln('DETALHAMENTO POR ROTA');
-    sb.writeln('─────────────────────────────────');
 
     for (final rwe in data.routes) {
-      final r = rwe.route;
-      final e = rwe.entry;
+      final neighborhoods = data.routeNeighborhoods[rwe.route.id] ?? const [];
+      final label = neighborhoods.isEmpty
+          ? 'Bairro não informado'
+          : neighborhoods.join(' • ');
+      sb.writeln('Rota ${rwe.route.routeNumber}: $label');
       sb.writeln('');
-      sb.writeln('ROTA ${r.routeNumber}');
-      sb.writeln('Entregas: ${e.routeDeliveryCount}');
-      sb.writeln('Classificação: ${_typeLabel(e.earningsType)}');
-      sb.writeln(
-        'Valor: ${e.routeDeliveryCount} × ${e.rateApplied.format()} = ${e.routeTotal.format()}',
-      );
-
-      if (e.routeDistanceKm != null) {
-        sb.writeln(
-          'Distância aprox.: ${e.routeDistanceKm!.toStringAsFixed(1)} km',
-        );
-      }
     }
 
-    sb.writeln('');
-    sb.writeln('─────────────────────────────────');
-    sb.writeln('Gerado pelo DeliveryFlow');
+    sb.writeln('🛵 Gerado pelo DeliveryFlow');
 
-    return sb.toString();
+    final report = sb.toString();
+    AppLogger.log(
+      LogEvents.reportGenerated,
+      module: 'ReportGenerator',
+      metadata: {
+        'shift_id': data.shift.id,
+        'delivery_count': data.totalDeliveries,
+        'total_cents': data.totalEarnings.cents,
+        'format': 'compact',
+      },
+    );
+    return report;
   }
 
   static String generateManual(Shift shift, {int dailyGoalCents = 12000}) {
@@ -115,16 +98,13 @@ abstract final class ReportGenerator {
     if (dailyGoalCents > 0) {
       final pct = (shift.totalEarnings.cents / dailyGoalCents * 100).round();
       final goalStr = 'R\$ ${(dailyGoalCents / 100).toStringAsFixed(0)}';
-      sb.writeln('Meta diária: $pct% (${shift.totalEarnings.format()} / $goalStr)');
+      sb.writeln(
+        'Meta diária: $pct% (${shift.totalEarnings.format()} / $goalStr)',
+      );
     }
     sb.writeln('');
     sb.writeln('─────────────────────────────────');
     sb.writeln('Gerado pelo DeliveryFlow');
     return sb.toString();
   }
-
-  static String _typeLabel(EarningsType type) => switch (type) {
-    EarningsType.longSingleDelivery => 'Longa distância',
-    EarningsType.normal => 'Normal',
-  };
 }

@@ -5,6 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+const _drinkOptions = [
+  'Coca 1L',
+  'Coca 1,5L',
+  'Coca 2L',
+  'Coca Zero 1L',
+  'Coca Zero 2L',
+  'Fanta Laranja 1L',
+  'Fanta Laranja 2L',
+  'Sprite 1L',
+  'Guaraná 1L',
+  'Outros',
+];
+
 class ManualDeliveryScreen extends ConsumerStatefulWidget {
   final int shiftId;
   final int? routeId;
@@ -21,7 +34,11 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
   final _pizzaCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
   final _houseCtrl = TextEditingController();
+  final _complementCtrl = TextEditingController();
+  final _neighborhoodCtrl = TextEditingController();
   final _customerCtrl = TextEditingController();
+  bool _hasDrinks = false;
+  String? _drinkType;
   bool _saving = false;
   String? _locatorError;
   String? _pizzaError;
@@ -32,6 +49,8 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
     _pizzaCtrl.dispose();
     _addressCtrl.dispose();
     _houseCtrl.dispose();
+    _complementCtrl.dispose();
+    _neighborhoodCtrl.dispose();
     _customerCtrl.dispose();
     super.dispose();
   }
@@ -65,26 +84,35 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
 
       final address = _addressCtrl.text.trim();
       final house = _houseCtrl.text.trim();
+      final complement = _complementCtrl.text.trim();
+      final neighborhood = _neighborhoodCtrl.text.trim();
       final customer = _customerCtrl.text.trim();
+      final sequence = await ref
+          .read(deliveryNotifierProvider.notifier)
+          .nextSequenceForRoute(routeId);
 
       final fullAddress = address.isEmpty
           ? '—'
           : house.isNotEmpty
-              ? '$address, $house'
-              : address;
+          ? '$address, $house'
+          : address;
 
       await ref
           .read(deliveryNotifierProvider.notifier)
           .createManual(
             routeId: routeId,
             shiftId: widget.shiftId,
-            sequenceNumber: 1,
+            sequenceNumber: sequence,
             addressText: address.isEmpty ? '—' : address,
             houseNumber: house.isEmpty ? null : house,
+            complement: complement.isEmpty ? null : complement,
+            neighborhood: neighborhood.isEmpty ? null : neighborhood,
             customerName: customer.isEmpty ? null : customer,
             orderNumber: locator,
             deliveryIdentifier: locator,
             pizzaNumber: pizza,
+            hasDrinks: _hasDrinks,
+            drinkType: _hasDrinks ? _drinkType : null,
           );
 
       AppLogger.info(
@@ -209,6 +237,57 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
               ],
             ),
             const SizedBox(height: 16),
+
+            TextField(
+              controller: _complementCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Complemento',
+                border: OutlineInputBorder(),
+                hintText: 'Casa fundo, bloco B, apto 302',
+                prefixIcon: Icon(Icons.notes_outlined),
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _neighborhoodCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Bairro',
+                border: OutlineInputBorder(),
+                hintText: 'Opcional',
+                prefixIcon: Icon(Icons.map_outlined),
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Tem refrigerante'),
+              value: _hasDrinks,
+              onChanged: (value) => setState(() {
+                _hasDrinks = value;
+                if (!value) _drinkType = null;
+              }),
+            ),
+            if (_hasDrinks) ...[
+              DropdownButtonFormField<String>(
+                initialValue: _drinkType,
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de refrigerante',
+                  border: OutlineInputBorder(),
+                ),
+                items: _drinkOptions
+                    .map(
+                      (value) =>
+                          DropdownMenuItem(value: value, child: Text(value)),
+                    )
+                    .toList(),
+                onChanged: (value) => setState(() => _drinkType = value),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Customer — optional
             TextField(

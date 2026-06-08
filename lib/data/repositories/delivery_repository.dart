@@ -39,31 +39,73 @@ class DeliveryRepository {
   Future<int> countCompletedInRoute(int routeId) =>
       _dao.countCompletedInRoute(routeId);
 
+  Future<int> nextSequenceForRoute(int routeId) async {
+    final deliveries = await getDeliveriesForRoute(routeId);
+    if (deliveries.isEmpty) return 1;
+    return deliveries
+            .map((d) => d.sequenceNumber)
+            .reduce((a, b) => a > b ? a : b) +
+        1;
+  }
+
+  Future<void> updateRouteOrder(List<Delivery> deliveries) async {
+    for (var i = 0; i < deliveries.length; i++) {
+      await _dao.updateSequenceNumber(
+        id: deliveries[i].id,
+        sequenceNumber: i + 1,
+      );
+    }
+  }
+
   Future<void> updateDeliveryFields({
     required int id,
     String? customerName,
     String? addressText,
     String? houseNumber,
+    String? complement,
+    String? neighborhood,
     String? orderNumber,
     String? deliveryIdentifier,
     String? pizzaNumber,
     bool? needsIfoodConfirmation,
     bool? hasDrinks,
+    String? drinkType,
     bool? needsCard,
     bool? needsChange,
   }) async {
     await _dao.updateDeliveryFields(
       id: id,
-      customerName: customerName != null ? Value(customerName) : const Value.absent(),
-      addressText: addressText != null ? Value(addressText) : const Value.absent(),
-      houseNumber: houseNumber != null ? Value(houseNumber) : const Value.absent(),
-      orderNumber: orderNumber != null ? Value(orderNumber) : const Value.absent(),
-      deliveryIdentifier: deliveryIdentifier != null ? Value(deliveryIdentifier) : const Value.absent(),
-      pizzaNumber: pizzaNumber != null ? Value(pizzaNumber) : const Value.absent(),
-      needsIfoodConfirmation: needsIfoodConfirmation != null ? Value(needsIfoodConfirmation) : const Value.absent(),
+      customerName: customerName != null
+          ? Value(customerName)
+          : const Value.absent(),
+      addressText: addressText != null
+          ? Value(addressText)
+          : const Value.absent(),
+      houseNumber: houseNumber != null
+          ? Value(houseNumber)
+          : const Value.absent(),
+      complement: complement != null ? Value(complement) : const Value.absent(),
+      neighborhood: neighborhood != null
+          ? Value(neighborhood)
+          : const Value.absent(),
+      orderNumber: orderNumber != null
+          ? Value(orderNumber)
+          : const Value.absent(),
+      deliveryIdentifier: deliveryIdentifier != null
+          ? Value(deliveryIdentifier)
+          : const Value.absent(),
+      pizzaNumber: pizzaNumber != null
+          ? Value(pizzaNumber)
+          : const Value.absent(),
+      needsIfoodConfirmation: needsIfoodConfirmation != null
+          ? Value(needsIfoodConfirmation)
+          : const Value.absent(),
       hasDrinks: hasDrinks != null ? Value(hasDrinks) : const Value.absent(),
+      drinkType: drinkType != null ? Value(drinkType) : const Value.absent(),
       needsCard: needsCard != null ? Value(needsCard) : const Value.absent(),
-      needsChange: needsChange != null ? Value(needsChange) : const Value.absent(),
+      needsChange: needsChange != null
+          ? Value(needsChange)
+          : const Value.absent(),
     );
   }
 
@@ -73,6 +115,8 @@ class DeliveryRepository {
     required int sequenceNumber,
     required String addressText,
     String? houseNumber,
+    String? complement,
+    String? neighborhood,
     String? customerName,
     String? orderNumber,
     int? orderValueCents,
@@ -81,6 +125,7 @@ class DeliveryRepository {
     String? deliveryIdentifier,
     String? partnerCollectionCode,
     bool hasDrinks = false,
+    String? drinkType,
     bool needsCard = false,
     bool needsChange = false,
     int? changeAmountCents,
@@ -97,6 +142,8 @@ class DeliveryRepository {
           status: const Value('pending'),
           addressText: Value(addressText),
           houseNumber: Value(houseNumber),
+          complement: Value(complement),
+          neighborhood: Value(neighborhood),
           customerName: Value(customerName),
           orderNumber: Value(orderNumber),
           orderValueCents: Value(orderValueCents),
@@ -105,6 +152,7 @@ class DeliveryRepository {
           deliveryIdentifier: Value(deliveryIdentifier),
           partnerCollectionCode: Value(partnerCollectionCode),
           hasDrinks: Value(hasDrinks),
+          drinkType: Value(drinkType),
           needsCard: Value(needsCard),
           needsChange: Value(needsChange),
           changeAmountCents: Value(changeAmountCents),
@@ -143,6 +191,19 @@ class DeliveryRepository {
           'needs_ifood': needsIfoodConfirmation,
         },
       );
+      AppLogger.log(
+        LogEvents.deliveryCreated,
+        module: 'DeliveryRepository',
+        metadata: {
+          'delivery_id': id,
+          'route_id': routeId,
+          'shift_id': shiftId,
+          'address': addressText,
+          'house_number': houseNumber,
+          'pizza_number': pizzaNumber,
+          'locator': deliveryIdentifier,
+        },
+      );
       return id;
     } catch (e, st) {
       AppLogger.error(
@@ -178,12 +239,17 @@ class DeliveryRepository {
     );
   }
 
-  Future<void> completeDelivery({required int id, double? distanceKm}) {
+  Future<void> completeDelivery({required int id, double? distanceKm}) async {
     final now = DateTime.now().toUtc().toIso8601String();
-    return _dao.completeDelivery(
+    await _dao.completeDelivery(
       id: id,
       completedAt: now,
       distanceKm: distanceKm,
+    );
+    AppLogger.log(
+      LogEvents.deliveryCompleted,
+      module: 'DeliveryRepository',
+      metadata: {'delivery_id': id, 'distance_km': distanceKm},
     );
   }
 
@@ -208,6 +274,8 @@ class DeliveryRepository {
     customerName: r.customerName,
     addressText: r.addressText,
     houseNumber: r.houseNumber,
+    complement: r.complement,
+    neighborhood: r.neighborhood,
     distanceKm: r.distanceKm,
     orderNumber: r.orderNumber,
     orderValueCents: r.orderValueCents,
@@ -222,6 +290,7 @@ class DeliveryRepository {
         ? DateTime.parse(r.ifoodConfirmedAt!)
         : null,
     hasDrinks: r.hasDrinks,
+    drinkType: r.drinkType,
     needsCard: r.needsCard,
     needsChange: r.needsChange,
     changeAmountCents: r.changeAmountCents,

@@ -93,8 +93,66 @@ class EarningsRepository {
     );
   }
 
+  Future<void> syncRouteEntry({
+    required int routeId,
+    required int shiftId,
+    required List<Delivery> completedDeliveries,
+  }) async {
+    final deliveryCount = completedDeliveries.length;
+    if (deliveryCount == 0) {
+      await _dao.deleteEntryForRoute(routeId);
+      return;
+    }
+
+    final existing = await _dao.getEntryForRoute(routeId);
+    if (existing != null) {
+      await _dao.updateRouteEntry(
+        routeId: routeId,
+        earningsType: existing.earningsType,
+        rateAppliedCents: existing.rateAppliedCents,
+        routeDeliveryCount: deliveryCount,
+        routeDistanceKm: existing.routeDistanceKm,
+        classificationReason: existing.classificationReason,
+        configSnapshot: existing.configSnapshot,
+      );
+      return;
+    }
+
+    final config = await getCurrentConfig();
+    final distanceKm = deliveryCount == 1
+        ? completedDeliveries.first.distanceKm
+        : null;
+    final type = EarningsRules.classify(
+      deliveryCountAtClose: deliveryCount,
+      distanceKm: distanceKm,
+    );
+    final rate = EarningsRules.rateFor(type, config);
+    final reason = _buildReason(
+      type: type,
+      deliveryCount: deliveryCount,
+      distanceKm: distanceKm,
+    );
+    final snapshot = jsonEncode(config.toJson());
+    await _dao.insertEarningsEntry(
+      EarningsEntriesTableCompanion(
+        routeId: Value(routeId),
+        shiftId: Value(shiftId),
+        earningsType: Value(type.toJson()),
+        rateAppliedCents: Value(rate.cents),
+        routeDeliveryCount: Value(deliveryCount),
+        routeDistanceKm: Value(distanceKm),
+        classificationReason: Value(reason),
+        configSnapshot: Value(snapshot),
+        createdAt: Value(DateTime.now().toUtc().toIso8601String()),
+      ),
+    );
+  }
+
   /// Decrements routeDeliveryCount by 1 for the given route's earnings entry.
   /// Deletes the entry when count reaches 0.
+  Future<void> deleteEntryForRoute(int routeId) =>
+      _dao.deleteEntryForRoute(routeId);
+
   Future<void> decrementRouteDelivery(int routeId) async {
     final row = await _dao.getEntryForRoute(routeId);
     if (row == null) return;

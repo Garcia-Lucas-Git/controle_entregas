@@ -6,7 +6,7 @@ part of 'earnings_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$shiftReportDataHash() => r'2a78f07793eec95204a4d9196a044920bfe60fe8';
+String _$shiftReportDataHash() => r'e67de07b33dfe57197b566aa2de4c92e77c9af5a';
 
 /// Copied from Dart SDK
 class _SystemHash {

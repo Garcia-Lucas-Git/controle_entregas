@@ -9,7 +9,9 @@ import 'package:permission_handler/permission_handler.dart';
 
 class NewRouteScreen extends ConsumerStatefulWidget {
   final int shiftId;
-  const NewRouteScreen({super.key, required this.shiftId});
+  final int? routeId;
+
+  const NewRouteScreen({super.key, required this.shiftId, this.routeId});
 
   @override
   ConsumerState<NewRouteScreen> createState() => _NewRouteScreenState();
@@ -19,9 +21,15 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
   final _ocrService = OcrService();
   final _picker = ImagePicker();
 
-  int? _routeId;
+  late int? _routeId;
   final List<OcrResult> _results = [];
   bool _processing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _routeId = widget.routeId;
+  }
 
   @override
   void dispose() {
@@ -291,7 +299,7 @@ class _NewRouteScreenState extends ConsumerState<NewRouteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nova Rota'),
+        title: Text(widget.routeId == null ? 'Nova Rota' : 'Adicionar Entrega'),
         actions: [
           if (_results.isNotEmpty && !_processing)
             TextButton(onPressed: _proceed, child: const Text('Revisar')),
@@ -386,7 +394,7 @@ class _EmptyCapture extends StatelessWidget {
           Text(
             processing
                 ? 'Processando comprovante...'
-                : 'Fotografe os comprovantes da rota.',
+                : 'Fotografe os comprovantes da entrega.',
             style: Theme.of(context).textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),

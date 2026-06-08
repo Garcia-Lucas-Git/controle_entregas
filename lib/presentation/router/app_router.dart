@@ -38,6 +38,7 @@ abstract final class AppRoutes {
   static const shiftHistory = '/history';
   static const shiftDetails = '/shift/:shiftId/details';
   static const shiftReport = '/history/shift/:shiftId/report';
+  static const weekDetails = '/history/week-details';
 }
 
 @riverpod
@@ -67,9 +68,13 @@ GoRouter appRouter(AppRouterRef ref) {
       ),
       GoRoute(
         path: AppRoutes.newRoute,
-        builder: (context, state) => NewRouteScreen(
-          shiftId: int.parse(state.pathParameters['shiftId']!),
-        ),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return NewRouteScreen(
+            shiftId: int.parse(state.pathParameters['shiftId']!),
+            routeId: extra['routeId'] as int?,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.routeReview,
@@ -117,6 +122,16 @@ GoRouter appRouter(AppRouterRef ref) {
       GoRoute(
         path: '/history/payment-forecast',
         builder: (context, state) => const PaymentForecastScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.weekDetails,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return WeekDetailsScreen(
+            weekStart: extra['start'] as DateTime,
+            weekEnd: extra['end'] as DateTime,
+          );
+        },
       ),
       GoRoute(
         path: '/shift/:shiftId/manual',

@@ -26,10 +26,7 @@ abstract final class OcrKeywords {
   // Card machine — only explicit physical machine references.
   // CARTAO / DEBITO / CREDITO removed: on iFood receipts these appear as
   // pre-paid payment method labels and must NOT trigger needsCard.
-  static const List<String> cardMachine = [
-    'MAQUINA',
-    'MAQUININHA',
-  ];
+  static const List<String> cardMachine = ['MAQUINA', 'MAQUININHA'];
 
   // iFood internal payment phrases that must NEVER trigger needsCard/needsChange.
   // These indicate the customer already paid on the platform.

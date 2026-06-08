@@ -12,6 +12,7 @@ Future<ShiftReportData> shiftReportData(
   final shiftRepo = ref.watch(shiftRepositoryProvider);
   final routeRepo = ref.watch(routeRepositoryProvider);
   final earningsRepo = ref.watch(earningsRepositoryProvider);
+  final deliveryRepo = ref.watch(deliveryRepositoryProvider);
 
   final shift = await shiftRepo.getById(shiftId);
   if (shift == null) throw StateError('Shift $shiftId not found');
@@ -29,5 +30,18 @@ Future<ShiftReportData> shiftReportData(
       .whereType<RouteWithEarnings>()
       .toList();
 
-  return ShiftReportData(shift: shift, routes: routesWithEarnings);
+  final neighborhoods = <int, List<String>>{};
+  for (final route in routesWithEarnings) {
+    final deliveries = await deliveryRepo.getDeliveriesForRoute(route.route.id);
+    neighborhoods[route.route.id] = deliveries
+        .map((d) => d.neighborhood?.trim() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toList();
+  }
+
+  return ShiftReportData(
+    shift: shift,
+    routes: routesWithEarnings,
+    routeNeighborhoods: neighborhoods,
+  );
 }

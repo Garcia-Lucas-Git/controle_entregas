@@ -30,17 +30,37 @@ class EarningsDao extends DatabaseAccessor<AppDatabase>
           .getSingleOrNull();
 
   Future<int> updateEntryDeliveryCount(int routeId, int newCount) =>
-      (update(db.earningsEntriesTable)..where((t) => t.routeId.equals(routeId)))
-          .write(
-            EarningsEntriesTableCompanion(
-              routeDeliveryCount: Value(newCount),
-            ),
-          );
+      (update(
+        db.earningsEntriesTable,
+      )..where((t) => t.routeId.equals(routeId))).write(
+        EarningsEntriesTableCompanion(routeDeliveryCount: Value(newCount)),
+      );
 
-  Future<int> deleteEntryForRoute(int routeId) =>
-      (delete(db.earningsEntriesTable)
-            ..where((t) => t.routeId.equals(routeId)))
-          .go();
+  Future<int> updateRouteEntry({
+    required int routeId,
+    required String earningsType,
+    required int rateAppliedCents,
+    required int routeDeliveryCount,
+    required double? routeDistanceKm,
+    required String classificationReason,
+    required String configSnapshot,
+  }) =>
+      (update(
+        db.earningsEntriesTable,
+      )..where((t) => t.routeId.equals(routeId))).write(
+        EarningsEntriesTableCompanion(
+          earningsType: Value(earningsType),
+          rateAppliedCents: Value(rateAppliedCents),
+          routeDeliveryCount: Value(routeDeliveryCount),
+          routeDistanceKm: Value(routeDistanceKm),
+          classificationReason: Value(classificationReason),
+          configSnapshot: Value(configSnapshot),
+        ),
+      );
+
+  Future<int> deleteEntryForRoute(int routeId) => (delete(
+    db.earningsEntriesTable,
+  )..where((t) => t.routeId.equals(routeId))).go();
 
   Future<EarningsConfigTableData?> getCurrentConfig() =>
       (select(db.earningsConfigTable)
