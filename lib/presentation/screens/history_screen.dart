@@ -230,54 +230,66 @@ class _WeekSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (shifts.isEmpty) return const SizedBox.shrink();
-
     final settings = ref.watch(settingsStreamProvider);
     final dailyGoalCents = settings.valueOrNull?.dailyGoalCents ?? 12000;
     const workingDays = 6;
     final weeklyGoalCents = dailyGoalCents * workingDays;
 
+    final now = DateTime.now();
+    final weekStart = HistoryScreen._weekStart(now);
+    final weekEnd = weekStart.add(const Duration(days: 6));
+    final rangeFmt = DateFormat('dd/MM', 'pt_BR');
+
     final revenue = shifts.fold(0, (sum, s) => sum + s.totalEarnings.cents);
     final fuel = shifts.fold(0, (sum, s) => sum + (s.fuelExpenseCents ?? 0));
-    final hasFuel = fuel > 0;
-
+    final net = revenue - fuel;
+    final deliveries = shifts.fold(0, (sum, s) => sum + s.deliveryCount);
     final progress = weeklyGoalCents > 0
-        ? (revenue / weeklyGoalCents).clamp(0.0, 1.0)
+        ? (net / weeklyGoalCents).clamp(0.0, 1.0)
         : 0.0;
-    final goalReached = revenue >= weeklyGoalCents;
-    final pct = weeklyGoalCents > 0
-        ? (revenue / weeklyGoalCents * 100).round()
-        : 0;
-    final remainingCents = max(0, weeklyGoalCents - revenue);
-    final remainingDeliveries = remainingCents > 0
-        ? (remainingCents / 800).ceil()
-        : 0;
+    final goalReached = weeklyGoalCents > 0 && net >= weeklyGoalCents;
+    final pct = weeklyGoalCents > 0 ? (net / weeklyGoalCents * 100).round() : 0;
+    final remainingCents = max(0, weeklyGoalCents - net);
 
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 6),
+      margin: const EdgeInsets.only(bottom: 8),
       color: colorScheme.primaryContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ────────────────────────────────────────────────────────
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'ESTA SEMANA',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onPrimaryContainer,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ESTA SEMANA',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimaryContainer,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${rangeFmt.format(weekStart)} a ${rangeFmt.format(weekEnd)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
+                    horizontal: 10,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: goalReached
@@ -285,10 +297,10 @@ class _WeekSummaryCard extends ConsumerWidget {
                         : colorScheme.onPrimaryContainer.withValues(
                             alpha: 0.15,
                           ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    goalReached ? 'Meta Atingida' : 'Meta Semanal: $pct%',
+                    '$pct%',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: goalReached
                           ? colorScheme.onPrimary
@@ -299,33 +311,13 @@ class _WeekSummaryCard extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-
-            // ── Progress bar ──────────────────────────────────────────────────
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: colorScheme.onPrimaryContainer.withValues(
-                  alpha: 0.2,
-                ),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  goalReached
-                      ? colorScheme.primary
-                      : colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ),
             const SizedBox(height: 12),
-
-            // ── Revenue highlight ─────────────────────────────────────────────
             Container(
               decoration: BoxDecoration(
                 color: _kRevenueBg,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -337,7 +329,7 @@ class _WeekSummaryCard extends ConsumerWidget {
                   ),
                   Text(
                     'R\$ ${(revenue / 100).toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -345,10 +337,7 @@ class _WeekSummaryCard extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-
-            // ── Line 1: Meta semanal · Faltam ────────────────────────────────
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -357,38 +346,63 @@ class _WeekSummaryCard extends ConsumerWidget {
                     value: 'R\$ ${(weeklyGoalCents / 100).toStringAsFixed(0)}',
                   ),
                 ),
-                if (!goalReached && remainingCents > 0)
-                  Expanded(
-                    child: _SummaryCell(
-                      label: 'Faltam',
-                      value: 'R\$ ${(remainingCents / 100).toStringAsFixed(2)}',
-                    ),
+                Expanded(
+                  child: _SummaryCell(
+                    label: 'Combustível',
+                    value: 'R\$ ${(fuel / 100).toStringAsFixed(2)}',
                   ),
+                ),
+                Expanded(
+                  child: _SummaryCell(
+                    label: 'Faltam',
+                    value: 'R\$ ${(remainingCents / 100).toStringAsFixed(2)}',
+                  ),
+                ),
               ],
             ),
-
-            // ── Line 2: Entregas necessárias · Combustível ────────────────────
-            if ((!goalReached && remainingDeliveries > 0) || hasFuel) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  if (!goalReached && remainingDeliveries > 0)
-                    Expanded(
-                      child: _SummaryCell(
-                        label: 'Entregas necessárias',
-                        value: '$remainingDeliveries',
-                      ),
-                    ),
-                  if (hasFuel)
-                    Expanded(
-                      child: _SummaryCell(
-                        label: 'Combustível',
-                        value: 'R\$ ${(fuel / 100).toStringAsFixed(2)}',
-                      ),
-                    ),
-                ],
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 9,
+                backgroundColor: colorScheme.onPrimaryContainer.withValues(
+                  alpha: 0.18,
+                ),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  goalReached ? colorScheme.primary : _kWeekHeaderBg,
+                ),
               ),
-            ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$deliveries entregas',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  'R\$ ${(net / 100).toStringAsFixed(2)} líquido',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  goalReached ? 'Meta batida' : 'Em andamento',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
