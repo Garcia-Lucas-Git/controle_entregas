@@ -35,6 +35,7 @@ class DeliveriesTable extends Table {
   // Delivery flags
   BoolColumn get hasDrinks => boolean().withDefault(const Constant(false))();
   BoolColumn get needsCard => boolean().withDefault(const Constant(false))();
+  IntColumn get cardAmountCents => integer().nullable()();
   BoolColumn get needsChange => boolean().withDefault(const Constant(false))();
   IntColumn get changeAmountCents => integer().nullable()();
 

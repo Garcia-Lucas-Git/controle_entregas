@@ -459,10 +459,13 @@ class _DeliveryTile extends ConsumerWidget {
           context: context,
           isScrollControlled: true,
           useSafeArea: true,
-          builder: (_) => DeliveryQuickPanel(
-            delivery: delivery,
-            shiftId: shiftId,
-            routeId: routeId,
+          builder: (_) => SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.88,
+            child: DeliveryQuickPanel(
+              delivery: delivery,
+              shiftId: shiftId,
+              routeId: routeId,
+            ),
           ),
         ),
       ),

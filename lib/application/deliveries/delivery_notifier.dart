@@ -47,6 +47,7 @@ class DeliveryNotifier extends _$DeliveryNotifier {
         hasDrinks: ocr.hasDrinks,
         drinkType: ocr.drinkType,
         needsCard: ocr.needsCard,
+        cardAmountCents: ocr.cardAmountCents,
         needsChange: ocr.needsChange,
         changeAmountCents: ocr.changeAmountCents,
         pizzaNumber: ocr.pizzaNumber,
@@ -67,6 +68,8 @@ class DeliveryNotifier extends _$DeliveryNotifier {
     String? pizzaNumber,
     bool hasDrinks = false,
     String? drinkType,
+    bool needsCard = false,
+    int? cardAmountCents,
   }) => ref
       .read(deliveryRepositoryProvider)
       .createDelivery(
@@ -84,6 +87,8 @@ class DeliveryNotifier extends _$DeliveryNotifier {
         pizzaNumber: pizzaNumber,
         hasDrinks: hasDrinks,
         drinkType: drinkType,
+        needsCard: needsCard,
+        cardAmountCents: cardAmountCents,
       );
 
   Future<int> nextSequenceForRoute(int routeId) =>
@@ -111,6 +116,8 @@ class DeliveryNotifier extends _$DeliveryNotifier {
     bool? hasDrinks,
     String? drinkType,
     bool? needsCard,
+    int? cardAmountCents,
+    bool clearCardAmount = false,
     bool? needsChange,
     required int routeId,
   }) async {
@@ -130,6 +137,8 @@ class DeliveryNotifier extends _$DeliveryNotifier {
           hasDrinks: hasDrinks,
           drinkType: drinkType,
           needsCard: needsCard,
+          cardAmountCents: cardAmountCents,
+          clearCardAmount: clearCardAmount,
           needsChange: needsChange,
         );
     AppLogger.log(

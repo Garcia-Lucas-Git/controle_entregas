@@ -19,6 +19,7 @@ class OcrResult {
   final bool hasDrinks;
   final String? drinkType;
   final bool needsCard;
+  final int? cardAmountCents;
   final bool needsChange;
   final int? changeAmountCents;
   final double confidence;
@@ -41,6 +42,7 @@ class OcrResult {
     this.hasDrinks = false,
     this.drinkType,
     this.needsCard = false,
+    this.cardAmountCents,
     this.needsChange = false,
     this.changeAmountCents,
     this.confidence = 1.0,
@@ -579,6 +581,7 @@ class OcrService {
         hasDrinks: _containsAny(fullText, OcrKeywords.drinks),
         drinkType: _extractDrinkType(fullText),
         needsCard: false, // Payment flags never set by OCR — manual review only
+        cardAmountCents: null,
         needsChange:
             false, // Payment flags never set by OCR — manual review only
         changeAmountCents: null,

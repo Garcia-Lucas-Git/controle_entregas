@@ -71,6 +71,8 @@ class DeliveryRepository {
     bool? hasDrinks,
     String? drinkType,
     bool? needsCard,
+    int? cardAmountCents,
+    bool clearCardAmount = false,
     bool? needsChange,
   }) async {
     await _dao.updateDeliveryFields(
@@ -103,6 +105,11 @@ class DeliveryRepository {
       hasDrinks: hasDrinks != null ? Value(hasDrinks) : const Value.absent(),
       drinkType: drinkType != null ? Value(drinkType) : const Value.absent(),
       needsCard: needsCard != null ? Value(needsCard) : const Value.absent(),
+      cardAmountCents: clearCardAmount
+          ? const Value(null)
+          : cardAmountCents != null
+          ? Value(cardAmountCents)
+          : const Value.absent(),
       needsChange: needsChange != null
           ? Value(needsChange)
           : const Value.absent(),
@@ -127,6 +134,7 @@ class DeliveryRepository {
     bool hasDrinks = false,
     String? drinkType,
     bool needsCard = false,
+    int? cardAmountCents,
     bool needsChange = false,
     int? changeAmountCents,
     String? pizzaNumber,
@@ -154,6 +162,7 @@ class DeliveryRepository {
           hasDrinks: Value(hasDrinks),
           drinkType: Value(drinkType),
           needsCard: Value(needsCard),
+          cardAmountCents: Value(cardAmountCents),
           needsChange: Value(needsChange),
           changeAmountCents: Value(changeAmountCents),
           pizzaNumber: Value(pizzaNumber),
@@ -292,6 +301,7 @@ class DeliveryRepository {
     hasDrinks: r.hasDrinks,
     drinkType: r.drinkType,
     needsCard: r.needsCard,
+    cardAmountCents: r.cardAmountCents,
     needsChange: r.needsChange,
     changeAmountCents: r.changeAmountCents,
     pizzaNumber: r.pizzaNumber,

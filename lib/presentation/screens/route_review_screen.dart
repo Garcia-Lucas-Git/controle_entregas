@@ -1,5 +1,6 @@
 import 'package:controle_entregas/application/deliveries/delivery_notifier.dart';
 import 'package:controle_entregas/application/settings/settings_notifier.dart';
+import 'package:controle_entregas/presentation/utils/currency_input.dart';
 import 'package:controle_entregas/services/app_logger.dart';
 import 'package:controle_entregas/services/maps_launcher.dart';
 import 'package:controle_entregas/services/ocr_service.dart';
@@ -60,6 +61,9 @@ class _RouteReviewScreenState extends ConsumerState<RouteReviewScreen> {
           : d.deliveryIdentifier;
       if (locator.isEmpty) errors.add('$label: localizador');
       if (d.pizzaNumber.trim().isEmpty) errors.add('$label: nº da pizza');
+      if (d.needsCard && d.cardAmountCents == null) {
+        errors.add('$label: valor da maquininha');
+      }
     }
     if (errors.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -323,6 +327,7 @@ class _DeliveryDraft {
   bool hasDrinks;
   String drinkType;
   bool needsCard;
+  int? cardAmountCents;
   bool needsChange;
   String rawText;
   double confidence;
@@ -342,6 +347,7 @@ class _DeliveryDraft {
     required this.hasDrinks,
     required this.drinkType,
     required this.needsCard,
+    required this.cardAmountCents,
     required this.needsChange,
     required this.rawText,
     required this.confidence,
@@ -363,6 +369,7 @@ class _DeliveryDraft {
         hasDrinks: r.hasDrinks,
         drinkType: r.drinkType ?? '',
         needsCard: r.needsCard,
+        cardAmountCents: r.cardAmountCents,
         needsChange: r.needsChange,
         rawText: r.rawText,
         confidence: r.confidence,
@@ -382,6 +389,7 @@ class _DeliveryDraft {
     bool? hasDrinks,
     String? drinkType,
     bool? needsCard,
+    int? cardAmountCents,
     bool? needsChange,
   }) => _DeliveryDraft(
     id: id,
@@ -399,6 +407,7 @@ class _DeliveryDraft {
     hasDrinks: hasDrinks ?? this.hasDrinks,
     drinkType: drinkType ?? this.drinkType,
     needsCard: needsCard ?? this.needsCard,
+    cardAmountCents: cardAmountCents ?? this.cardAmountCents,
     needsChange: needsChange ?? this.needsChange,
     rawText: rawText,
     confidence: confidence,
@@ -421,6 +430,7 @@ class _DeliveryDraft {
     hasDrinks: hasDrinks,
     drinkType: drinkType,
     needsCard: needsCard,
+    cardAmountCents: needsCard ? cardAmountCents : null,
     needsChange: needsChange,
     confidence: confidence,
   );
@@ -459,6 +469,7 @@ class _DraftCardState extends State<_DraftCard> {
   late final TextEditingController _orderCtrl;
   late final TextEditingController _idCtrl;
   late final TextEditingController _codeCtrl;
+  late final TextEditingController _cardAmountCtrl;
 
   @override
   void initState() {
@@ -473,6 +484,9 @@ class _DraftCardState extends State<_DraftCard> {
     _orderCtrl = TextEditingController(text: d.orderNumber);
     _idCtrl = TextEditingController(text: d.deliveryIdentifier);
     _codeCtrl = TextEditingController(text: d.partnerCollectionCode);
+    _cardAmountCtrl = TextEditingController(
+      text: currencyCentsForInput(d.cardAmountCents),
+    );
   }
 
   @override
@@ -486,23 +500,26 @@ class _DraftCardState extends State<_DraftCard> {
     _orderCtrl.dispose();
     _idCtrl.dispose();
     _codeCtrl.dispose();
+    _cardAmountCtrl.dispose();
     super.dispose();
   }
 
   void _notify() {
-    widget.onChanged(
-      widget.draft.copyWith(
-        customerName: _nameCtrl.text,
-        addressText: _addrCtrl.text,
-        houseNumber: _houseCtrl.text,
-        complement: _complementCtrl.text,
-        neighborhood: _neighborhoodCtrl.text,
-        pizzaNumber: _pizzaCtrl.text,
-        orderNumber: _orderCtrl.text,
-        deliveryIdentifier: _idCtrl.text,
-        partnerCollectionCode: _codeCtrl.text,
-      ),
+    final updated = widget.draft.copyWith(
+      customerName: _nameCtrl.text,
+      addressText: _addrCtrl.text,
+      houseNumber: _houseCtrl.text,
+      complement: _complementCtrl.text,
+      neighborhood: _neighborhoodCtrl.text,
+      pizzaNumber: _pizzaCtrl.text,
+      orderNumber: _orderCtrl.text,
+      deliveryIdentifier: _idCtrl.text,
+      partnerCollectionCode: _codeCtrl.text,
     );
+    updated.cardAmountCents = parseBrazilianCurrencyToCents(
+      _cardAmountCtrl.text,
+    );
+    widget.onChanged(updated);
   }
 
   @override
@@ -801,11 +818,21 @@ class _DraftCardState extends State<_DraftCard> {
                           widget.onChanged(d.copyWith(drinkType: value ?? '')),
                     ),
                   _FlagRow(
-                    label: '💳 Cartão',
+                    label: '💳 Maquininha',
                     value: d.needsCard,
                     onChanged: (v) =>
                         widget.onChanged(d.copyWith(needsCard: v)),
                   ),
+                  if (d.needsCard)
+                    _EditField(
+                      label: 'Valor da Maquininha *',
+                      controller: _cardAmountCtrl,
+                      onChanged: (_) => _notify(),
+                      isRequired: true,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
                   _FlagRow(
                     label: '💰 Troco',
                     value: d.needsChange,

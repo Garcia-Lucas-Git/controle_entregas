@@ -1493,6 +1493,17 @@ class $DeliveriesTableTable extends DeliveriesTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _cardAmountCentsMeta = const VerificationMeta(
+    'cardAmountCents',
+  );
+  @override
+  late final GeneratedColumn<int> cardAmountCents = GeneratedColumn<int>(
+    'card_amount_cents',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _needsChangeMeta = const VerificationMeta(
     'needsChange',
   );
@@ -1596,6 +1607,7 @@ class $DeliveriesTableTable extends DeliveriesTable
     ifoodConfirmedAt,
     hasDrinks,
     needsCard,
+    cardAmountCents,
     needsChange,
     changeAmountCents,
     pizzaNumber,
@@ -1777,6 +1789,15 @@ class $DeliveriesTableTable extends DeliveriesTable
         needsCard.isAcceptableOrUnknown(data['needs_card']!, _needsCardMeta),
       );
     }
+    if (data.containsKey('card_amount_cents')) {
+      context.handle(
+        _cardAmountCentsMeta,
+        cardAmountCents.isAcceptableOrUnknown(
+          data['card_amount_cents']!,
+          _cardAmountCentsMeta,
+        ),
+      );
+    }
     if (data.containsKey('needs_change')) {
       context.handle(
         _needsChangeMeta,
@@ -1923,6 +1944,10 @@ class $DeliveriesTableTable extends DeliveriesTable
         DriftSqlType.bool,
         data['${effectivePrefix}needs_card'],
       )!,
+      cardAmountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}card_amount_cents'],
+      ),
       needsChange: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_change'],
@@ -1982,6 +2007,7 @@ class DeliveriesTableData extends DataClass
   final String? ifoodConfirmedAt;
   final bool hasDrinks;
   final bool needsCard;
+  final int? cardAmountCents;
   final bool needsChange;
   final int? changeAmountCents;
   final String? pizzaNumber;
@@ -2010,6 +2036,7 @@ class DeliveriesTableData extends DataClass
     this.ifoodConfirmedAt,
     required this.hasDrinks,
     required this.needsCard,
+    this.cardAmountCents,
     required this.needsChange,
     this.changeAmountCents,
     this.pizzaNumber,
@@ -2063,6 +2090,9 @@ class DeliveriesTableData extends DataClass
     }
     map['has_drinks'] = Variable<bool>(hasDrinks);
     map['needs_card'] = Variable<bool>(needsCard);
+    if (!nullToAbsent || cardAmountCents != null) {
+      map['card_amount_cents'] = Variable<int>(cardAmountCents);
+    }
     map['needs_change'] = Variable<bool>(needsChange);
     if (!nullToAbsent || changeAmountCents != null) {
       map['change_amount_cents'] = Variable<int>(changeAmountCents);
@@ -2127,6 +2157,9 @@ class DeliveriesTableData extends DataClass
           : Value(ifoodConfirmedAt),
       hasDrinks: Value(hasDrinks),
       needsCard: Value(needsCard),
+      cardAmountCents: cardAmountCents == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cardAmountCents),
       needsChange: Value(needsChange),
       changeAmountCents: changeAmountCents == null && nullToAbsent
           ? const Value.absent()
@@ -2183,6 +2216,7 @@ class DeliveriesTableData extends DataClass
       ifoodConfirmedAt: serializer.fromJson<String?>(json['ifoodConfirmedAt']),
       hasDrinks: serializer.fromJson<bool>(json['hasDrinks']),
       needsCard: serializer.fromJson<bool>(json['needsCard']),
+      cardAmountCents: serializer.fromJson<int?>(json['cardAmountCents']),
       needsChange: serializer.fromJson<bool>(json['needsChange']),
       changeAmountCents: serializer.fromJson<int?>(json['changeAmountCents']),
       pizzaNumber: serializer.fromJson<String?>(json['pizzaNumber']),
@@ -2220,6 +2254,7 @@ class DeliveriesTableData extends DataClass
       'ifoodConfirmedAt': serializer.toJson<String?>(ifoodConfirmedAt),
       'hasDrinks': serializer.toJson<bool>(hasDrinks),
       'needsCard': serializer.toJson<bool>(needsCard),
+      'cardAmountCents': serializer.toJson<int?>(cardAmountCents),
       'needsChange': serializer.toJson<bool>(needsChange),
       'changeAmountCents': serializer.toJson<int?>(changeAmountCents),
       'pizzaNumber': serializer.toJson<String?>(pizzaNumber),
@@ -2251,6 +2286,7 @@ class DeliveriesTableData extends DataClass
     Value<String?> ifoodConfirmedAt = const Value.absent(),
     bool? hasDrinks,
     bool? needsCard,
+    Value<int?> cardAmountCents = const Value.absent(),
     bool? needsChange,
     Value<int?> changeAmountCents = const Value.absent(),
     Value<String?> pizzaNumber = const Value.absent(),
@@ -2290,6 +2326,9 @@ class DeliveriesTableData extends DataClass
         : this.ifoodConfirmedAt,
     hasDrinks: hasDrinks ?? this.hasDrinks,
     needsCard: needsCard ?? this.needsCard,
+    cardAmountCents: cardAmountCents.present
+        ? cardAmountCents.value
+        : this.cardAmountCents,
     needsChange: needsChange ?? this.needsChange,
     changeAmountCents: changeAmountCents.present
         ? changeAmountCents.value
@@ -2348,6 +2387,9 @@ class DeliveriesTableData extends DataClass
           : this.ifoodConfirmedAt,
       hasDrinks: data.hasDrinks.present ? data.hasDrinks.value : this.hasDrinks,
       needsCard: data.needsCard.present ? data.needsCard.value : this.needsCard,
+      cardAmountCents: data.cardAmountCents.present
+          ? data.cardAmountCents.value
+          : this.cardAmountCents,
       needsChange: data.needsChange.present
           ? data.needsChange.value
           : this.needsChange,
@@ -2393,6 +2435,7 @@ class DeliveriesTableData extends DataClass
           ..write('ifoodConfirmedAt: $ifoodConfirmedAt, ')
           ..write('hasDrinks: $hasDrinks, ')
           ..write('needsCard: $needsCard, ')
+          ..write('cardAmountCents: $cardAmountCents, ')
           ..write('needsChange: $needsChange, ')
           ..write('changeAmountCents: $changeAmountCents, ')
           ..write('pizzaNumber: $pizzaNumber, ')
@@ -2426,6 +2469,7 @@ class DeliveriesTableData extends DataClass
     ifoodConfirmedAt,
     hasDrinks,
     needsCard,
+    cardAmountCents,
     needsChange,
     changeAmountCents,
     pizzaNumber,
@@ -2458,6 +2502,7 @@ class DeliveriesTableData extends DataClass
           other.ifoodConfirmedAt == this.ifoodConfirmedAt &&
           other.hasDrinks == this.hasDrinks &&
           other.needsCard == this.needsCard &&
+          other.cardAmountCents == this.cardAmountCents &&
           other.needsChange == this.needsChange &&
           other.changeAmountCents == this.changeAmountCents &&
           other.pizzaNumber == this.pizzaNumber &&
@@ -2488,6 +2533,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
   final Value<String?> ifoodConfirmedAt;
   final Value<bool> hasDrinks;
   final Value<bool> needsCard;
+  final Value<int?> cardAmountCents;
   final Value<bool> needsChange;
   final Value<int?> changeAmountCents;
   final Value<String?> pizzaNumber;
@@ -2516,6 +2562,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     this.ifoodConfirmedAt = const Value.absent(),
     this.hasDrinks = const Value.absent(),
     this.needsCard = const Value.absent(),
+    this.cardAmountCents = const Value.absent(),
     this.needsChange = const Value.absent(),
     this.changeAmountCents = const Value.absent(),
     this.pizzaNumber = const Value.absent(),
@@ -2545,6 +2592,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     this.ifoodConfirmedAt = const Value.absent(),
     this.hasDrinks = const Value.absent(),
     this.needsCard = const Value.absent(),
+    this.cardAmountCents = const Value.absent(),
     this.needsChange = const Value.absent(),
     this.changeAmountCents = const Value.absent(),
     this.pizzaNumber = const Value.absent(),
@@ -2577,6 +2625,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     Expression<String>? ifoodConfirmedAt,
     Expression<bool>? hasDrinks,
     Expression<bool>? needsCard,
+    Expression<int>? cardAmountCents,
     Expression<bool>? needsChange,
     Expression<int>? changeAmountCents,
     Expression<String>? pizzaNumber,
@@ -2609,6 +2658,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
       if (ifoodConfirmedAt != null) 'ifood_confirmed_at': ifoodConfirmedAt,
       if (hasDrinks != null) 'has_drinks': hasDrinks,
       if (needsCard != null) 'needs_card': needsCard,
+      if (cardAmountCents != null) 'card_amount_cents': cardAmountCents,
       if (needsChange != null) 'needs_change': needsChange,
       if (changeAmountCents != null) 'change_amount_cents': changeAmountCents,
       if (pizzaNumber != null) 'pizza_number': pizzaNumber,
@@ -2640,6 +2690,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     Value<String?>? ifoodConfirmedAt,
     Value<bool>? hasDrinks,
     Value<bool>? needsCard,
+    Value<int?>? cardAmountCents,
     Value<bool>? needsChange,
     Value<int?>? changeAmountCents,
     Value<String?>? pizzaNumber,
@@ -2672,6 +2723,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
       ifoodConfirmedAt: ifoodConfirmedAt ?? this.ifoodConfirmedAt,
       hasDrinks: hasDrinks ?? this.hasDrinks,
       needsCard: needsCard ?? this.needsCard,
+      cardAmountCents: cardAmountCents ?? this.cardAmountCents,
       needsChange: needsChange ?? this.needsChange,
       changeAmountCents: changeAmountCents ?? this.changeAmountCents,
       pizzaNumber: pizzaNumber ?? this.pizzaNumber,
@@ -2751,6 +2803,9 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
     if (needsCard.present) {
       map['needs_card'] = Variable<bool>(needsCard.value);
     }
+    if (cardAmountCents.present) {
+      map['card_amount_cents'] = Variable<int>(cardAmountCents.value);
+    }
     if (needsChange.present) {
       map['needs_change'] = Variable<bool>(needsChange.value);
     }
@@ -2798,6 +2853,7 @@ class DeliveriesTableCompanion extends UpdateCompanion<DeliveriesTableData> {
           ..write('ifoodConfirmedAt: $ifoodConfirmedAt, ')
           ..write('hasDrinks: $hasDrinks, ')
           ..write('needsCard: $needsCard, ')
+          ..write('cardAmountCents: $cardAmountCents, ')
           ..write('needsChange: $needsChange, ')
           ..write('changeAmountCents: $changeAmountCents, ')
           ..write('pizzaNumber: $pizzaNumber, ')
@@ -6508,6 +6564,7 @@ typedef $$DeliveriesTableTableCreateCompanionBuilder =
       Value<String?> ifoodConfirmedAt,
       Value<bool> hasDrinks,
       Value<bool> needsCard,
+      Value<int?> cardAmountCents,
       Value<bool> needsChange,
       Value<int?> changeAmountCents,
       Value<String?> pizzaNumber,
@@ -6538,6 +6595,7 @@ typedef $$DeliveriesTableTableUpdateCompanionBuilder =
       Value<String?> ifoodConfirmedAt,
       Value<bool> hasDrinks,
       Value<bool> needsCard,
+      Value<int?> cardAmountCents,
       Value<bool> needsChange,
       Value<int?> changeAmountCents,
       Value<String?> pizzaNumber,
@@ -6716,6 +6774,11 @@ class $$DeliveriesTableTableFilterComposer
 
   ColumnFilters<bool> get needsCard => $composableBuilder(
     column: $table.needsCard,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cardAmountCents => $composableBuilder(
+    column: $table.cardAmountCents,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6925,6 +6988,11 @@ class $$DeliveriesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cardAmountCents => $composableBuilder(
+    column: $table.cardAmountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get needsChange => $composableBuilder(
     column: $table.needsChange,
     builder: (column) => ColumnOrderings(column),
@@ -7096,6 +7164,11 @@ class $$DeliveriesTableTableAnnotationComposer
   GeneratedColumn<bool> get needsCard =>
       $composableBuilder(column: $table.needsCard, builder: (column) => column);
 
+  GeneratedColumn<int> get cardAmountCents => $composableBuilder(
+    column: $table.cardAmountCents,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get needsChange => $composableBuilder(
     column: $table.needsChange,
     builder: (column) => column,
@@ -7255,6 +7328,7 @@ class $$DeliveriesTableTableTableManager
                 Value<String?> ifoodConfirmedAt = const Value.absent(),
                 Value<bool> hasDrinks = const Value.absent(),
                 Value<bool> needsCard = const Value.absent(),
+                Value<int?> cardAmountCents = const Value.absent(),
                 Value<bool> needsChange = const Value.absent(),
                 Value<int?> changeAmountCents = const Value.absent(),
                 Value<String?> pizzaNumber = const Value.absent(),
@@ -7283,6 +7357,7 @@ class $$DeliveriesTableTableTableManager
                 ifoodConfirmedAt: ifoodConfirmedAt,
                 hasDrinks: hasDrinks,
                 needsCard: needsCard,
+                cardAmountCents: cardAmountCents,
                 needsChange: needsChange,
                 changeAmountCents: changeAmountCents,
                 pizzaNumber: pizzaNumber,
@@ -7313,6 +7388,7 @@ class $$DeliveriesTableTableTableManager
                 Value<String?> ifoodConfirmedAt = const Value.absent(),
                 Value<bool> hasDrinks = const Value.absent(),
                 Value<bool> needsCard = const Value.absent(),
+                Value<int?> cardAmountCents = const Value.absent(),
                 Value<bool> needsChange = const Value.absent(),
                 Value<int?> changeAmountCents = const Value.absent(),
                 Value<String?> pizzaNumber = const Value.absent(),
@@ -7341,6 +7417,7 @@ class $$DeliveriesTableTableTableManager
                 ifoodConfirmedAt: ifoodConfirmedAt,
                 hasDrinks: hasDrinks,
                 needsCard: needsCard,
+                cardAmountCents: cardAmountCents,
                 needsChange: needsChange,
                 changeAmountCents: changeAmountCents,
                 pizzaNumber: pizzaNumber,

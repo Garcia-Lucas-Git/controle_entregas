@@ -1,5 +1,6 @@
 import 'package:controle_entregas/application/deliveries/delivery_notifier.dart';
 import 'package:controle_entregas/application/routes/route_notifier.dart';
+import 'package:controle_entregas/presentation/utils/currency_input.dart';
 import 'package:controle_entregas/services/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +38,8 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
   final _complementCtrl = TextEditingController();
   final _neighborhoodCtrl = TextEditingController();
   final _customerCtrl = TextEditingController();
+  final _cardAmountCtrl = TextEditingController();
+  bool _needsCard = false;
   bool _hasDrinks = false;
   String? _drinkType;
   bool _saving = false;
@@ -52,6 +55,7 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
     _complementCtrl.dispose();
     _neighborhoodCtrl.dispose();
     _customerCtrl.dispose();
+    _cardAmountCtrl.dispose();
     super.dispose();
   }
 
@@ -65,6 +69,10 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
     }
     if (pizza.isEmpty) {
       setState(() => _pizzaError = 'Obrigatório');
+      hasError = true;
+    }
+    final cardAmountCents = parseBrazilianCurrencyToCents(_cardAmountCtrl.text);
+    if (_needsCard && cardAmountCents == null) {
       hasError = true;
     }
     if (hasError) return;
@@ -113,6 +121,8 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
             pizzaNumber: pizza,
             hasDrinks: _hasDrinks,
             drinkType: _hasDrinks ? _drinkType : null,
+            needsCard: _needsCard,
+            cardAmountCents: _needsCard ? cardAmountCents : null,
           );
 
       AppLogger.info(
@@ -285,6 +295,37 @@ class _ManualDeliveryScreenState extends ConsumerState<ManualDeliveryScreen> {
                     )
                     .toList(),
                 onChanged: (value) => setState(() => _drinkType = value),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Maquininha'),
+              value: _needsCard,
+              onChanged: (value) => setState(() {
+                _needsCard = value;
+                if (!value) _cardAmountCtrl.clear();
+              }),
+            ),
+            if (_needsCard) ...[
+              TextField(
+                controller: _cardAmountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: brazilianCurrencyInputFormatters,
+                decoration: InputDecoration(
+                  labelText: 'Valor da Maquininha *',
+                  prefixText: 'R\$ ',
+                  border: const OutlineInputBorder(),
+                  errorText:
+                      parseBrazilianCurrencyToCents(_cardAmountCtrl.text) ==
+                          null
+                      ? 'Obrigatório'
+                      : null,
+                ),
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 16),
             ],

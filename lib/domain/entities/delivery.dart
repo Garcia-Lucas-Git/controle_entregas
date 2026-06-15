@@ -26,6 +26,7 @@ class Delivery {
   // Delivery flags
   final bool hasDrinks;
   final bool needsCard;
+  final int? cardAmountCents;
   final bool needsChange;
   final int? changeAmountCents;
 
@@ -57,6 +58,7 @@ class Delivery {
     this.ifoodConfirmedAt,
     this.hasDrinks = false,
     this.needsCard = false,
+    this.cardAmountCents,
     this.needsChange = false,
     this.changeAmountCents,
     this.pizzaNumber,

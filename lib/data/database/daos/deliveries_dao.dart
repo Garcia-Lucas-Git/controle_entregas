@@ -114,6 +114,7 @@ class DeliveriesDao extends DatabaseAccessor<AppDatabase>
     Value<bool> hasDrinks = const Value.absent(),
     Value<String?> drinkType = const Value.absent(),
     Value<bool> needsCard = const Value.absent(),
+    Value<int?> cardAmountCents = const Value.absent(),
     Value<bool> needsChange = const Value.absent(),
   }) => (update(db.deliveriesTable)..where((t) => t.id.equals(id))).write(
     DeliveriesTableCompanion(
@@ -129,6 +130,7 @@ class DeliveriesDao extends DatabaseAccessor<AppDatabase>
       hasDrinks: hasDrinks,
       drinkType: drinkType,
       needsCard: needsCard,
+      cardAmountCents: cardAmountCents,
       needsChange: needsChange,
     ),
   );

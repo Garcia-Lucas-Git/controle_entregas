@@ -47,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -117,6 +117,12 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(
             deliveriesTable,
             deliveriesTable.drinkType as GeneratedColumn<Object>,
+          );
+        }
+        if (from < 8) {
+          await m.addColumn(
+            deliveriesTable,
+            deliveriesTable.cardAmountCents as GeneratedColumn<Object>,
           );
         }
         AppLogger.info(
